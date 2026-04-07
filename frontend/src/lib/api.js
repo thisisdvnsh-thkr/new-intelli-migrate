@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API_BASE = '/api'
+// Use Render backend in production, localhost in development
+const API_BASE = import.meta.env.PROD 
+  ? 'https://new-intelli-migrate.onrender.com/api'
+  : '/api'
 
 const api = axios.create({
   baseURL: API_BASE,
