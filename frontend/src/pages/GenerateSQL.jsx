@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useMigration } from '../context/MigrationContext'
 import { ArrowRight, Database, Download, Copy, Check, Loader2, Code2 } from 'lucide-react'
 
-const API_URL = ''
+const API_URL = 'https://new-intelli-migrate.onrender.com'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
