@@ -112,7 +112,7 @@ VALUES
     ('C004', 'Alice Johnson', 'alice_j@yahoo.com'),
     ('C006', 'Diana Prince', 'diana.prince@work.net'),
     ('C007', 'Edward Norton', 'ed.norton@protonmail.com'),
-    ('C008', 'Fiona GreenðŸ’š', 'fiona.green@email.com'),
+    ('C008', 'Fiona Green💚', 'fiona.green@email.com'),
     ('C009', 'George Harris', 'george.harris@mail.com'),
     ('C010', 'Helen Troy', 'helen.troy@olympus.gr'),
     ('C012', 'Julia Roberts', 'julia.roberts@hollywood.com'),
