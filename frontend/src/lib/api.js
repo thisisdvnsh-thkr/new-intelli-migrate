@@ -1,31 +1,63 @@
 import axios from 'axios'
 
 // Backend API URL - use Render in production
-const API_BASE = 'https://new-intelli-migrate.onrender.com/api'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://new-intelli-migrate.onrender.com'
 
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 120000,
 })
 
-// Health check
-export const checkHealth = async () => {
-  const response = await api.get('/health')
+// Attach token if present
+export function setAuthToken(token) {
+  if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  else delete api.defaults.headers.common['Authorization']
+}
+
+// Auth
+export const signup = async (email, password, full_name) => {
+  const response = await api.post('/auth/signup', { email, password, full_name })
   return response.data
 }
 
-// Get agents status
-export const getAgentsStatus = async () => {
-  const response = await api.get('/agents/status')
+export const login = async (email, password) => {
+  const response = await api.post('/auth/login', { email, password })
   return response.data
 }
 
-// Step 1: Upload file
+export const getMe = async () => {
+  const response = await api.get('/auth/me')
+  return response.data
+}
+
+// Account management
+export const changePassword = async (old_password, new_password) => {
+  const response = await api.post('/auth/change-password', { old_password, new_password })
+  return response.data
+}
+
+export const deleteAccount = async () => {
+  const response = await api.delete('/auth/delete')
+  return response.data
+}
+
+// User settings
+export const getUserSettings = async () => {
+  const response = await api.get('/api/user/settings')
+  return response.data
+}
+
+export const saveUserSettings = async (settings) => {
+  const response = await api.put('/api/user/settings', { settings })
+  return response.data
+}
+
+// Migration pipeline
 export const uploadFile = async (file, onProgress) => {
   const formData = new FormData()
   formData.append('file', file)
   
-  const response = await api.post('/upload', formData, {
+  const response = await api.post('/api/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     onUploadProgress: (e) => {
       const percent = Math.round((e.loaded * 100) / e.total)
@@ -35,42 +67,33 @@ export const uploadFile = async (file, onProgress) => {
   return response.data
 }
 
-// Step 2: Map schema
 export const mapSchema = async (sessionId, domain = 'ecommerce') => {
-  const response = await api.post(`/map-schema/${sessionId}?domain=${domain}`)
+  const response = await api.post(`/api/map-schema/${sessionId}?domain=${domain}`)
   return response.data
 }
 
-// Step 3: Detect anomalies
 export const detectAnomalies = async (sessionId) => {
-  const response = await api.post(`/detect-anomalies/${sessionId}`)
+  const response = await api.post(`/api/detect-anomalies/${sessionId}`)
   return response.data
 }
 
-// Step 4: Normalize data
 export const normalizeData = async (sessionId) => {
-  const response = await api.post(`/normalize/${sessionId}`)
+  const response = await api.post(`/api/normalize/${sessionId}`)
   return response.data
 }
 
-// Step 5: Generate SQL
 export const generateSQL = async (sessionId, dialect = 'postgresql') => {
-  const response = await api.post(`/generate-sql/${sessionId}?dialect=${dialect}`)
+  const response = await api.post(`/api/generate-sql/${sessionId}?dialect=${dialect}`)
   return response.data
 }
 
-// Step 6: Deploy to Supabase
-export const deployToSupabase = async (sessionId, supabaseUrl, supabaseKey) => {
-  const response = await api.post(`/deploy/${sessionId}`, {
-    supabase_url: supabaseUrl,
-    supabase_key: supabaseKey
-  })
+export const deployToPostgres = async (sessionId, db_password) => {
+  const response = await api.post(`/api/deploy/${sessionId}`, { db_password })
   return response.data
 }
 
-// Download SQL file
 export const downloadSQL = async (sessionId) => {
-  const response = await api.get(`/download-sql/${sessionId}`, {
+  const response = await api.get(`/api/download-sql/${sessionId}`, {
     responseType: 'blob'
   })
   

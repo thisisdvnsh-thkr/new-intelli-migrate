@@ -1,0 +1,37 @@
+name: Publish to Cloudflare Pages
+
+on:
+  push:
+    branches: [ 'deploy/cloudflare', 'main' ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Publish to Cloudflare Pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE: 'https://new-intelli-migrate.onrender.com'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 78bb06f8b3be8709d3dd63b6981d1b1e
+          projectName: new-intelli-migrate
+          directory: frontend/dist
