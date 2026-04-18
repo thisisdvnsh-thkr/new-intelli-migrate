@@ -107,4 +107,9 @@ export const downloadSQL = async (sessionId) => {
   window.URL.revokeObjectURL(url)
 }
 
+export const checkHealth = async () => {
+  const response = await api.get('/openapi.json')
+  return response.data
+}
+
 export default api
