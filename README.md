@@ -1,7 +1,15 @@
-# Intelli-Migrate: AI-Powered Data Migration SaaS
+# Intelli-Migrate — AI-Driven Data Migration & ETL Automation Platform
 
-> **College Major Project** - An intelligent data migration platform using a swarm of 5 AI agents to automate the ETL process from messy data to production-ready databases.
+> An AI-powered data migration platform leveraging a multi-agent architecture to automate ETL pipelines, schema mapping, anomaly detection, and database deployment.
 
+---
+## 🚀 Live Demo
+
+🔗 Frontend: [https://intelli-migrate.vercel.app](https://intelli-migrate.vercel.app)  
+🔗 Backend API: [https://your-render-url.onrender.com](https://new-intelli-migrate.onrender.com)
+> Upload messy data → see full pipeline → get SQL output
+
+---
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.10+-green)
 ![License](https://img.shields.io/badge/license-MIT-purple)
@@ -21,6 +29,64 @@
 | 💾 **Agent 5: SQL Generator** | SQLAlchemy | Generate DDL/DML and deploy to databases |
 
 ---
+## ⏳ System Workflow
+```
+Raw Data (JSON/CSV/XML)
+        │
+        ▼
+Agent 1: Parser Engine
+        │
+        ▼
+Agent 2: NLP Schema Mapping
+        │
+        ▼
+Agent 3: Anomaly Detection
+        │
+        ▼
+Agent 4: Data Normalization (3NF)
+        │
+        ▼
+Agent 5: SQL Generator
+        │
+        ▼
+Database Deployment
+```
+## 📊 System Visualization
+
+### 🔄 End-to-End Pipeline
+<p align="center">
+  <img src="./visuals/Pipeline.png" width="800"/>
+</p>
+
+---
+
+### 🔍 Data Transformation (Unstructured → Structured)
+<p align="center">
+  <img src="./visuals/transformation.png" width="800"/>
+</p>
+
+## 🏗️ System Design Decisions
+
+### Why Multi-Agent Architecture?
+- Enables modular processing where each stage (parsing, mapping, anomaly detection) is independently scalable
+- Improves maintainability compared to monolithic ETL pipelines
+
+### Why NLP for Schema Mapping?
+- Traditional rule-based mapping fails for inconsistent column names
+- NLP embeddings allow semantic matching (e.g., "cust_name" → "customer_name")
+
+### Why Isolation Forest for Anomaly Detection?
+- Efficient for high-dimensional tabular data
+- Works well without labeled anomaly data
+
+### Why Normalization (3NF)?
+- Ensures structured relational database design
+- Reduces redundancy and improves data integrity
+
+### Trade-offs
+- Slight increase in processing time due to multiple agents
+- Requires model dependencies (NLP + ML)
+
 
 ## 🚀 Quick Start
 
@@ -79,6 +145,13 @@ python -m http.server 3000
 cd ../dataset
 python generate_messy_data.py
 ```
+---
+## 🚀 Business Impact
+
+- Reduces manual ETL effort by automating schema mapping and transformation
+- Enables rapid migration from unstructured to production-ready databases
+- Improves data quality through anomaly detection and normalization
+- Accelerates database deployment with auto-generated SQL scripts
 
 ---
 
@@ -185,7 +258,14 @@ curl -X POST "http://localhost:8000/api/migrate" \
 ```
 
 ---
+## ⚠️ Limitations
 
+- Performance may vary for extremely large datasets (>1M records)
+- NLP mapping accuracy depends on input data quality
+- Limited support for complex nested JSON structures
+- Currently optimized for structured tabular outputs only
+
+---
 ## 🎓 Team Member Contributions
 
 | Team Member | Agent | Primary Files |
@@ -284,12 +364,6 @@ Then update `API_BASE` in `frontend/index.html`.
 - ✅ **Multi-dialect SQL**: PostgreSQL, MySQL, SQLite
 - ✅ **ERD Generation**: Mermaid diagrams for visualization
 - ✅ **One-click Deployment**: Direct to Postgres or SQLite
-
----
-
-## 📄 License
-
-This project is created for educational purposes as a college major project.
 
 ---
 
