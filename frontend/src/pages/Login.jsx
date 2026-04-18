@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Database, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { login as apiLogin, getMe } from '../lib/api'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -24,19 +25,21 @@ export default function Login() {
     setError('')
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      login({ email, name: email.split('@')[0] })
+      const data = await apiLogin(email, password)
+      // fetch user
+      const me = await getMe()
+      login(me, data.access_token)
       navigate('/dashboard')
     } catch (err) {
-      setError('Invalid credentials')
+      setError(err?.response?.data?.detail || 'Invalid credentials')
     } finally {
       setLoading(false)
     }
   }
   
   const handleSocialLogin = (provider) => {
-    login({ email: `user@${provider}.com`, name: `${provider} User` })
-    navigate('/dashboard')
+    // Social flows not implemented yet
+    setError('Social login is not enabled. Use email/password.')
   }
   
   return (

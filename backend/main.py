@@ -3,7 +3,7 @@ Intelli-Migrate: AI-Powered Data Migration SaaS
 Main FastAPI Application - Orchestrates all 5 AI Agents
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -11,15 +11,40 @@ from typing import Optional, List, Dict, Any
 import os
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 import shutil
 
-# Import AI Agents
-from agents.parser_engine import ParserEngine, ParseResult
-from agents.nlp_mapper import NLPMapper, SchemaMappingResult
-from agents.anomaly_detector import AnomalyDetector, AnomalyReport
-from agents.normalizer import Normalizer, NormalizationResult
-from agents.sql_generator import SQLGenerator, SQLScript
+# Database and auth
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Import AI Agents (optional — guarded to speed up smoke tests)
+try:
+    from agents.parser_engine import ParserEngine, ParseResult
+    from agents.nlp_mapper import NLPMapper, SchemaMappingResult
+    from agents.anomaly_detector import AnomalyDetector, AnomalyReport
+    from agents.normalizer import Normalizer, NormalizationResult
+    from agents.sql_generator import SQLGenerator, SQLScript
+except Exception as e:
+    ParserEngine = None
+    ParseResult = None
+    NLPMapper = None
+    SchemaMappingResult = None
+    AnomalyDetector = None
+    AnomalyReport = None
+    Normalizer = None
+    NormalizationResult = None
+    SQLGenerator = None
+    SQLScript = None
+    print(f"Warning: agents not available: {e}")
+
+# Import models
+from models import Base, User, Settings
 
 
 # ============================================
@@ -46,14 +71,14 @@ app.add_middleware(
 )
 
 # ============================================
-# Initialize AI Agents
+# Initialize AI Agents (if available)
 # ============================================
 
-parser_engine = ParserEngine()
-nlp_mapper = NLPMapper(confidence_threshold=0.85)
-anomaly_detector = AnomalyDetector(contamination=0.1)
-normalizer = Normalizer()
-sql_generator = SQLGenerator(dialect='postgresql')
+parser_engine = ParserEngine() if ParserEngine else None
+nlp_mapper = NLPMapper(confidence_threshold=0.85) if NLPMapper else type('DummyNLP', (), {'model': None, 'confidence_threshold': 0.85})()
+anomaly_detector = AnomalyDetector(contamination=0.1) if AnomalyDetector else type('DummyAnomaly', (), {'isolation_forest': None})()
+normalizer = Normalizer() if Normalizer else None
+sql_generator = SQLGenerator(dialect='postgresql') if SQLGenerator else type('DummySQL', (), {'dialect': 'postgresql'})()
 
 # Persistent session storage using files (survives Render restarts)
 SESSIONS_DIR = os.path.join(os.path.dirname(__file__), '..', 'sessions')
@@ -84,7 +109,7 @@ def session_exists(session_id: str) -> bool:
 
 
 # ============================================
-# Pydantic Models
+# Pydantic Models + Auth
 # ============================================
 
 class SessionStatus(BaseModel):
@@ -101,11 +126,181 @@ class MappingOverride(BaseModel):
 
 
 class DeployConfig(BaseModel):
+    database_url: Optional[str] = None
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None
     db_password: Optional[str] = None
     use_sqlite: bool = False
     sqlite_path: Optional[str] = None
+
+
+# --- Auth / User models ---
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    full_name: Optional[str]
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class SettingsIn(BaseModel):
+    settings: Dict[str, Any]
+
+# --- Database setup ---
+DATABASE_URL = os.getenv('DATABASE_URL') or f"sqlite:///" + os.path.join(os.path.dirname(__file__), '..', 'temp', 'intelli.db')
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith('sqlite') else {})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Create tables on startup
+Base.metadata.create_all(bind=engine)
+
+# Password & JWT config
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")  # use pbkdf2 to avoid bcrypt platform issues during local smoke tests
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-change-this')
+ALGORITHM = 'HS256'
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+# --- DB helpers ---
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+from sqlalchemy.orm import Session
+from fastapi import Depends
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
+
+def create_user(db: Session, user_in: UserCreate):
+    hashed = get_password_hash(user_in.password)
+    user = User(email=user_in.email, hashed_password=hashed, full_name=user_in.full_name)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+# --- Auth dependency ---
+async def get_current_user(authorization: Optional[str] = Header(None), db: Session = Depends(lambda: next(get_db()))):
+    if not authorization:
+        raise HTTPException(status_code=401, detail='Missing authorization')
+    scheme, _, token = authorization.partition(' ')
+    if scheme.lower() != 'bearer' or not token:
+        raise HTTPException(status_code=401, detail='Invalid auth scheme')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get('sub')
+        if user_id is None:
+            raise HTTPException(status_code=401, detail='Invalid token payload')
+    except JWTError:
+        raise HTTPException(status_code=401, detail='Could not validate token')
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail='User not found')
+    return user
+
+# --- Auth routes ---
+@app.post('/auth/signup', response_model=Token)
+def signup(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
+    existing = get_user_by_email(db, user_in.email)
+    if existing:
+        raise HTTPException(status_code=400, detail='Email already registered')
+    user = create_user(db, user_in)
+    token = create_access_token({'sub': str(user.id)})
+    return {'access_token': token, 'token_type': 'bearer'}
+
+
+@app.post('/auth/login', response_model=Token)
+def login(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
+    user = get_user_by_email(db, user_in.email)
+    if not user or not verify_password(user_in.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail='Invalid credentials')
+    token = create_access_token({'sub': str(user.id)})
+    return {'access_token': token, 'token_type': 'bearer'}
+
+
+@app.get('/auth/me', response_model=UserOut)
+async def me(current_user: User = Depends(get_current_user)):
+    return {'id': current_user.id, 'email': current_user.email, 'full_name': current_user.full_name}
+
+
+# Change password endpoint
+class ChangePasswordIn(BaseModel):
+    old_password: str
+    new_password: str
+
+@app.post('/auth/change-password')
+async def change_password(payload: ChangePasswordIn, current_user: User = Depends(get_current_user), db: Session = Depends(lambda: next(get_db()))):
+    # Verify old password
+    if not verify_password(payload.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=401, detail='Invalid current password')
+    # Update password
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.add(current_user)
+    db.commit()
+    return {'status': 'ok', 'message': 'Password changed'}
+
+
+# Delete account endpoint
+@app.delete('/auth/delete')
+async def delete_account(current_user: User = Depends(get_current_user), db: Session = Depends(lambda: next(get_db()))):
+    # Delete related settings
+    db.query(Settings).filter(Settings.user_id == current_user.id).delete()
+    # Delete user
+    db.delete(current_user)
+    db.commit()
+    return {'status': 'deleted'}
+
+
+# --- User settings endpoints ---
+@app.get('/api/user/settings')
+def get_settings(current_user: User = Depends(get_current_user), db: Session = Depends(lambda: next(get_db()))):
+    settings = db.query(Settings).filter(Settings.user_id == current_user.id).first()
+    if not settings:
+        return {'settings': {}}
+    try:
+        data = json.loads(settings.settings_json) if settings.settings_json else {}
+    except Exception:
+        data = {}
+    return {'settings': data}
+
+
+@app.put('/api/user/settings')
+def put_settings(payload: SettingsIn, current_user: User = Depends(get_current_user), db: Session = Depends(lambda: next(get_db()))):
+    settings = db.query(Settings).filter(Settings.user_id == current_user.id).first()
+    sjson = json.dumps(payload.settings)
+    if not settings:
+        settings = Settings(user_id=current_user.id, settings_json=sjson)
+        db.add(settings)
+    else:
+        settings.settings_json = sjson
+    db.commit()
+    return {'settings': payload.settings}
 
 
 # ============================================
@@ -467,7 +662,7 @@ async def download_sql(session_id: str):
 @app.post("/api/deploy/{session_id}")
 async def deploy_database(session_id: str, config: DeployConfig):
     """
-    Step 6: Deploy to database (Supabase or SQLite)
+    Step 6: Deploy to database (Postgres or SQLite)
     """
     if not session_exists(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
@@ -494,15 +689,18 @@ async def deploy_database(session_id: str, config: DeployConfig):
         # Deploy to SQLite
         db_path = config.sqlite_path or os.path.join(TEMP_DIR, f"{session_id}.db")
         result = sql_generator.deploy_to_sqlite(script, db_path)
+    elif config.database_url:
+        # Deploy to Postgres using a DATABASE_URL
+        result = sql_generator.deploy_to_postgres(script, config.database_url, config.db_password)
     elif config.supabase_url and config.supabase_key:
-        # Deploy to Supabase
+        # Legacy: Deploy to Supabase-specific endpoint (kept for backwards compatibility)
         result = sql_generator.deploy_to_supabase(
             script, config.supabase_url, config.supabase_key, config.db_password
         )
     else:
         raise HTTPException(
             status_code=400, 
-            detail="Provide Supabase credentials or enable SQLite"
+            detail="Provide database credentials (database_url) or enable SQLite"
         )
     
     # Update session

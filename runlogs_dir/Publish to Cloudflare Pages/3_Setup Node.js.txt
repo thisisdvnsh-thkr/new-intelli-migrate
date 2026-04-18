@@ -1,0 +1,17 @@
+﻿2026-04-18T10:28:29.2855822Z ##[group]Run actions/setup-node@v3
+2026-04-18T10:28:29.2856540Z with:
+2026-04-18T10:28:29.2856981Z   node-version: 18
+2026-04-18T10:28:29.2857471Z   always-auth: false
+2026-04-18T10:28:29.2857986Z   check-latest: false
+2026-04-18T10:28:29.2858754Z   token: ***
+2026-04-18T10:28:29.2859182Z ##[endgroup]
+2026-04-18T10:28:29.4688271Z Attempting to download 18...
+2026-04-18T10:28:30.0059499Z Acquiring 18.20.8 - x64 from https://github.com/actions/node-versions/releases/download/18.20.8-14110393767/node-18.20.8-linux-x64.tar.gz
+2026-04-18T10:28:30.5279966Z Extracting ...
+2026-04-18T10:28:30.5374952Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword -C /home/runner/work/_temp/887977be-57b4-40a6-a0a7-b93daa8c9f54 -f /home/runner/work/_temp/eae748fd-28a0-4ca7-a58d-be67537007b9
+2026-04-18T10:28:31.4472505Z Adding to the cache ...
+2026-04-18T10:28:32.6334692Z ##[group]Environment details
+2026-04-18T10:28:32.8468888Z node: v18.20.8
+2026-04-18T10:28:32.8469423Z npm: 10.8.2
+2026-04-18T10:28:32.8469689Z yarn: 1.22.22
+2026-04-18T10:28:32.8470519Z ##[endgroup]

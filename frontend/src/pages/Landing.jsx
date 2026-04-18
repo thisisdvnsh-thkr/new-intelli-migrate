@@ -246,7 +246,7 @@ function HowItWorks() {
   const steps = [
     { step: '01', title: 'Upload Your Data', description: 'Drag & drop JSON, CSV, or XML files. Our parser handles nested structures automatically.' },
     { step: '02', title: 'AI Analyzes Schema', description: 'NLP maps columns, ML detects anomalies, and algorithms normalize to 3NF.' },
-    { step: '03', title: 'Review & Export', description: 'Preview generated SQL, fix any issues, and deploy directly to Supabase.' },
+    { step: '03', title: 'Review & Export', description: 'Preview generated SQL, fix any issues, and deploy to your managed PostgreSQL.' },
   ]
   
   return (
@@ -311,7 +311,7 @@ function Pricing() {
       price: '$29',
       period: '/month',
       description: 'For growing teams and projects',
-      features: ['Unlimited migrations', '100MB file size', 'Priority support', 'Supabase deploy', 'API access', 'Team collaboration'],
+      features: ['Unlimited migrations', '100MB file size', 'Priority support', 'Managed Postgres deploy', 'API access', 'Team collaboration'],
       cta: 'Start Pro Trial',
       popular: true
     },

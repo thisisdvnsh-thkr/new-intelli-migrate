@@ -205,9 +205,9 @@ curl -X POST "http://localhost:8000/api/migrate" \
 Create a `.env` file in the `backend/` directory:
 
 ```env
-# Supabase Configuration (for cloud deployment)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-api-key
+# Cloud Postgres Configuration (for cloud deployment)
+DATABASE_URL=postgres://user:password@host:port/dbname
+# If using Supabase, you may still set SUPABASE_URL and SUPABASE_KEY (optional)
 
 # ML Configuration
 NLP_CONFIDENCE_THRESHOLD=0.85
@@ -221,7 +221,7 @@ PORT=8000
 ### Changing SQL Dialect
 
 The SQL Generator supports multiple dialects:
-- `postgresql` (default) - For Supabase, PostgreSQL
+- `postgresql` (default) - For managed PostgreSQL (Render, Supabase)
 - `mysql` - For MySQL/MariaDB
 - `sqlite` - For local SQLite databases
 
@@ -283,7 +283,7 @@ Then update `API_BASE` in `frontend/index.html`.
 - ✅ **Automatic 3NF Normalization**: Creates proper relational structure
 - ✅ **Multi-dialect SQL**: PostgreSQL, MySQL, SQLite
 - ✅ **ERD Generation**: Mermaid diagrams for visualization
-- ✅ **One-click Deployment**: Direct to Supabase or SQLite
+- ✅ **One-click Deployment**: Direct to Postgres or SQLite
 
 ---
 
@@ -298,7 +298,7 @@ This project is created for educational purposes as a college major project.
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
 - [sentence-transformers](https://www.sbert.net/) - NLP embeddings
 - [scikit-learn](https://scikit-learn.org/) - Machine learning
-- [Supabase](https://supabase.com/) - Database-as-a-Service
+- [Render](https://render.com/) - Managed Postgres (recommended)
 - [Tailwind CSS](https://tailwindcss.com/) - Frontend styling
 
 ---

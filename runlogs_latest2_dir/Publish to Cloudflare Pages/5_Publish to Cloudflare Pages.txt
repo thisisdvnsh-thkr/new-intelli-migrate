@@ -1,0 +1,31 @@
+﻿2026-04-18T10:53:49.2027744Z ##[group]Run cloudflare/pages-action@v1
+2026-04-18T10:53:49.2027988Z with:
+2026-04-18T10:53:49.2028349Z   apiToken: ***
+2026-04-18T10:53:49.2028541Z   accountId: 78bb06f8b3be8709d3dd63b6981d1b1e
+2026-04-18T10:53:49.2028780Z   projectName: new-intelli-migrate
+2026-04-18T10:53:49.2028971Z   directory: frontend/dist
+2026-04-18T10:53:49.2029159Z   wranglerVersion: 2
+2026-04-18T10:53:49.2029324Z ##[endgroup]
+2026-04-18T10:53:49.4439838Z Cloudflare API returned non-200: 404
+2026-04-18T10:53:49.4477739Z API returned: {
+2026-04-18T10:53:49.4478469Z   "result": null,
+2026-04-18T10:53:49.4479194Z   "success": false,
+2026-04-18T10:53:49.4479703Z   "errors": [
+2026-04-18T10:53:49.4480272Z     {
+2026-04-18T10:53:49.4480705Z       "code": 8000007,
+2026-04-18T10:53:49.4481544Z       "message": "Project not found. The specified project name does not match any of your existing projects."
+2026-04-18T10:53:49.4482338Z     }
+2026-04-18T10:53:49.4482767Z   ],
+2026-04-18T10:53:49.4483125Z   "messages": []
+2026-04-18T10:53:49.4483609Z }
+2026-04-18T10:53:49.4483878Z 
+2026-04-18T10:53:49.4503424Z /home/runner/work/_actions/cloudflare/pages-action/v1/index.js:22082
+2026-04-18T10:53:49.4504316Z       throw new Error("Failed to get Pages project, API returned non-200");
+2026-04-18T10:53:49.4504740Z             ^
+2026-04-18T10:53:49.4504868Z 
+2026-04-18T10:53:49.4505144Z Error: Failed to get Pages project, API returned non-200
+2026-04-18T10:53:49.4505787Z     at getProject (/home/runner/work/_actions/cloudflare/pages-action/v1/index.js:22082:13)
+2026-04-18T10:53:49.4506561Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-04-18T10:53:49.4507232Z     at async /home/runner/work/_actions/cloudflare/pages-action/v1/index.js:22167:21
+2026-04-18T10:53:49.4507663Z 
+2026-04-18T10:53:49.4507805Z Node.js v20.20.1

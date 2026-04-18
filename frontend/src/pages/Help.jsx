@@ -32,12 +32,12 @@ const faqs = [
     answer: "Third Normal Form (3NF) is a database design principle that eliminates redundancy. Our AI automatically decomposes your flat data into properly normalized tables with foreign key relationships."
   },
   {
-    question: "How do I deploy to Supabase?",
-    answer: "After generating SQL, click 'Deploy to Supabase'. We'll create the tables and insert your data directly into your Supabase PostgreSQL database. You'll need your Supabase URL and anon key."
+    question: "How do I deploy to Render Postgres?",
+    answer: "After generating SQL, click 'Deploy'. The backend will push DDL/DML to your managed PostgreSQL (Render). Ensure your Render DATABASE_URL is configured in the backend."
   },
   {
     question: "Is my data secure?",
-    answer: "Yes! Your data is processed locally on our servers and never stored permanently. We use SSL encryption for all transfers, and you can delete your session data at any time."
+    answer: "Yes! Your data is processed securely on the server. We use SSL for transfers, tokens for auth, and you can delete your session data at any time."
   }
 ]
 
@@ -75,8 +75,8 @@ const guides = [
   {
     title: "Cloud Deployment",
     icon: Cloud,
-    description: "Deploying to Supabase",
-    steps: ["Connect your Supabase project", "Tables created automatically", "Data inserted in batches", "View in Supabase dashboard"]
+    description: "Deploying to managed PostgreSQL",
+    steps: ["Connect your managed Postgres (Render)", "Tables created automatically by backend", "Data inserted in batches", "View in your database dashboard"]
   }
 ]
 

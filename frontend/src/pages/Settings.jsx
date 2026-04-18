@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getUserSettings, saveUserSettings, changePassword, deleteAccount } from '../lib/api'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { 
@@ -16,20 +17,42 @@ const stagger = {
 }
 
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [saved, setSaved] = useState(false)
   const [settings, setSettings] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+    name: '',
+    email: '',
     notifications: true,
     darkMode: true,
     autoSave: true,
     defaultDatabase: 'postgresql'
   })
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  useEffect(() => {
+    // prefill from auth user
+    if (user) {
+      setSettings(prev => ({ ...prev, name: user.full_name || user.name || prev.name, email: user.email || prev.email }))
+    }
+    const load = async () => {
+      try {
+        const res = await getUserSettings()
+        if (res?.settings) setSettings(prev => ({ ...prev, ...res.settings }))
+      } catch (e) {
+        console.warn('Failed to load settings', e)
+      }
+    }
+    load()
+  }, [user])
+
+  const handleSave = async () => {
+    try {
+      await saveUserSettings(settings)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      console.error('Save settings failed', e)
+      alert('Failed to save settings')
+    }
   }
 
   const sections = [
@@ -100,7 +123,7 @@ export default function Settings() {
               onChange={(e) => setSettings({...settings, defaultDatabase: e.target.value})}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-blue-500/50 transition-all"
             >
-              <option value="postgresql">PostgreSQL (Supabase)</option>
+              <option value="postgresql">PostgreSQL (Render)</option>
               <option value="mysql">MySQL</option>
               <option value="sqlite">SQLite</option>
             </select>
@@ -119,11 +142,33 @@ export default function Settings() {
       icon: Shield,
       content: (
         <div className="space-y-4">
-          <button className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white hover:bg-white/10 transition-all w-full">
+          <button onClick={async () => {
+              const oldP = window.prompt('Enter current password')
+              if (!oldP) return
+              const newP = window.prompt('Enter new password')
+              if (!newP) return
+              try {
+                await changePassword(oldP, newP)
+                alert('Password changed successfully')
+              } catch (e) {
+                console.error(e)
+                alert('Failed to change password')
+              }
+            }} className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white hover:bg-white/10 transition-all w-full">
             <Key className="w-5 h-5 text-white/50" />
             <span>Change Password</span>
           </button>
-          <button className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 hover:bg-red-500/20 transition-all w-full">
+          <button onClick={async () => {
+              if (!window.confirm('Delete account? This action cannot be undone.')) return
+              try {
+                await deleteAccount()
+                logout()
+                alert('Account deleted')
+              } catch (e) {
+                console.error(e)
+                alert('Failed to delete account')
+              }
+            }} className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 hover:bg-red-500/20 transition-all w-full">
             <Trash2 className="w-5 h-5" />
             <span>Delete Account</span>
           </button>

@@ -1,0 +1,12 @@
+﻿2026-04-18T10:47:25.8146854Z Post job cleanup.
+2026-04-18T10:47:25.8867395Z [command]/usr/bin/git version
+2026-04-18T10:47:25.8901339Z git version 2.53.0
+2026-04-18T10:47:25.8942099Z Temporarily overriding HOME='/home/runner/work/_temp/aa2605f2-7f75-4692-8e9b-c03e83236be3' before making global git config changes
+2026-04-18T10:47:25.8943564Z Adding repository directory to the temporary git global config as a safe directory
+2026-04-18T10:47:25.8946853Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/new-intelli-migrate/new-intelli-migrate
+2026-04-18T10:47:25.8978447Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-04-18T10:47:25.9007669Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-04-18T10:47:25.9235686Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-04-18T10:47:25.9256912Z http.https://github.com/.extraheader
+2026-04-18T10:47:25.9267517Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-04-18T10:47:25.9295800Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"

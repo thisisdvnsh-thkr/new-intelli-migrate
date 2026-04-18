@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-04-18T22:44:52.5566491+05:30",
+  "pages_ok": true,
+  "sitemap_ok": true,
+  "robots_ok": true,
+  "signup": {
+    "ok": false,
+    "error": "Response status code does not indicate success: 404 (Not Found)."
+  },
+  "login": {
+    "ok": false,
+    "error": "Response status code does not indicate success: 404 (Not Found)."
+  },
+  "me": null,
+  "settings_get": null,
+  "settings_put": null,
+  "delete": null
+}

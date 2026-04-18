@@ -71,7 +71,7 @@
 | API | FastAPI (Python 3.10+) | REST API, Async Processing |
 | NLP | sentence-transformers (all-MiniLM-L6-v2) | Semantic Embeddings |
 | ML | scikit-learn (IsolationForest) | Anomaly Detection |
-| Database | SQLite / PostgreSQL (Supabase) | Data Storage |
+| Database | SQLite / PostgreSQL (Render or Supabase) | Data Storage |
 
 ---
 
@@ -581,9 +581,9 @@ docker run -p 8000:8000 intelli-migrate
 ### Environment Variables
 
 ```env
-# Required for Supabase deployment
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_KEY=eyJhbGci...
+# Required for cloud Postgres deployment (Render or Supabase)
+DATABASE_URL=postgres://user:password@host:port/dbname
+# SUPABASE_KEY (if using Supabase): your_supabase_key_here
 
 # Optional configuration
 NLP_MODEL=all-MiniLM-L6-v2

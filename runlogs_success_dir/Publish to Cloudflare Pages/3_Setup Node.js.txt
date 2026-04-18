@@ -1,0 +1,13 @@
+﻿2026-04-18T10:58:46.3392063Z ##[group]Run actions/setup-node@v3
+2026-04-18T10:58:46.3393314Z with:
+2026-04-18T10:58:46.3394130Z   node-version: 20
+2026-04-18T10:58:46.3395030Z   always-auth: false
+2026-04-18T10:58:46.3395974Z   check-latest: false
+2026-04-18T10:58:46.3397375Z   token: ***
+2026-04-18T10:58:46.3398216Z ##[endgroup]
+2026-04-18T10:58:46.5290137Z Found in cache @ /opt/hostedtoolcache/node/20.20.2/x64
+2026-04-18T10:58:46.5296853Z ##[group]Environment details
+2026-04-18T10:58:46.8312297Z node: v20.20.2
+2026-04-18T10:58:46.8313862Z npm: 10.8.2
+2026-04-18T10:58:46.8315084Z yarn: 1.22.22
+2026-04-18T10:58:46.8317739Z ##[endgroup]

@@ -1,6 +1,6 @@
 """
 Agent 5: SQL Generator
-Generates DDL/DML SQL scripts and deploys to cloud databases (Supabase/PostgreSQL).
+Generates DDL/DML SQL scripts and deploys to cloud databases (PostgreSQL).
 Supports MySQL, PostgreSQL, SQLite syntax variations.
 """
 
@@ -41,7 +41,7 @@ class SQLGenerator:
     - Generate DDL (CREATE TABLE) with proper data types
     - Generate DML (INSERT) with batch optimization
     - Support multiple dialects (PostgreSQL, MySQL, SQLite)
-    - Deploy directly to Supabase
+    - Deploy directly to managed Postgres (Render, Supabase)
     - Handle foreign key constraints
     - Escape special characters and SQL injection prevention
     """
@@ -352,7 +352,7 @@ class SQLGenerator:
                            supabase_url: str, supabase_key: str,
                            db_password: str = None) -> DeploymentResult:
         """
-        Deploy SQL to Supabase database using direct PostgreSQL connection
+        Deploy SQL to Postgres database using direct PostgreSQL connection
         """
         try:
             tables_created = []
@@ -365,10 +365,10 @@ class SQLGenerator:
             if not url_match:
                 return DeploymentResult(
                     success=False,
-                    message="Invalid Supabase URL format",
+                    message="Invalid external DB URL format",
                     tables_created=[],
                     records_inserted=0,
-                    errors=["URL should be like: https://yourproject.supabase.co"]
+                    errors=["Provide a valid DB host URL or DATABASE_URL"]
                 )
             
             project_ref = url_match.group(1)
@@ -401,7 +401,7 @@ class SQLGenerator:
                 password = db_password if db_password else supabase_key
                 encoded_password = quote_plus(password)
                 
-                # Supabase connection string format (Session mode pooler)
+                # Supabase-specific pooler format (kept for legacy support)
                 conn_string = f"postgresql://postgres.{project_ref}:{encoded_password}@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
                 
                 conn = psycopg2.connect(conn_string, connect_timeout=10)
@@ -427,7 +427,7 @@ class SQLGenerator:
                 success = len(errors) == 0 or len(tables_created) > 0
                 return DeploymentResult(
                     success=success,
-                    message=f"Deployed {len(tables_created)} tables with {records_inserted} records to Supabase!" if success else "Deployment had errors",
+                    message=f"Deployed {len(tables_created)} tables with {records_inserted} records to Postgres!" if success else "Deployment had errors",
                     tables_created=tables_created,
                     records_inserted=records_inserted,
                     errors=errors[:5] if errors else [],
@@ -441,7 +441,7 @@ class SQLGenerator:
             
             # Fallback: Save SQL for manual execution
             import os
-            sql_file_path = os.path.join(os.path.dirname(__file__), '..', 'temp', 'supabase_migration.sql')
+            sql_file_path = os.path.join(os.path.dirname(__file__), '..', 'temp', 'migration.sql')
             os.makedirs(os.path.dirname(sql_file_path), exist_ok=True)
             
             with open(sql_file_path, 'w', encoding='utf-8') as f:
@@ -452,19 +452,86 @@ class SQLGenerator:
                 message=f"SQL saved for {len(tables_created)} tables. Manual deployment needed.",
                 tables_created=tables_created,
                 records_inserted=0,
-                errors=errors + ["Run the SQL in Supabase Dashboard > SQL Editor"],
+                errors=errors + ["Run the SQL in your DB provider's SQL Editor"],
                 connection_string=sql_file_path
             )
             
         except Exception as e:
             return DeploymentResult(
                 success=False,
-                message=f"Supabase deployment failed: {str(e)}",
+                message=f"Postgres deployment failed: {str(e)}",
                 tables_created=[],
                 records_inserted=0,
                 errors=[str(e)]
             )
-    
+
+    def deploy_to_postgres(self, sql_script: SQLScript, database_url: str, db_password: str = None) -> DeploymentResult:
+        """
+        Deploy SQL to a Postgres database using a full DATABASE_URL connection string.
+        """
+        try:
+            import psycopg2
+            statements = self._split_statements(sql_script.full_script)
+            tables_created = []
+            errors = []
+            records_inserted = 0
+
+            conn = psycopg2.connect(database_url, connect_timeout=10)
+            conn.autocommit = True
+            cursor = conn.cursor()
+
+            for stmt in statements:
+                stmt = stmt.strip()
+                if not stmt:
+                    continue
+
+                # Track CREATE TABLE statements
+                if 'CREATE TABLE' in stmt.upper():
+                    match = re.search(r'CREATE TABLE\s+(?:IF NOT EXISTS\s+)?["\']?(\w+)["\']?', stmt, re.IGNORECASE)
+                    if match:
+                        tables_created.append(match.group(1))
+
+                # Track INSERT statements
+                if 'INSERT INTO' in stmt.upper():
+                    row_matches = re.findall(r'\([^)]+\)', stmt.split('VALUES', 1)[-1] if 'VALUES' in stmt.upper() else '')
+                    records_inserted += len(row_matches) if row_matches else 1
+
+                try:
+                    cursor.execute(stmt)
+                except Exception as e:
+                    msg = str(e)
+                    if 'already exists' not in msg.lower():
+                        errors.append(msg)
+
+            cursor.close()
+            conn.close()
+
+            success = len(errors) == 0
+            return DeploymentResult(
+                success=success,
+                message=f"Deployed {len(tables_created)} tables with {records_inserted} records to Postgres!" if success else "Deployment had errors",
+                tables_created=tables_created,
+                records_inserted=records_inserted,
+                errors=errors[:5] if errors else [],
+                connection_string=database_url
+            )
+        except ImportError:
+            return DeploymentResult(
+                success=False,
+                message="psycopg2 not installed. Run: pip install psycopg2-binary",
+                tables_created=[],
+                records_inserted=0,
+                errors=["psycopg2 missing"]
+            )
+        except Exception as e:
+            return DeploymentResult(
+                success=False,
+                message=f"Postgres deployment failed: {str(e)}",
+                tables_created=[],
+                records_inserted=0,
+                errors=[str(e)]
+            )
+
     def deploy_to_sqlite(self, sql_script: SQLScript, db_path: str) -> DeploymentResult:
         """Deploy SQL to SQLite database"""
         import sqlite3

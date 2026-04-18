@@ -1,0 +1,33 @@
+﻿2026-04-18T10:53:41.3598822Z Current runner version: '2.333.1'
+2026-04-18T10:53:41.3620344Z ##[group]Runner Image Provisioner
+2026-04-18T10:53:41.3621100Z Hosted Compute Agent
+2026-04-18T10:53:41.3621543Z Version: 20260213.493
+2026-04-18T10:53:41.3622066Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-04-18T10:53:41.3622671Z Build Date: 2026-02-13T00:28:41Z
+2026-04-18T10:53:41.3623164Z Worker ID: {fadc445f-68c3-4b70-aeb7-62b3e8008e89}
+2026-04-18T10:53:41.3623713Z Azure Region: westus
+2026-04-18T10:53:41.3624181Z ##[endgroup]
+2026-04-18T10:53:41.3625221Z ##[group]Operating System
+2026-04-18T10:53:41.3625713Z Ubuntu
+2026-04-18T10:53:41.3626111Z 24.04.4
+2026-04-18T10:53:41.3626501Z LTS
+2026-04-18T10:53:41.3626878Z ##[endgroup]
+2026-04-18T10:53:41.3627270Z ##[group]Runner Image
+2026-04-18T10:53:41.3627718Z Image: ubuntu-24.04
+2026-04-18T10:53:41.3628122Z Version: 20260413.86.1
+2026-04-18T10:53:41.3628964Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260413.86/images/ubuntu/Ubuntu2404-Readme.md
+2026-04-18T10:53:41.3630414Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260413.86
+2026-04-18T10:53:41.3631165Z ##[endgroup]
+2026-04-18T10:53:41.3632074Z ##[group]GITHUB_TOKEN Permissions
+2026-04-18T10:53:41.3633673Z Contents: read
+2026-04-18T10:53:41.3634119Z Deployments: write
+2026-04-18T10:53:41.3634539Z Metadata: read
+2026-04-18T10:53:41.3634969Z ##[endgroup]
+2026-04-18T10:53:41.3637045Z Secret source: Actions
+2026-04-18T10:53:41.3637614Z Prepare workflow directory
+2026-04-18T10:53:41.3901594Z Prepare all required actions
+2026-04-18T10:53:41.3932676Z Getting action download info
+2026-04-18T10:53:41.8169597Z Download action repository 'actions/checkout@v3' (SHA:f43a0e5ff2bd294095638e18286ca9a3d1956744)
+2026-04-18T10:53:41.9872607Z Download action repository 'actions/setup-node@v3' (SHA:3235b876344d2a9aa001b8d1453c930bba69e610)
+2026-04-18T10:53:42.1881342Z Download action repository 'cloudflare/pages-action@v1' (SHA:f0a1cd58cd66095dee69bfa18fa5efd1dde93bca)
+2026-04-18T10:53:42.7337901Z Complete job name: Publish to Cloudflare Pages

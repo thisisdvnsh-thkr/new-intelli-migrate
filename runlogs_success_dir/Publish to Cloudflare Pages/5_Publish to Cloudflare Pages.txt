@@ -1,0 +1,43 @@
+﻿2026-04-18T10:58:52.6678961Z ##[group]Run cloudflare/pages-action@v1
+2026-04-18T10:58:52.6679415Z with:
+2026-04-18T10:58:52.6680002Z   apiToken: ***
+2026-04-18T10:58:52.6680355Z   accountId: 78bb06f8b3be8709d3dd63b6981d1b1e
+2026-04-18T10:58:52.6680823Z   projectName: new-intelli-migrate
+2026-04-18T10:58:52.6681218Z   directory: frontend/dist
+2026-04-18T10:58:52.6681582Z   wranglerVersion: 2
+2026-04-18T10:58:52.6681891Z ##[endgroup]
+2026-04-18T10:58:53.9767476Z npm warn exec The following package was not found and will be installed: wrangler@2.21.3
+2026-04-18T10:58:57.7446399Z npm warn deprecated rollup-plugin-inject@3.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-inject.
+2026-04-18T10:58:57.8152328Z npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+2026-04-18T10:58:57.8188059Z npm warn deprecated @miniflare/runner-vm@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8397831Z npm warn deprecated @miniflare/kv@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8548630Z npm warn deprecated @miniflare/web-sockets@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8558965Z npm warn deprecated @miniflare/storage-file@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8570465Z npm warn deprecated @miniflare/html-rewriter@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8576926Z npm warn deprecated @miniflare/cli-parser@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8707747Z npm warn deprecated @miniflare/scheduler@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8922202Z npm warn deprecated @miniflare/cache@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.8942684Z npm warn deprecated @miniflare/sites@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9243106Z npm warn deprecated @miniflare/queues@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9348008Z npm warn deprecated @miniflare/storage-memory@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9419016Z npm warn deprecated @miniflare/shared@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9454956Z npm warn deprecated @miniflare/http-server@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9515019Z npm warn deprecated @miniflare/r2@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9533689Z npm warn deprecated @miniflare/watcher@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9715215Z npm warn deprecated miniflare@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9720138Z npm warn deprecated @miniflare/d1@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:57.9783376Z npm warn deprecated @miniflare/durable-objects@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:58.0160930Z npm warn deprecated @miniflare/core@2.14.4: Miniflare v2 is no longer supported. Please upgrade to Miniflare v4
+2026-04-18T10:58:59.8341654Z npm warn deprecated wrangler@2.21.3: Wrangler v2 is no longer supported. Please upgrade to Wrangler v4
+2026-04-18T10:59:03.2273437Z Uploading... (2/5)
+2026-04-18T10:59:03.7513452Z Uploading... (3/5)
+2026-04-18T10:59:03.9469003Z Uploading... (4/5)
+2026-04-18T10:59:04.5055964Z Uploading... (5/5)
+2026-04-18T10:59:04.5057768Z ✨ Success! Uploaded 3 files (2 already uploaded) (1.65 sec)
+2026-04-18T10:59:04.5058472Z 
+2026-04-18T10:59:05.7622388Z ✨ Deployment complete! Take a peek over at https://841791bf.new-intelli-migrate.pages.dev
+2026-04-18T10:59:05.8998347Z npm notice
+2026-04-18T10:59:05.8999117Z npm notice New major version of npm available! 10.8.2 -> 11.12.1
+2026-04-18T10:59:05.9000063Z npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+2026-04-18T10:59:05.9000861Z npm notice To update run: npm install -g npm@11.12.1
+2026-04-18T10:59:05.9001394Z npm notice

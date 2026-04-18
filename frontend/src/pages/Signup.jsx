@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Database, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { signup as apiSignup, getMe } from '../lib/api'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -25,19 +26,19 @@ export default function Signup() {
     setError('')
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      login({ email, name })
+      const data = await apiSignup(email, password, name)
+      const me = await getMe()
+      login(me, data.access_token)
       navigate('/dashboard?onboarding=true')
     } catch (err) {
-      setError('Signup failed')
+      setError(err?.response?.data?.detail || 'Signup failed')
     } finally {
       setLoading(false)
     }
   }
   
   const handleSocialLogin = (provider) => {
-    login({ email: `user@${provider}.com`, name: `${provider} User` })
-    navigate('/dashboard?onboarding=true')
+    setError('Social signup is not enabled')
   }
   
   return (

@@ -1,0 +1,14 @@
+{
+  "sitemap": {
+    "contentType": [
+      "application/xml"
+    ],
+    "status": 200,
+    "snippet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url>\n    <loc>https://new-intelli-migrate.pages.dev/</loc>\n    <lastmod>2026-04-18</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n  <url>\n    <loc>https://new-intelli-migrate.pages.dev/login</loc>\n    <lastmod>2026-04-18</lastmod>\n    <changefreq>weekly</change",
+    "length": 809
+  },
+  "robots": {
+    "status": 200,
+    "content": "User-agent: *\nAllow: /\nSitemap: https://new-intelli-migrate.pages.dev/sitemap.xml\n"
+  }
+}

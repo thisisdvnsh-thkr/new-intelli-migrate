@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import api, { setAuthToken, getMe } from '../lib/api'
 
 const AuthContext = createContext(null)
 
@@ -7,26 +8,32 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check localStorage for persisted user
-    const storedUser = localStorage.getItem('intelli-user')
-    if (storedUser) {
+    const stored = localStorage.getItem('intelli-auth')
+    if (stored) {
       try {
-        setUser(JSON.parse(storedUser))
+        const parsed = JSON.parse(stored)
+        setAuthState(parsed.user, parsed.token)
       } catch (e) {
-        localStorage.removeItem('intelli-user')
+        localStorage.removeItem('intelli-auth')
       }
     }
     setLoading(false)
   }, [])
 
-  const login = (userData) => {
-    setUser(userData)
-    localStorage.setItem('intelli-user', JSON.stringify(userData))
+  const setAuthState = (userObj, token) => {
+    setUser(userObj)
+    if (token) setAuthToken(token)
+    localStorage.setItem('intelli-auth', JSON.stringify({ user: userObj, token }))
+  }
+
+  const login = (userObj, token) => {
+    setAuthState(userObj, token)
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('intelli-user')
+    setAuthToken(null)
+    localStorage.removeItem('intelli-auth')
   }
 
   return (

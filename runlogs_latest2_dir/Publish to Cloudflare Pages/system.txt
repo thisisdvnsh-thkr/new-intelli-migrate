@@ -1,0 +1,8 @@
+2026-04-18T10:53:39.2960000Z Evaluating publish.if
+2026-04-18T10:53:39.2960000Z Evaluating: success()
+2026-04-18T10:53:39.2960000Z Result: true
+2026-04-18T10:53:39.2970000Z Requested labels: ubuntu-latest
+2026-04-18T10:53:39.2970000Z Job defined at: thisisdvnsh-thkr/new-intelli-migrate/.github/workflows/publish-pages.yml@refs/heads/deploy/cloudflare
+2026-04-18T10:53:39.2970000Z Waiting for a runner to pick up this job...
+2026-04-18T10:53:39.3030000Z Job is about to start running on the hosted runner: GitHub Actions 1000000003
+2026-04-18T10:53:39.3030000Z Job is waiting for a hosted runner to come online.

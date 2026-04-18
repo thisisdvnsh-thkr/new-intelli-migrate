@@ -45,7 +45,7 @@ function OnboardingTour({ onComplete }) {
     },
     {
       title: "Generate & Deploy SQL",
-      description: "Once processed, download your SQL or deploy directly to Supabase!",
+      description: "Once processed, download your SQL or deploy to your managed PostgreSQL!", 
       target: "sql-card"
     }
   ]
@@ -356,7 +356,7 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-bold text-white mb-2">View SQL Output</h3>
                     <p className="text-white/40 text-sm leading-relaxed mb-4">
-                      Download your generated DDL/DML scripts or deploy directly to Supabase
+                      Download your generated DDL/DML scripts or deploy to your managed PostgreSQL
                     </p>
                     <span className="inline-flex items-center gap-2 text-purple-400 font-semibold text-sm group-hover:gap-3 transition-all">
                       View output <ArrowRight className="w-4 h-4" />

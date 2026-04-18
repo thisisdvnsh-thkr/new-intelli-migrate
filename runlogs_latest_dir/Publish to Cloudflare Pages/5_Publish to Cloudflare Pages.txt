@@ -1,0 +1,21 @@
+﻿2026-04-18T10:47:25.4528420Z ##[group]Run cloudflare/pages-action@v1
+2026-04-18T10:47:25.4528729Z with:
+2026-04-18T10:47:25.4529276Z   apiToken: ***
+2026-04-18T10:47:25.4529495Z   accountId: 78bb06f8b3be8709d3dd63b6981d1b1e
+2026-04-18T10:47:25.4529778Z   projectName: new-intelli-migrate
+2026-04-18T10:47:25.4530015Z   directory: frontend/dist
+2026-04-18T10:47:25.4530237Z   wranglerVersion: 2
+2026-04-18T10:47:25.4530436Z ##[endgroup]
+2026-04-18T10:47:25.7212839Z Cloudflare API returned non-200: 401
+2026-04-18T10:47:25.7272808Z API returned: {"success":false,"errors":[{"code":10000,"message":"Authentication error"}],"messages":[],"result":null}
+2026-04-18T10:47:25.7301705Z 
+2026-04-18T10:47:25.7303842Z /home/runner/work/_actions/cloudflare/pages-action/v1/index.js:22082
+2026-04-18T10:47:25.7305133Z       throw new Error("Failed to get Pages project, API returned non-200");
+2026-04-18T10:47:25.7306030Z             ^
+2026-04-18T10:47:25.7306423Z 
+2026-04-18T10:47:25.7307039Z Error: Failed to get Pages project, API returned non-200
+2026-04-18T10:47:25.7308243Z     at getProject (/home/runner/work/_actions/cloudflare/pages-action/v1/index.js:22082:13)
+2026-04-18T10:47:25.7309506Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-04-18T10:47:25.7310696Z     at async /home/runner/work/_actions/cloudflare/pages-action/v1/index.js:22167:21
+2026-04-18T10:47:25.7311606Z 
+2026-04-18T10:47:25.7312413Z Node.js v20.20.1

@@ -225,7 +225,7 @@ Action: Click the green "📥 Download SQL Script" button
 Say this:
 "With one click, we download the complete SQL script.
 This contains CREATE TABLE statements and INSERT statements.
-You can run this directly on Supabase, AWS RDS, or any PostgreSQL server."
+You can run this directly on any PostgreSQL server (Render, Supabase, AWS RDS)."
 
 -------------------------------------------------------------------------------
 

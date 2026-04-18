@@ -1,0 +1,33 @@
+﻿2026-04-18T10:47:19.2157582Z ##[group]Run npm ci
+2026-04-18T10:47:19.2158116Z [36;1mnpm ci[0m
+2026-04-18T10:47:19.2158547Z [36;1mnpm run build[0m
+2026-04-18T10:47:19.2190830Z shell: /usr/bin/bash -e {0}
+2026-04-18T10:47:19.2191623Z env:
+2026-04-18T10:47:19.2192228Z   VITE_API_BASE: https://new-intelli-migrate.onrender.com
+2026-04-18T10:47:19.2192844Z ##[endgroup]
+2026-04-18T10:47:24.4185575Z 
+2026-04-18T10:47:24.4193538Z added 220 packages, and audited 221 packages in 5s
+2026-04-18T10:47:24.4194357Z 
+2026-04-18T10:47:24.4194577Z 45 packages are looking for funding
+2026-04-18T10:47:24.4194919Z   run `npm fund` for details
+2026-04-18T10:47:24.4323842Z 
+2026-04-18T10:47:24.4324751Z 3 vulnerabilities (2 moderate, 1 high)
+2026-04-18T10:47:24.4325382Z 
+2026-04-18T10:47:24.4325798Z To address all issues, run:
+2026-04-18T10:47:24.4329416Z   npm audit fix
+2026-04-18T10:47:24.4330032Z 
+2026-04-18T10:47:24.4330770Z Run `npm audit` for details.
+2026-04-18T10:47:24.5648462Z 
+2026-04-18T10:47:24.5649068Z > frontend@0.0.0 build
+2026-04-18T10:47:24.5649589Z > vite build
+2026-04-18T10:47:24.5649786Z 
+2026-04-18T10:47:24.9298824Z [36mvite v8.0.3 [32mbuilding client environment for production...[36m[39m
+2026-04-18T10:47:24.9444238Z [2K
+2026-04-18T10:47:25.2221474Z transforming...✓ 2193 modules transformed.
+2026-04-18T10:47:25.2765265Z rendering chunks...
+2026-04-18T10:47:25.4107724Z computing gzip size...
+2026-04-18T10:47:25.4218665Z dist/index.html                   0.90 kB │ gzip:   0.47 kB
+2026-04-18T10:47:25.4219898Z dist/assets/index-DVhzZhe_.css   64.22 kB │ gzip:   9.41 kB
+2026-04-18T10:47:25.4220932Z dist/assets/index-CHQETIcH.js   495.50 kB │ gzip: 152.13 kB
+2026-04-18T10:47:25.4221691Z 
+2026-04-18T10:47:25.4222289Z [32m✓ built in 489ms[39m

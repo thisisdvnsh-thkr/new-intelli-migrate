@@ -174,7 +174,7 @@ export default function GenerateSQL() {
               whileTap={{ scale: 0.98 }}
               className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all duration-300"
             >
-              Deploy to Supabase
+              Deploy to Postgres
               <ArrowRight className="w-5 h-5" />
             </motion.button>
           </div>

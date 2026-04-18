@@ -1,0 +1,54 @@
+{
+  "backend_openapi": {
+    "error": "The request was canceled due to the configured HttpClient.Timeout of 30 seconds elapsing.",
+    "ok": false
+  },
+  "backend_health": {
+    "type": "PSCustomObject",
+    "ok": true,
+    "summary": ""
+  },
+  "pages": {
+    "headers": [
+      "Date",
+      "Transfer-Encoding",
+      "Connection",
+      "Access-Control-Allow-Origin",
+      "Cache-Control",
+      "Nel",
+      "Link",
+      "Referrer-Policy",
+      "X-Content-Type-Options",
+      "x-robots-tag",
+      "Report-To",
+      "Server",
+      "CF-RAY",
+      "Alt-Svc",
+      "Content-Type"
+    ],
+    "length": 908,
+    "ok": true,
+    "status": 200
+  },
+  "pages_redirect": {
+    "headers": [
+      "Date",
+      "Transfer-Encoding",
+      "Connection",
+      "Access-Control-Allow-Origin",
+      "Cache-Control",
+      "Nel",
+      "Referrer-Policy",
+      "X-Content-Type-Options",
+      "Report-To",
+      "Server",
+      "CF-RAY",
+      "Alt-Svc",
+      "Content-Type"
+    ],
+    "length": 908,
+    "ok": true,
+    "status": 200
+  },
+  "timestamp": "2026-04-18T16:53:02.7944230+05:30"
+}

@@ -91,10 +91,10 @@ class AnomalyDetector:
                 random_state=42,
                 n_estimators=100
             )
-            print("✅ Anomaly Detection Model loaded: IsolationForest")
+            print("Anomaly Detection Model loaded: IsolationForest")
             self._ml_loaded = True
         except ImportError:
-            print("⚠️ scikit-learn not installed. Using rule-based detection only.")
+            print("scikit-learn not installed. Using rule-based detection only.")
             self.isolation_forest = None
             self._ml_loaded = True
     
@@ -128,7 +128,7 @@ class AnomalyDetector:
                 try:
                     anomalies.extend(self._detect_statistical_outliers(records))
                 except Exception as e:
-                    print(f"⚠️ Statistical outlier detection skipped: {e}")
+                    print(f"Statistical outlier detection skipped: {e}")
             
             # 5. Duplicate detection
             anomalies.extend(self._detect_duplicates(records))
