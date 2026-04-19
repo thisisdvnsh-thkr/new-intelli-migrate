@@ -5,7 +5,7 @@
 ---
 ## 🚀 Live Demo
 
-🔗 Frontend: [https://intelli-migrate.vercel.app](https://new-intelli-migrate.pages.dev/)  
+🔗 Frontend: [https://new-intelli-migrate.pages.dev/](https://new-intelli-migrate.pages.dev/)  
 🔗 Backend API: [https://your-render-url.onrender.com](https://new-intelli-migrate.onrender.com)
 > Upload messy data → see full pipeline → get SQL output
 
