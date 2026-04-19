@@ -763,6 +763,20 @@ async def get_session(session_id: str):
     }
 
 
+@app.post("/api/session/{session_id}/run")
+async def run_session(session_id: str, background: BackgroundTasks, domain: str = "ecommerce", dialect: str = "postgresql", deploy_sqlite: bool = False):
+    """Schedule background pipeline run for an existing uploaded session."""
+    if not session_exists(session_id):
+        raise HTTPException(status_code=404, detail="Session not found")
+    session = load_session(session_id)
+    file_path = session.get("file_path") or session.get("file_path")
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=400, detail="Uploaded file missing for this session. Re-upload via /api/upload")
+    # Schedule background pipeline
+    background.add_task(_run_pipeline_background, session_id, file_path, domain, dialect, deploy_sqlite)
+    return JSONResponse(status_code=202, content={"session_id": session_id, "status": "scheduled", "poll": f"/api/session/{session_id}"})
+
+
 @app.delete("/api/session/{session_id}")
 async def delete_session(session_id: str):
     """Delete session and cleanup files"""
