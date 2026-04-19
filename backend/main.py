@@ -3,7 +3,7 @@ Intelli-Migrate: AI-Powered Data Migration SaaS
 Main FastAPI Application - Orchestrates all 5 AI Agents
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Depends, Header
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -87,6 +87,10 @@ os.makedirs(SESSIONS_DIR, exist_ok=True)
 # Temp directory for uploads
 TEMP_DIR = os.path.join(os.path.dirname(__file__), '..', 'temp')
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+# Jobs dir for background tasks (stores job metadata/logs if needed)
+JOBS_DIR = os.path.join(os.path.dirname(__file__), '..', 'jobs')
+os.makedirs(JOBS_DIR, exist_ok=True)
 
 def save_session(session_id: str, data: Dict):
     """Save session to file for persistence"""
@@ -455,9 +459,10 @@ async def upload_file(file: UploadFile = File(...)):
 # ============================================
 
 @app.post("/api/map-schema/{session_id}")
-async def map_schema(session_id: str, domain: str = "ecommerce"):
+async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict = Body(None)):
     """
     Step 2: Map source columns to standardized names using NLP
+    Accepts an optional JSON body; if omitted, an empty dict is used.
     """
     if not session_exists(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
@@ -465,20 +470,20 @@ async def map_schema(session_id: str, domain: str = "ecommerce"):
     session = load_session(session_id)
     
     # Get source columns
-    source_columns = list(session["schema"].keys())
+    source_columns = list(session.get("schema", {}).keys())
     
     # Run NLP Mapper (Agent 2)
     mapping_result = nlp_mapper.map_schema(source_columns, domain)
     
     # Update session
     session["current_step"] = 2
-    session["steps_completed"].append("schema_mapping")
+    session.setdefault("steps_completed", []).append("schema_mapping")
     session["mapping_result"] = nlp_mapper.get_mapping_report(mapping_result)
     session["table_name"] = mapping_result.table_name
     
     # Apply mappings to records
     session["mapped_records"] = nlp_mapper.apply_mappings(
-        session["records"], 
+        session.get("records", []), 
         mapping_result.mappings
     )
     
@@ -498,24 +503,25 @@ async def map_schema(session_id: str, domain: str = "ecommerce"):
 # ============================================
 
 @app.post("/api/detect-anomalies/{session_id}")
-async def detect_anomalies(session_id: str):
+async def detect_anomalies(session_id: str, payload: dict = Body(None)):
     """
     Step 3: Detect data quality issues and anomalies
+    Accepts an optional JSON body.
     """
     if not session_exists(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     
     session = load_session(session_id)
-    records = session.get("mapped_records", session["records"])
+    records = session.get("mapped_records", session.get("records", []))
     
     # Run Anomaly Detector (Agent 3)
     report = anomaly_detector.detect_anomalies(records, session.get("schema"))
     
     # Update session
     session["current_step"] = 3
-    session["steps_completed"].append("anomaly_detection")
+    session.setdefault("steps_completed", []).append("anomaly_detection")
     session["anomaly_report"] = anomaly_detector.get_anomaly_summary(report)
-    session["cleaned_records"] = report.cleaned_records
+    session["cleaned_records"] = getattr(report, 'cleaned_records', records)
     
     save_session(session_id, session)
     
@@ -533,15 +539,16 @@ async def detect_anomalies(session_id: str):
 # ============================================
 
 @app.post("/api/normalize/{session_id}")
-async def normalize_data(session_id: str):
+async def normalize_data(session_id: str, payload: dict = Body(None)):
     """
     Step 4: Normalize data to 3NF
+    Accepts optional JSON body.
     """
     if not session_exists(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     
     session = load_session(session_id)
-    records = session.get("cleaned_records", session.get("mapped_records", session["records"]))
+    records = session.get("cleaned_records", session.get("mapped_records", session.get("records", [])))
     table_name = session.get("table_name", "data")
     
     # Run Normalizer (Agent 4)
@@ -549,7 +556,7 @@ async def normalize_data(session_id: str):
     
     # Update session
     session["current_step"] = 4
-    session["steps_completed"].append("normalization")
+    session.setdefault("steps_completed", []).append("normalization")
     session["normalization_result"] = normalizer.get_normalization_summary(result)
     session["normalized_tables"] = [
         {
@@ -584,9 +591,10 @@ async def normalize_data(session_id: str):
 # ============================================
 
 @app.post("/api/generate-sql/{session_id}")
-async def generate_sql(session_id: str, dialect: str = "postgresql"):
+async def generate_sql(session_id: str, dialect: str = "postgresql", payload: dict = Body(None)):
     """
     Step 5: Generate SQL DDL/DML scripts
+    Accepts optional JSON body.
     """
     import traceback
     
@@ -615,7 +623,7 @@ async def generate_sql(session_id: str, dialect: str = "postgresql"):
         
         # Update session
         session["current_step"] = 5
-        session["steps_completed"].append("sql_generation")
+        session.setdefault("steps_completed", []).append("sql_generation")
         session["sql_script_path"] = sql_path
         session["sql_summary"] = sql_generator.get_sql_summary(script)
         
@@ -681,8 +689,8 @@ async def deploy_database(session_id: str, config: DeployConfig):
         dml="",
         full_script=sql_content,
         dialect=sql_generator.dialect,
-        table_count=session["sql_summary"]["table_count"],
-        record_count=session["sql_summary"]["record_count"]
+        table_count=session.get("sql_summary", {}).get("table_count", 0),
+        record_count=session.get("sql_summary", {}).get("record_count", 0)
     )
     
     if config.use_sqlite:
@@ -705,20 +713,20 @@ async def deploy_database(session_id: str, config: DeployConfig):
     
     # Update session
     session["current_step"] = 6
-    session["steps_completed"].append("deployment")
+    session.setdefault("steps_completed", []).append("deployment")
     session["deployment_result"] = {
-        "success": result.success,
-        "message": result.message,
-        "tables_created": result.tables_created,
-        "records_inserted": result.records_inserted,
-        "errors": result.errors
+        "success": getattr(result, 'success', False),
+        "message": getattr(result, 'message', None),
+        "tables_created": getattr(result, 'tables_created', 0),
+        "records_inserted": getattr(result, 'records_inserted', 0),
+        "errors": getattr(result, 'errors', None)
     }
     
     save_session(session_id, session)
     
     return {
         "session_id": session_id,
-        "status": "success" if result.success else "error",
+        "status": "success" if session["deployment_result"]["success"] else "error",
         "step": 6,
         "step_name": "Deployment",
         "data": session["deployment_result"]
@@ -785,8 +793,97 @@ async def delete_session(session_id: str):
 # Full Pipeline (One-Shot)
 # ============================================
 
+def _run_pipeline_background(session_id, file_path, domain, dialect, deploy_sqlite):
+    """Background pipeline runner: parses, maps, detects anomalies, normalizes, generates SQL, and optionally deploys.
+    Saves progress to the session file so the API can poll /api/session/{session_id}.
+    """
+    try:
+        # Parse file
+        parse_result = parser_engine.parse(file_path)
+        # Initialize session if missing
+        session = load_session(session_id) or {}
+        session.setdefault('created_at', datetime.now().isoformat())
+        session.setdefault('file_name', os.path.basename(file_path))
+        session.setdefault('current_step', 1)
+        session.setdefault('steps_completed', ['upload'])
+        session['parse_result'] = {
+            'record_count': getattr(parse_result, 'record_count', 0),
+            'file_type': getattr(parse_result, 'file_type', 'unknown'),
+            'schema': getattr(parse_result, 'schema', {})
+        }
+        save_session(session_id, session)
+
+        # Step 2: mapping
+        columns = list(getattr(parse_result, 'schema', {}).keys())
+        mapping_result = nlp_mapper.map_schema(columns, domain)
+        session['current_step'] = 2
+        session.setdefault('steps_completed', []).append('schema_mapping')
+        session['mapping_result'] = nlp_mapper.get_mapping_report(mapping_result)
+        session['table_name'] = mapping_result.table_name
+        session['mapped_records'] = nlp_mapper.apply_mappings(getattr(parse_result, 'records', []), mapping_result.mappings)
+        save_session(session_id, session)
+
+        # Step 3: anomalies
+        report = anomaly_detector.detect_anomalies(session.get('mapped_records', []), session.get('parse_result', {}).get('schema'))
+        session['current_step'] = 3
+        session.setdefault('steps_completed', []).append('anomaly_detection')
+        session['anomaly_report'] = anomaly_detector.get_anomaly_summary(report)
+        session['cleaned_records'] = getattr(report, 'cleaned_records', session.get('mapped_records', []))
+        save_session(session_id, session)
+
+        # Step 4: normalization
+        norm_result = normalizer.normalize(session.get('cleaned_records', []), session.get('table_name', 'data'))
+        session['current_step'] = 4
+        session.setdefault('steps_completed', []).append('normalization')
+        session['normalization_result'] = normalizer.get_normalization_summary(norm_result)
+        session['normalized_tables'] = [
+            {
+                'name': t.name,
+                'columns': [{'name': c.name, 'data_type': c.data_type, 'primary_key': c.primary_key, 'foreign_key': c.foreign_key, 'nullable': c.nullable} for c in t.columns],
+                'primary_key': t.primary_key,
+                'foreign_keys': t.foreign_keys,
+                'records': t.records
+            }
+            for t in norm_result.tables
+        ]
+        session['relationships'] = norm_result.relationships
+        session['erd_diagram'] = norm_result.erd_diagram
+        save_session(session_id, session)
+
+        # Step 5: generate SQL
+        sql_generator.dialect = dialect
+        script = sql_generator.generate_sql(session['normalized_tables'], session.get('relationships', []))
+        sql_path = os.path.join(TEMP_DIR, f"{session_id}_script.sql")
+        with open(sql_path, 'w', encoding='utf-8') as f:
+            f.write(script.full_script)
+        session['current_step'] = 5
+        session.setdefault('steps_completed', []).append('sql_generation')
+        session['sql_script_path'] = sql_path
+        session['sql_summary'] = sql_generator.get_sql_summary(script)
+        save_session(session_id, session)
+
+        # Step 6: optional deploy
+        if deploy_sqlite:
+            db_path = os.path.join(TEMP_DIR, f"{session_id}.db")
+            deploy_res = sql_generator.deploy_to_sqlite(script, db_path)
+            session['current_step'] = 6
+            session.setdefault('steps_completed', []).append('deployment')
+            session['deployment_result'] = {
+                'success': getattr(deploy_res, 'success', False),
+                'message': getattr(deploy_res, 'message', None)
+            }
+            save_session(session_id, session)
+
+    except Exception as e:
+        session = load_session(session_id) or {}
+        session['error'] = str(e)
+        session['current_step'] = -1
+        save_session(session_id, session)
+
+
 @app.post("/api/migrate")
 async def full_migration(
+    background: BackgroundTasks,
     file: UploadFile = File(...),
     domain: str = "ecommerce",
     dialect: str = "postgresql",
@@ -795,7 +892,7 @@ async def full_migration(
     """
     Run complete migration pipeline in one request
     """
-    # Step 1: Upload
+    # Step 1: Upload and schedule background run
     session_id = str(uuid.uuid4())
     file_path = os.path.join(TEMP_DIR, f"{session_id}_{file.filename}")
     
@@ -803,7 +900,19 @@ async def full_migration(
         content = await file.read()
         f.write(content)
     
-    try:
+    # Initialize session metadata and schedule background processing
+    session_data = {
+        "created_at": datetime.now().isoformat(),
+        "file_name": file.filename,
+        "current_step": 0,
+        "steps_completed": ["upload"]
+    }
+    save_session(session_id, session_data)
+    background.add_task(_run_pipeline_background, session_id, file_path, domain, dialect, deploy_sqlite)
+    return JSONResponse(status_code=202, content={"session_id": session_id, "status": "scheduled", "poll": f"/api/session/{session_id}"})
+
+    # NOTE: background task will process the pipeline; poll /api/session/{session_id} for updates
+
         # Parse
         parse_result = parser_engine.parse(file_path)
         if not parse_result.success:
