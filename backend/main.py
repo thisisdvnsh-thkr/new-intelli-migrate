@@ -74,11 +74,63 @@ app.add_middleware(
 # Initialize AI Agents (if available)
 # ============================================
 
-parser_engine = ParserEngine() if ParserEngine else None
-nlp_mapper = NLPMapper(confidence_threshold=0.85) if NLPMapper else type('DummyNLP', (), {'model': None, 'confidence_threshold': 0.85})()
-anomaly_detector = AnomalyDetector(contamination=0.1) if AnomalyDetector else type('DummyAnomaly', (), {'isolation_forest': None})()
-normalizer = Normalizer() if Normalizer else None
-sql_generator = SQLGenerator(dialect='postgresql') if SQLGenerator else type('DummySQL', (), {'dialect': 'postgresql'})()
+# Lazy-initialize heavy agents to avoid slow startup or blocking during deployment
+parser_engine = None
+nlp_mapper = None
+anomaly_detector = None
+normalizer = None
+sql_generator = None
+
+# Getter factories that instantiate agents on first use
+def get_parser_engine():
+    global parser_engine
+    if parser_engine is None and ParserEngine:
+        try:
+            parser_engine = ParserEngine()
+        except Exception as e:
+            print(f"ParserEngine init failed: {e}")
+            parser_engine = None
+    return parser_engine
+
+def get_nlp_mapper():
+    global nlp_mapper
+    if nlp_mapper is None and NLPMapper:
+        try:
+            nlp_mapper = NLPMapper(confidence_threshold=0.85)
+        except Exception as e:
+            print(f"NLPMapper init failed: {e}")
+            nlp_mapper = None
+    return nlp_mapper
+
+def get_anomaly_detector():
+    global anomaly_detector
+    if anomaly_detector is None and AnomalyDetector:
+        try:
+            anomaly_detector = AnomalyDetector(contamination=0.1)
+        except Exception as e:
+            print(f"AnomalyDetector init failed: {e}")
+            anomaly_detector = None
+    return anomaly_detector
+
+def get_normalizer():
+    global normalizer
+    if normalizer is None and Normalizer:
+        try:
+            normalizer = Normalizer()
+        except Exception as e:
+            print(f"Normalizer init failed: {e}")
+            normalizer = None
+    return normalizer
+
+def get_sql_generator():
+    global sql_generator
+    if sql_generator is None and SQLGenerator:
+        try:
+            sql_generator = SQLGenerator(dialect='postgresql')
+        except Exception as e:
+            print(f"SQLGenerator init failed: {e}")
+            sql_generator = None
+    return sql_generator
 
 # Persistent session storage using files (survives Render restarts)
 SESSIONS_DIR = os.path.join(os.path.dirname(__file__), '..', 'sessions')
@@ -405,11 +457,47 @@ async def upload_file(file: UploadFile = File(...)):
             content = await file.read()
             f.write(content)
         
-        # Parse file using Agent 1
-        result = parser_engine.parse(file_path)
-        
-        if not result.success:
-            raise HTTPException(status_code=400, detail=f"Parse error: {result.errors}")
+        # Parse file using Agent 1 (lazy-init). If ParserEngine unavailable, use lightweight fallback parser
+        global parser_engine
+        engine = get_parser_engine()
+        if engine:
+            result = engine.parse(file_path)
+            if not result.success:
+                raise HTTPException(status_code=400, detail=f"Parse error: {result.errors}")
+        else:
+            # Lightweight fallback: attempt JSON, then CSV
+            from types import SimpleNamespace
+            try:
+                with open(file_path, 'r', encoding='utf-8') as fh:
+                    text = fh.read()
+                try:
+                    data = json.loads(text)
+                    records = data if isinstance(data, list) else [data]
+                    # build schema as simple field descriptors
+                    schema = {}
+                    first = records[0] if records else {}
+                    for k, v in first.items():
+                        schema[k] = SimpleNamespace(data_type=type(v).__name__, nullable=(v is None))
+                    result = SimpleNamespace(success=True, file_type='json', record_count=len(records), schema=schema, schema_drift_detected=False, drift_details=[], records=records)
+                except Exception:
+                    import csv
+                    reader = csv.DictReader(text.splitlines())
+                    records = [r for r in reader]
+                    first = records[0] if records else {}
+                    schema = {k: SimpleNamespace(data_type='string', nullable=True) for k in first.keys()}
+                    result = SimpleNamespace(success=True, file_type='csv', record_count=len(records), schema=schema, schema_drift_detected=False, drift_details=[], records=records)
+                # Provide a minimal parser_engine with get_schema_summary used later
+                class _DP:
+                    def get_schema_summary(self, s):
+                        out = {}
+                        for key, val in s.items():
+                            out[key] = {'data_type': getattr(val, 'data_type', 'string'), 'nullable': getattr(val, 'nullable', True)}
+                        return out
+                parser_engine = _DP()
+            except Exception as e:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                raise HTTPException(status_code=400, detail=f"Fallback parse failed: {e}")
         
         # Store session data (file-based for persistence)
         session_data = {
