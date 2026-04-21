@@ -294,60 +294,111 @@ class AnomalyDetector:
         return anomalies
     
     def _detect_statistical_outliers(self, records: List[Dict]) -> List[Anomaly]:
-        """Detect statistical outliers using Isolation Forest"""
+        """Detect statistical outliers using Isolation Forest.
+        Improved preprocessing: median imputation + scaling, robust handling of NaNs,
+        and severity assignment using decision function scores.
+        """
         anomalies = []
-        
+
         if not self.isolation_forest:
             return anomalies
-        
-        # Extract numeric fields
+
+        if not records:
+            return anomalies
+
+        try:
+            import numpy as np
+            from sklearn.impute import SimpleImputer
+            from sklearn.preprocessing import StandardScaler
+        except Exception:
+            # If sklearn/numpy not available, skip ML outlier detection
+            return anomalies
+
+        # Identify numeric-capable fields and build column-wise arrays with np.nan for missing
         numeric_fields = []
+        cols = []
         for field in records[0].keys():
-            values = [self._to_numeric(r.get(field)) for r in records]
-            if any(v is not None for v in values):
+            col = [self._to_numeric(r.get(field)) for r in records]
+            if any(v is not None for v in col):
                 numeric_fields.append(field)
-        
+                # convert None to np.nan
+                cols.append([float(v) if v is not None else np.nan for v in col])
+
         if not numeric_fields:
             return anomalies
-        
-        # Build feature matrix
-        import numpy as np
-        
-        feature_matrix = []
-        for record in records:
-            row = []
-            for field in numeric_fields:
-                value = self._to_numeric(record.get(field))
-                row.append(value if value is not None else 0)
-            feature_matrix.append(row)
-        
-        feature_matrix = np.array(feature_matrix)
-        
-        # Handle all-zero columns
-        valid_cols = feature_matrix.std(axis=0) > 0
+
+        feature_matrix = np.column_stack(cols)  # shape: (n_records, n_numeric)
+
+        # Drop columns that are all-NaN or zero-variance
+        col_std = np.nanstd(feature_matrix, axis=0)
+        valid_cols = col_std > 0
         if not any(valid_cols):
             return anomalies
-        
+
         feature_matrix = feature_matrix[:, valid_cols]
         valid_fields = [f for i, f in enumerate(numeric_fields) if valid_cols[i]]
-        
+
+        # Impute median for missing values
         try:
-            # Fit and predict
-            predictions = self.isolation_forest.fit_predict(feature_matrix)
-            
-            for i, pred in enumerate(predictions):
-                if pred == -1:  # Outlier
+            imputer = SimpleImputer(strategy='median')
+            X = imputer.fit_transform(feature_matrix)
+        except Exception:
+            # Fallback: replace nan with column medians manually
+            X = np.where(np.isnan(feature_matrix), np.nanmedian(feature_matrix, axis=0), feature_matrix)
+
+        # Scale features for IsolationForest
+        try:
+            scaler = StandardScaler()
+            Xs = scaler.fit_transform(X)
+        except Exception:
+            Xs = X
+
+        try:
+            # Use a locally-instantiated IsolationForest to allow adaptive contamination for small datasets
+            from sklearn.ensemble import IsolationForest as IF
+            n_records = Xs.shape[0]
+            if n_records <= 1:
+                return anomalies
+
+            # Adaptive contamination: smaller datasets -> smaller contamination
+            if n_records < 50:
+                local_cont = max(0.01, min(self.contamination, 0.05))
+            else:
+                local_cont = self.contamination
+
+            model = IF(contamination=local_cont, random_state=42, n_estimators=100)
+            preds = model.fit_predict(Xs)
+
+            # decision_function: higher is more normal, lower is more anomalous
+            scores = None
+            try:
+                scores = model.decision_function(Xs)
+            except Exception:
+                scores = None
+
+            for i, pred in enumerate(preds):
+                if pred == -1:
+                    score = float(scores[i]) if scores is not None else None
+                    # Determine severity: very negative => critical
+                    severity = 'warning'
+                    if score is not None and score < -0.25:
+                        severity = 'critical'
+
+                    desc = 'Record is a statistical outlier'
+                    if score is not None:
+                        desc += f' (score={score:.3f})'
+
                     anomalies.append(Anomaly(
                         record_index=i,
                         field_name='_record',
                         anomaly_type='statistical_outlier',
-                        severity='warning',
-                        description='Record is a statistical outlier',
-                        original_value=str(records[i])[:100]
+                        severity=severity,
+                        description=desc,
+                        original_value=str(records[i])[:200]
                     ))
         except Exception as e:
             print(f"⚠️ Statistical outlier detection failed: {e}")
-        
+
         return anomalies
     
     def _to_numeric(self, value) -> Optional[float]:
