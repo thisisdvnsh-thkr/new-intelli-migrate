@@ -560,20 +560,83 @@ async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict =
     # Get source columns
     source_columns = list(session.get("schema", {}).keys())
     
-    # Run NLP Mapper (Agent 2)
-    mapping_result = nlp_mapper.map_schema(source_columns, domain)
-    
+    # Run NLP Mapper (Agent 2) with lazy init and fallback
+    mapper = get_nlp_mapper()
+    if mapper:
+        mapping_result = mapper.map_schema(source_columns, domain)
+        mapping_report = mapper.get_mapping_report(mapping_result)
+        mapped_records = mapper.apply_mappings(session.get("records", []), mapping_result.mappings)
+    else:
+        # Fallback simple mapping based on STANDARD_COLUMNS patterns
+        from types import SimpleNamespace
+        mappings = []
+        unmapped = []
+        std = {}
+        try:
+            # try to access STANDARD_COLUMNS if agent module is available
+            from agents.nlp_mapper import NLPMapper as _N
+            std = _N.STANDARD_COLUMNS
+            abbrev = _N.ABBREVIATIONS
+        except Exception:
+            std = {}
+            abbrev = {}
+        def normalize(name: str):
+            import re
+            n = re.sub(r'[^a-zA-Z0-9]', '_', name.lower())
+            n = re.sub(r'_+', '_', n).strip('_')
+            return n
+        def expand(name: str):
+            parts = name.split('_')
+            return '_'.join([abbrev.get(p, p) for p in parts])
+        for f in source_columns:
+            n = normalize(f)
+            mapped = None
+            confidence = 0.5
+            mtype = 'fallback'
+            # exact/pattern match
+            for standard, variants in std.items():
+                if n == standard or n in variants:
+                    mapped = standard; confidence = 1.0; mtype = 'exact'; break
+                if expand(n) == standard or expand(n) in [expand(v) for v in variants]:
+                    mapped = standard; confidence = 0.95; mtype = 'pattern'; break
+            if mapped is None:
+                mapped = re.sub(r'[^a-z0-9_]', '_', n)
+                if mapped == '': mapped = 'col_' + str(abs(hash(f)) % 10000)
+                unmapped.append(f)
+            mappings.append(SimpleNamespace(original_name=f, mapped_name=mapped, confidence=confidence, mapping_type=mtype))
+        avg_conf = sum(m.confidence for m in mappings) / len(mappings) if mappings else 0.0
+        table_name = (domain + "_data")
+        mapping_result = SimpleNamespace(success=len(unmapped) < len(source_columns) * 0.3, mappings=mappings, unmapped_fields=unmapped, average_confidence=avg_conf, table_name=table_name)
+        mapping_report = {
+            'success': mapping_result.success,
+            'table_name': mapping_result.table_name,
+            'total_fields': len(mapping_result.mappings),
+            'high_confidence': len([m for m in mapping_result.mappings if m.confidence >= 0.9]),
+            'medium_confidence': len([m for m in mapping_result.mappings if 0.7 <= m.confidence < 0.9]),
+            'low_confidence': len([m for m in mapping_result.mappings if m.confidence < 0.7]),
+            'average_confidence': round(mapping_result.average_confidence * 100, 1),
+            'mappings': [
+                {'from': m.original_name, 'to': m.mapped_name, 'confidence': round(m.confidence * 100, 1), 'type': m.mapping_type}
+                for m in mapping_result.mappings
+            ]
+        }
+        # Apply mappings to records
+        mapping_dict = {m.original_name: m.mapped_name for m in mapping_result.mappings}
+        mapped_records = []
+        for record in session.get('records', []):
+            new_rec = {}
+            for k, v in record.items():
+                new_rec[mapping_dict.get(k, k)] = v
+            mapped_records.append(new_rec)
+
     # Update session
     session["current_step"] = 2
     session.setdefault("steps_completed", []).append("schema_mapping")
-    session["mapping_result"] = nlp_mapper.get_mapping_report(mapping_result)
+    session["mapping_result"] = mapping_report
     session["table_name"] = mapping_result.table_name
     
-    # Apply mappings to records
-    session["mapped_records"] = nlp_mapper.apply_mappings(
-        session.get("records", []), 
-        mapping_result.mappings
-    )
+    # Apply mapped records
+    session["mapped_records"] = mapped_records
     
     save_session(session_id, session)
     
