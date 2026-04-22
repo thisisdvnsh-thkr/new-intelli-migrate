@@ -8,10 +8,8 @@ gunicorn==21.0.0
 python-multipart==0.0.6
 
 # AI/ML Libraries
-# Pin sklearn/numpy to versions compatible with IsolationForest usage detected in deployed logs
-sentence-transformers==2.2.2
-scikit-learn==1.2.2
-numpy==1.24.4
+# Heavy ML libraries moved to requirements-ml.txt to avoid building during normal deploys
+# To enable ML features, install: pip install -r requirements-ml.txt
 
 # Database
 sqlalchemy==2.0.19
