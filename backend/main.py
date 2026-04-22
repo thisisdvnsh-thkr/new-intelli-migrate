@@ -924,11 +924,76 @@ async def normalize_data(session_id: str, payload: dict = Body(None)):
         import traceback
         tb = traceback.format_exc()
         print(f"Normalization error for session {session_id}: {e}\n{tb}")
+        # Save error to session
         session.setdefault('error', str(e))
         session.setdefault('error_traceback', tb)
         session['current_step'] = -1
+
+        # Fallback: create a simple main table from records so SQL generation can proceed
+        try:
+            cols = []
+            sample = records[0] if records else {}
+            for k, v in sample.items():
+                dtype = 'TEXT'
+                if isinstance(v, int):
+                    dtype = 'INTEGER'
+                elif isinstance(v, float):
+                    dtype = 'DECIMAL(10,2)'
+                elif isinstance(v, bool):
+                    dtype = 'BOOLEAN'
+                elif isinstance(v, str) and len(v) <= 50:
+                    dtype = 'VARCHAR(50)'
+                cols.append({
+                    'name': k,
+                    'data_type': dtype,
+                    'primary_key': False,
+                    'foreign_key': None,
+                    'nullable': True
+                })
+            main_table = {
+                'name': table_name,
+                'columns': [{'name': 'id', 'data_type': 'INTEGER', 'primary_key': True, 'foreign_key': None, 'nullable': False}] + cols,
+                'primary_key': 'id',
+                'foreign_keys': [],
+                'records': [{**{'id': i+1}, **r} for i, r in enumerate(records)]
+            }
+            session['normalization_result'] = {
+                'success': False,
+                'normalization_level': 'fallback',
+                'original_columns': len(sample.keys()) if sample else 0,
+                'total_tables': 1,
+                'total_columns': len(cols) + 1,
+                'relationships': 0,
+                'tables': [
+                    {
+                        'name': main_table['name'],
+                        'columns': [c['name'] for c in main_table['columns']],
+                        'primary_key': main_table['primary_key'],
+                        'foreign_keys': main_table['foreign_keys'],
+                        'record_count': len(main_table['records'])
+                    }
+                ],
+                'erd_diagram': f"erDiagram\n    {main_table['name']} {{\n        INTEGER id PK\n        " + "\n        ".join([f"{c['data_type']} {c['name']}" for c in cols]) + "\n    }"
+            }
+            session['normalized_tables'] = [main_table]
+            session['relationships'] = []
+            session['erd_diagram'] = session['normalization_result']['erd_diagram']
+        except Exception as ee:
+            print(f"Fallback normalization also failed: {ee}")
+
         save_session(session_id, session)
-        raise HTTPException(status_code=500, detail=f"Normalization failed: {str(e)}")
+        # Return fallback response to allow pipeline continuation
+        return {
+            "session_id": session_id,
+            "status": "warning",
+            "step": 4,
+            "step_name": "Normalization",
+            "data": {
+                "message": "Normalization failed; fallback main table created",
+                "error": str(e),
+                "erd_diagram": session.get('erd_diagram')
+            }
+        }
 
 
 # ============================================
