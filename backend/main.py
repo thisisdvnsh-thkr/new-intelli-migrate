@@ -441,23 +441,50 @@ async def diagnostic():
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint"""
-    # Use getters to avoid attribute errors if agents are not initialized
-    parser = get_parser_engine()
-    mapper = get_nlp_mapper()
-    detector = get_anomaly_detector()
-    normalizer_local = get_normalizer()
-    sqlg = get_sql_generator()
+    """Health check endpoint (non-invasive)"""
+    # Avoid initializing heavy agents during health checks; inspect module/class availability and instance flags
+    try:
+        parser_available = ParserEngine is not None
+    except NameError:
+        parser_available = False
+
+    try:
+        nlp_available = False
+        if nlp_mapper is not None:
+            nlp_available = getattr(nlp_mapper, '_model_loaded', False) and getattr(nlp_mapper, 'model', None) is not None
+        else:
+            nlp_available = False
+    except Exception:
+        nlp_available = False
+
+    try:
+        anomaly_ml = False
+        if anomaly_detector is not None:
+            anomaly_ml = getattr(anomaly_detector, '_ml_loaded', False) and getattr(anomaly_detector, 'isolation_forest', None) is not None
+        else:
+            anomaly_ml = False
+    except Exception:
+        anomaly_ml = False
+
+    try:
+        normalizer_ok = Normalizer is not None
+    except NameError:
+        normalizer_ok = False
+
+    try:
+        sql_ok = SQLGenerator is not None
+    except NameError:
+        sql_ok = False
 
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "agents": {
-            "parser": "ready" if parser is not None else "unavailable",
-            "nlp_mapper": "ready" if (mapper and getattr(mapper, 'model', None) is not None) else "fallback_mode",
-            "anomaly_detector": "ready" if (detector and getattr(detector, 'isolation_forest', None) is not None) else "rule_based_only",
-            "normalizer": "ready" if normalizer_local is not None else "limited",
-            "sql_generator": "ready" if sqlg is not None else "limited"
+            "parser": "available" if parser_available else "unavailable",
+            "nlp_mapper": "ready" if nlp_available else "fallback_mode",
+            "anomaly_detector": "ml_ready" if anomaly_ml else "rule_based_only",
+            "normalizer": "available" if normalizer_ok else "limited",
+            "sql_generator": "available" if sql_ok else "limited"
         }
     }
 
