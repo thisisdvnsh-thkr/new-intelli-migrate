@@ -1,0 +1,5 @@
+# Heavy ML dependencies (install only when ML features are required)
+sentence-transformers==2.2.2
+scikit-learn==1.2.2
+numpy==1.24.4
+# Add other optional ML libs here (torch, transformers) as needed
