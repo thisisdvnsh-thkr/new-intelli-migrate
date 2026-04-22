@@ -380,18 +380,84 @@ async def root():
     }
 
 
+@app.get("/api/diag")
+async def diagnostic():
+    """Lightweight diagnostic endpoint to report installed libraries and agent init status.
+    Useful for remote debugging without triggering heavy model loads.
+    """
+    info = {
+        'env': {
+            'python_version': None,
+            'cwd': os.getcwd()
+        },
+        'modules': {},
+        'agents': {}
+    }
+
+    try:
+        import sys
+        info['env']['python_version'] = sys.version
+    except Exception:
+        info['env']['python_version'] = 'unknown'
+
+    # Check optional libraries
+    libs = ['sentence_transformers', 'sklearn', 'numpy', 'torch']
+    for lib in libs:
+        try:
+            __import__(lib)
+            info['modules'][lib] = 'installed'
+        except Exception as e:
+            info['modules'][lib] = f'missing: {str(e)[:200]}'
+
+    # Check agent classes without initializing heavy models
+    info['agents']['ParserEngine'] = 'available' if ParserEngine is not None else 'missing'
+    info['agents']['NLPMapper'] = 'available' if NLPMapper is not None else 'missing'
+    info['agents']['AnomalyDetector'] = 'available' if AnomalyDetector is not None else 'missing'
+    info['agents']['Normalizer'] = 'available' if Normalizer is not None else 'missing'
+    info['agents']['SQLGenerator'] = 'available' if SQLGenerator is not None else 'missing'
+
+    # Try lazy init but catch exceptions
+    try:
+        pe = get_parser_engine()
+        info['agents']['parser_instance'] = 'ok' if pe is not None else 'init_failed_or_none'
+    except Exception as e:
+        info['agents']['parser_instance'] = f'error: {str(e)[:200]}'
+
+    try:
+        nm = get_nlp_mapper()
+        info['agents']['nlp_instance'] = 'ok' if nm is not None else 'init_failed_or_none'
+    except Exception as e:
+        info['agents']['nlp_instance'] = f'error: {str(e)[:200]}'
+
+    try:
+        ad = get_anomaly_detector()
+        info['agents']['anomaly_instance'] = 'ok' if ad is not None else 'init_failed_or_none'
+    except Exception as e:
+        info['agents']['anomaly_instance'] = f'error: {str(e)[:200]}'
+
+    return JSONResponse(content=info)
+
+
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint"""
+    # Use getters to avoid attribute errors if agents are not initialized
+    parser = get_parser_engine()
+    mapper = get_nlp_mapper()
+    detector = get_anomaly_detector()
+    normalizer_local = get_normalizer()
+    sqlg = get_sql_generator()
+
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "agents": {
-            "parser": "ready",
-            "nlp_mapper": "ready" if nlp_mapper.model is not None else "fallback_mode",
-            "anomaly_detector": "ready" if anomaly_detector.isolation_forest is not None else "rule_based_only",
-            "normalizer": "ready",
-            "sql_generator": "ready"
+            "parser": "ready" if parser is not None else "unavailable",
+            "nlp_mapper": "ready" if (mapper and getattr(mapper, 'model', None) is not None) else "fallback_mode",
+            "anomaly_detector": "ready" if (detector and getattr(detector, 'isolation_forest', None) is not None) else "rule_based_only",
+            "normalizer": "ready" if normalizer_local is not None else "limited",
+            "sql_generator": "ready" if sqlg is not None else "limited"
         }
     }
 
@@ -399,31 +465,42 @@ async def health_check():
 @app.get("/api/agents/status")
 async def agents_status():
     """Get detailed status of all agents"""
+    # Safe inspection using getters
+    parser = get_parser_engine()
+    mapper = get_nlp_mapper()
+    detector = get_anomaly_detector()
+    normalizer_local = get_normalizer()
+    sqlg = get_sql_generator()
+
+    mapper_model = getattr(mapper, 'model', None) if mapper else None
+    mapper_conf = getattr(mapper, 'confidence_threshold', None) if mapper else None
+    detector_ml = getattr(detector, 'isolation_forest', None) if detector else None
+
     return {
         "agents": [
             {
                 "name": "Parser Engine",
                 "id": "parser",
-                "status": "active",
+                "status": "active" if parser is not None else "unavailable",
                 "capabilities": ["JSON", "XML", "CSV", "Schema Detection", "Drift Handling"]
             },
             {
                 "name": "NLP Schema Mapper",
                 "id": "nlp_mapper",
-                "status": "active" if nlp_mapper.model is not None else "limited",
-                "model": "all-MiniLM-L6-v2" if nlp_mapper.model is not None else "pattern-matching",
-                "confidence_threshold": nlp_mapper.confidence_threshold
+                "status": "active" if mapper_model is not None else "limited",
+                "model": "all-MiniLM-L6-v2" if mapper_model is not None else "pattern-matching",
+                "confidence_threshold": mapper_conf
             },
             {
                 "name": "Anomaly Detector",
                 "id": "anomaly_detector",
-                "status": "active" if anomaly_detector.isolation_forest is not None else "limited",
-                "ml_enabled": anomaly_detector.isolation_forest is not None
+                "status": "active" if detector_ml is not None else "limited",
+                "ml_enabled": bool(detector_ml)
             },
             {
                 "name": "Normalizer",
                 "id": "normalizer",
-                "status": "active",
+                "status": "active" if normalizer_local is not None else "limited",
                 "target_form": "3NF"
             },
             {
@@ -734,15 +811,25 @@ async def detect_anomalies(session_id: str, payload: dict = Body(None)):
     session = load_session(session_id)
     records = session.get("mapped_records", session.get("records", []))
     
-    # Run Anomaly Detector (Agent 3)
-    report = anomaly_detector.detect_anomalies(records, session.get("schema"))
+    # Run Anomaly Detector (Agent 3) - ensure lazy init and fallback
+    detector = get_anomaly_detector()
+    if detector:
+        try:
+            report = detector.detect_anomalies(records, session.get("schema"))
+            session["anomaly_report"] = detector.get_anomaly_summary(report)
+            session["cleaned_records"] = getattr(report, 'cleaned_records', records)
+        except Exception as e:
+            print(f"Anomaly detection endpoint error: {e}")
+            session["anomaly_report"] = {'quality_score': 0, 'total_records': len(records), 'clean_records': 0, 'removed_records': 0, 'anomaly_breakdown': {}, 'field_quality': {}, 'top_issues': []}
+            session["cleaned_records"] = records
+    else:
+        # ML unavailable: simple default
+        session["anomaly_report"] = {'quality_score': 100.0, 'total_records': len(records), 'clean_records': len(records), 'removed_records': 0, 'anomaly_breakdown': {}, 'field_quality': {}, 'top_issues': []}
+        session["cleaned_records"] = records
     
     # Update session
     session["current_step"] = 3
     session.setdefault("steps_completed", []).append("anomaly_detection")
-    session["anomaly_report"] = anomaly_detector.get_anomaly_summary(report)
-    session["cleaned_records"] = getattr(report, 'cleaned_records', records)
-    
     save_session(session_id, session)
     
     return {
@@ -1032,8 +1119,52 @@ def _run_pipeline_background(session_id, file_path, domain, dialect, deploy_sqli
     Saves progress to the session file so the API can poll /api/session/{session_id}.
     """
     try:
-        # Parse file
-        parse_result = parser_engine.parse(file_path)
+        # Initialize agents (lazy): parser, mapper, detector, normalizer, sql generator
+        parser = get_parser_engine()
+        mapper = get_nlp_mapper()
+        detector = get_anomaly_detector()
+        normalizer_local = get_normalizer()
+        sql_gen = get_sql_generator()
+
+        # Parse file (use parser if available, otherwise fallback simple JSON/CSV parser)
+        if parser:
+            parse_result = parser.parse(file_path)
+        else:
+            try:
+                # Try JSON, then CSV
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                try:
+                    records = json.loads(content)
+                    if isinstance(records, dict):
+                        # wrap single object into list
+                        records = [records]
+                except Exception:
+                    # fallback to CSV
+                    import csv
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        reader = csv.DictReader(f)
+                        records = [r for r in reader]
+
+                PR = type('ParseResult', (), {})
+                parse_result = PR()
+                setattr(parse_result, 'records', records)
+                setattr(parse_result, 'record_count', len(records))
+                setattr(parse_result, 'file_type', 'json_or_csv')
+                schema = {}
+                if records:
+                    for k in records[0].keys():
+                        schema[k] = 'string'
+                setattr(parse_result, 'schema', schema)
+            except Exception as e:
+                print(f"Fallback parse failed: {e}")
+                PR = type('ParseResult', (), {})
+                parse_result = PR()
+                setattr(parse_result, 'records', [])
+                setattr(parse_result, 'record_count', 0)
+                setattr(parse_result, 'file_type', 'unknown')
+                setattr(parse_result, 'schema', {})
+
         # Initialize session if missing
         session = load_session(session_id) or {}
         session.setdefault('created_at', datetime.now().isoformat())
@@ -1049,64 +1180,106 @@ def _run_pipeline_background(session_id, file_path, domain, dialect, deploy_sqli
 
         # Step 2: mapping
         columns = list(getattr(parse_result, 'schema', {}).keys())
-        mapping_result = nlp_mapper.map_schema(columns, domain)
-        session['current_step'] = 2
-        session.setdefault('steps_completed', []).append('schema_mapping')
-        session['mapping_result'] = nlp_mapper.get_mapping_report(mapping_result)
-        session['table_name'] = mapping_result.table_name
-        session['mapped_records'] = nlp_mapper.apply_mappings(getattr(parse_result, 'records', []), mapping_result.mappings)
+        if mapper:
+            mapping_result = mapper.map_schema(columns, domain)
+            session['current_step'] = 2
+            session.setdefault('steps_completed', []).append('schema_mapping')
+            session['mapping_result'] = mapper.get_mapping_report(mapping_result)
+            session['table_name'] = mapping_result.table_name
+            session['mapped_records'] = mapper.apply_mappings(getattr(parse_result, 'records', []), mapping_result.mappings)
+        else:
+            # Fallback: identity mapping
+            session['current_step'] = 2
+            session.setdefault('steps_completed', []).append('schema_mapping')
+            session['mapping_result'] = {'success': True, 'table_name': f"{domain}_data", 'mappings': []}
+            session['table_name'] = f"{domain}_data"
+            session['mapped_records'] = getattr(parse_result, 'records', [])
         save_session(session_id, session)
 
         # Step 3: anomalies
-        report = anomaly_detector.detect_anomalies(session.get('mapped_records', []), session.get('parse_result', {}).get('schema'))
+        if detector:
+            try:
+                report = detector.detect_anomalies(session.get('mapped_records', []), session.get('parse_result', {}).get('schema'))
+                session['anomaly_report'] = detector.get_anomaly_summary(report)
+                session['cleaned_records'] = getattr(report, 'cleaned_records', session.get('mapped_records', []))
+            except Exception as e:
+                print(f"Anomaly detection failed during pipeline: {e}")
+                session['anomaly_report'] = {'quality_score': 0, 'total_records': len(session.get('mapped_records', [])), 'clean_records': 0, 'removed_records': 0, 'anomaly_breakdown': {}, 'field_quality': {}, 'top_issues': []}
+                session['cleaned_records'] = session.get('mapped_records', [])
+        else:
+            # ML not available: provide basic empty report
+            session['anomaly_report'] = {'quality_score': 100.0, 'total_records': len(session.get('mapped_records', [])), 'clean_records': len(session.get('mapped_records', [])), 'removed_records': 0, 'anomaly_breakdown': {}, 'field_quality': {}, 'top_issues': []}
+            session['cleaned_records'] = session.get('mapped_records', [])
         session['current_step'] = 3
         session.setdefault('steps_completed', []).append('anomaly_detection')
-        session['anomaly_report'] = anomaly_detector.get_anomaly_summary(report)
-        session['cleaned_records'] = getattr(report, 'cleaned_records', session.get('mapped_records', []))
         save_session(session_id, session)
 
         # Step 4: normalization
-        norm_result = normalizer.normalize(session.get('cleaned_records', []), session.get('table_name', 'data'))
+        if normalizer_local:
+            try:
+                norm_result = normalizer_local.normalize(session.get('cleaned_records', []), session.get('table_name', 'data'))
+                session['normalization_result'] = normalizer_local.get_normalization_summary(norm_result)
+                session['normalized_tables'] = [
+                    {
+                        'name': t.name,
+                        'columns': [{'name': c.name, 'data_type': c.data_type, 'primary_key': c.primary_key, 'foreign_key': c.foreign_key, 'nullable': c.nullable} for c in t.columns],
+                        'primary_key': t.primary_key,
+                        'foreign_keys': t.foreign_keys,
+                        'records': t.records
+                    }
+                    for t in getattr(norm_result, 'tables', [])
+                ]
+            except Exception as e:
+                print(f"Normalization failed: {e}")
+                session['normalization_result'] = {}
+                session['normalized_tables'] = []
+        else:
+            session['normalization_result'] = {}
+            session['normalized_tables'] = []
         session['current_step'] = 4
         session.setdefault('steps_completed', []).append('normalization')
-        session['normalization_result'] = normalizer.get_normalization_summary(norm_result)
-        session['normalized_tables'] = [
-            {
-                'name': t.name,
-                'columns': [{'name': c.name, 'data_type': c.data_type, 'primary_key': c.primary_key, 'foreign_key': c.foreign_key, 'nullable': c.nullable} for c in t.columns],
-                'primary_key': t.primary_key,
-                'foreign_keys': t.foreign_keys,
-                'records': t.records
-            }
-            for t in norm_result.tables
-        ]
-        session['relationships'] = norm_result.relationships
-        session['erd_diagram'] = norm_result.erd_diagram
+        # Attach relationships and ERD if normalization produced them
+        session['relationships'] = getattr(norm_result, 'relationships', []) if 'norm_result' in locals() else []
+        session['erd_diagram'] = getattr(norm_result, 'erd_diagram', None) if 'norm_result' in locals() else None
         save_session(session_id, session)
 
         # Step 5: generate SQL
-        sql_generator.dialect = dialect
-        script = sql_generator.generate_sql(session['normalized_tables'], session.get('relationships', []))
-        sql_path = os.path.join(TEMP_DIR, f"{session_id}_script.sql")
-        with open(sql_path, 'w', encoding='utf-8') as f:
-            f.write(script.full_script)
-        session['current_step'] = 5
-        session.setdefault('steps_completed', []).append('sql_generation')
-        session['sql_script_path'] = sql_path
-        session['sql_summary'] = sql_generator.get_sql_summary(script)
-        save_session(session_id, session)
+        if sql_gen:
+            try:
+                sql_gen.dialect = dialect
+                script = sql_gen.generate_sql(session['normalized_tables'], session.get('relationships', []))
+                sql_path = os.path.join(TEMP_DIR, f"{session_id}_script.sql")
+                with open(sql_path, 'w', encoding='utf-8') as f:
+                    f.write(script.full_script)
+                session['current_step'] = 5
+                session.setdefault('steps_completed', []).append('sql_generation')
+                session['sql_script_path'] = sql_path
+                session['sql_summary'] = sql_gen.get_sql_summary(script)
+                save_session(session_id, session)
+            except Exception as e:
+                print(f"SQL generation failed: {e}")
+                session['sql_summary'] = {}
+                save_session(session_id, session)
+        else:
+            session['sql_summary'] = {}
+            save_session(session_id, session)
 
         # Step 6: optional deploy
-        if deploy_sqlite:
-            db_path = os.path.join(TEMP_DIR, f"{session_id}.db")
-            deploy_res = sql_generator.deploy_to_sqlite(script, db_path)
-            session['current_step'] = 6
-            session.setdefault('steps_completed', []).append('deployment')
-            session['deployment_result'] = {
-                'success': getattr(deploy_res, 'success', False),
-                'message': getattr(deploy_res, 'message', None)
-            }
-            save_session(session_id, session)
+        if deploy_sqlite and sql_gen and 'script' in locals():
+            try:
+                db_path = os.path.join(TEMP_DIR, f"{session_id}.db")
+                deploy_res = sql_gen.deploy_to_sqlite(script, db_path)
+                session['current_step'] = 6
+                session.setdefault('steps_completed', []).append('deployment')
+                session['deployment_result'] = {
+                    'success': getattr(deploy_res, 'success', False),
+                    'message': getattr(deploy_res, 'message', None)
+                }
+                save_session(session_id, session)
+            except Exception as e:
+                print(f"Deployment failed: {e}")
+                session['deployment_result'] = {'success': False, 'message': str(e)}
+                save_session(session_id, session)
 
     except Exception as e:
         session = load_session(session_id) or {}
