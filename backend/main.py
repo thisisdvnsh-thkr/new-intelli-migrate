@@ -442,38 +442,32 @@ async def diagnostic():
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint (non-invasive)"""
-    # Avoid initializing heavy agents during health checks; inspect module/class availability and instance flags
+    # Use getters to avoid initializing heavy models unexpectedly and to reflect lazy-init state
     try:
         parser_available = ParserEngine is not None
     except NameError:
         parser_available = False
 
     try:
-        nlp_available = False
-        if nlp_mapper is not None:
-            nlp_available = getattr(nlp_mapper, '_model_loaded', False) and getattr(nlp_mapper, 'model', None) is not None
-        else:
-            nlp_available = False
+        mapper = get_nlp_mapper()
+        nlp_available = bool(mapper and getattr(mapper, '_model_loaded', False) and getattr(mapper, 'model', None) is not None)
     except Exception:
         nlp_available = False
 
     try:
-        anomaly_ml = False
-        if anomaly_detector is not None:
-            anomaly_ml = getattr(anomaly_detector, '_ml_loaded', False) and getattr(anomaly_detector, 'isolation_forest', None) is not None
-        else:
-            anomaly_ml = False
+        detector = get_anomaly_detector()
+        anomaly_ml = bool(detector and getattr(detector, '_ml_loaded', False) and getattr(detector, 'isolation_forest', None) is not None)
     except Exception:
         anomaly_ml = False
 
     try:
-        normalizer_ok = Normalizer is not None
-    except NameError:
+        normalizer_ok = True if get_normalizer() is not None else False
+    except Exception:
         normalizer_ok = False
 
     try:
-        sql_ok = SQLGenerator is not None
-    except NameError:
+        sql_ok = True if get_sql_generator() is not None else False
+    except Exception:
         sql_ok = False
 
     return {
@@ -534,7 +528,7 @@ async def agents_status():
                 "name": "SQL Generator",
                 "id": "sql_generator",
                 "status": "active",
-                "dialect": sql_generator.dialect
+                "dialect": (get_sql_generator().dialect if get_sql_generator() is not None else None)
             }
         ]
     }

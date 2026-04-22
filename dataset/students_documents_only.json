@@ -1,0 +1,812 @@
+[
+  {
+    "_id": "221620101001",
+    "roll_no": "221620101001",
+    "name": "ABHAY MAURYA",
+    "father_name": "MR. UMESH KUMAR MAURYA",
+    "academic_info": {
+      "branch": "CSE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": "30-03-2004",
+      "blood_group": "O+"
+    },
+    "contact_info": {
+      "email": "abhay.maurya0303@gmail.com",
+      "contact_no": "8191826630",
+      "parents_no": "8958281976",
+      "address": "GAUGHAT, KICCHA, UDHAM SINGH NAGAR, UTTARAKHAND"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101002",
+    "u_id": "221620101002",
+    "student_nm": "ABHAY NEGI",
+    "dad_name": "PUSHKAR SINGH NEGI",
+    "dept": "CSE",
+    "yr_batch": "2022-26",
+    "dob": "18-03-2003",
+    "bloodGrp": "O+",
+    "email_addr": "abhaynegi331@gmail.com",
+    "mob": "7302132719",
+    "parent_mob": "8477889766",
+    "addr": "ALAVIRDI, NAUGANVA NATH, KHATIMA, U.S. NAGAR",
+    "college": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur"
+  },
+  {
+    "_id": "221620101003",
+    "roll_no": "221620101003",
+    "name": "ABHINAV SINGH",
+    "father_name": "MR. DHARMENDRA SINGH",
+    "academic": {
+      "program": {
+        "branch": "CSE",
+        "batch": "2022-26",
+        "semester": 1,
+        "subjects": [
+          {
+            "code": "CS101",
+            "name": "Programming Fundamentals",
+            "credits": 4,
+            "grade": "A"
+          },
+          {
+            "code": "MA101",
+            "name": "Engineering Mathematics",
+            "credits": 3,
+            "grade": "B+"
+          },
+          {
+            "code": "PH101",
+            "name": "Engineering Physics",
+            "credits": 3,
+            "grade": "A-"
+          }
+        ]
+      },
+      "attendance": {
+        "percentage": 87.5,
+        "present_days": 70,
+        "total_days": 80
+      },
+      "hostel": {
+        "room_no": "A-204",
+        "block": "Alpha Block",
+        "fee_paid": true
+      }
+    },
+    "personal": {
+      "dob": "3-Apr-2005",
+      "blood_group": "A+",
+      "medical": {
+        "allergies": [
+          "peanuts"
+        ],
+        "emergency_contact": "9756235328"
+      }
+    },
+    "contact": {
+      "email": "as7093220@gmail.com",
+      "phone": {
+        "primary": "8267927505",
+        "parent": "9756235328"
+      },
+      "address": {
+        "street": "KRISHNA VIHAR COLONY",
+        "locality": "FULSUNGI",
+        "city": "RUDRAPUR",
+        "state": "UTTARAKHAND",
+        "pin": "263153"
+      }
+    },
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101004",
+    "roll_no": "221620101004",
+    "name": "ABHISHEK TIWARI",
+    "father_name": "MR. PITAMBER TIWARI",
+    "academic_info": {
+      "branch": "CSE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": "28-03-2002",
+      "blood_group": "B+",
+      "age": 847
+    },
+    "contact_info": {
+      "email": "not-an-email",
+      "contact_no": "9528948368",
+      "parents_no": "6395356312",
+      "address": "SHYAMLATAL SUKHIDHANG, CHAMPAWAT, UTTARAKHAND",
+      "fees_paid": -19999
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101005",
+    "roll_no": "221620101005",
+    "name": "ADITYA BACHKETI",
+    "father_name": null,
+    "academic_info": {
+      "branch": "CSE",
+      "batch": null,
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": null,
+      "blood_group": "O+"
+    },
+    "contact_info": {
+      "email": null,
+      "contact_no": "8273538917",
+      "parents_no": "8057977700",
+      "address": "SUPI BHAGWANPUR, MOTINAGAR, NAINITAL"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      null,
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101001_dup",
+    "rollNo": "221620101001",
+    "fullName": "Abhay Maurya",
+    "fatherName": "Umesh Kumar Maurya",
+    "branch": "C.S.E",
+    "batch": "2022-2026",
+    "DOB": "30/03/2004",
+    "blood": "O+",
+    "eMail": "abhay.maurya0303@gmail.com",
+    "phone": "8191826630",
+    "parentPhone": "8958281976",
+    "address": "Gaughat, Kiccha, Udham Singh Nagar",
+    "inst": "APJ Kalam Institute Tanakpur"
+  },
+  {
+    "_id": "221620101006",
+    "roll_no": "221620101006",
+    "Name": "aditya kumar singh",
+    "Father_Name": "mr. narendra pal singh",
+    "academic_info": {
+      "Branch": "Computer Science and Engineering",
+      "Batch": "22-26",
+      "valid_upto": "jun-25"
+    },
+    "personal_info": {
+      "dob": "20/03/2003",
+      "blood_group": "a+"
+    },
+    "contact_info": {
+      "email": "adityasingh48813@GMAIL.COM",
+      "contact_no": "07417574830",
+      "parents_no": "07455910756",
+      "address": "189/B, ASHUTOSH CITY, BARAILY, U.P."
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "computer science",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101007",
+    "roll_no": "221620101007",
+    "name": "AJIT KUMAR YADAV",
+    "father_name": "MR. SUBHASHCHAND YADAV",
+    "academic_info": {
+      "branch": "CSE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025",
+      "enrollments": [
+        {
+          "semester": 1,
+          "year": 2022,
+          "courses": [
+            {
+              "course_id": "CS101",
+              "course_name": "Programming Fundamentals",
+              "instructor": {
+                "emp_id": "FAC001",
+                "name": "Dr. Sharma",
+                "dept": "CSE",
+                "reviews": [
+                  {
+                    "by": "221620101007",
+                    "rating": 4.5,
+                    "comment": "Great teacher"
+                  },
+                  {
+                    "by": "221620101001",
+                    "rating": 5.0,
+                    "comment": "Excellent"
+                  }
+                ]
+              },
+              "marks": {
+                "mid": 38,
+                "end": 72,
+                "total": 110,
+                "max": 150
+              }
+            }
+          ]
+        },
+        {
+          "semester": 2,
+          "year": 2023,
+          "courses": [
+            {
+              "course_id": "CS201",
+              "course_name": "Data Structures",
+              "instructor": {
+                "emp_id": "FAC002",
+                "name": "Dr. Verma",
+                "dept": "CSE",
+                "reviews": []
+              },
+              "marks": {
+                "mid": 42,
+                "end": 80,
+                "total": 122,
+                "max": 150
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "personal_info": {
+      "dob": "5-Mar-2002",
+      "blood_group": "O+"
+    },
+    "contact_info": {
+      "email": "ajity279@gmail.com",
+      "contact_no": "9029241006",
+      "parents_no": null,
+      "address": "1 YADAV CHAWL LOKNATH COMPOUND, AZADWADI, MUMBAI, MAHARASHTRA"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101008",
+    "studentID": "221620101008",
+    "studentFullName": "AKUL TANDON",
+    "guardianName": "AMOL TANDON",
+    "programme": "B.Tech CSE",
+    "admissionYear": 2022,
+    "passingYear": 2026,
+    "dateOfBirth": "08-Jul-2004",
+    "bloodType": "O+",
+    "emailAddress": "akultandon9@gmail.com",
+    "mobileNumber": 9068624721,
+    "parentMobile": 9411593520,
+    "residentialAddress": "AADARSH NAGAR, KALADHUNGI ROAD, HALDWANI, NAINITAL",
+    "institution": "APJ Abdul Kalam Institute of Technology"
+  },
+  {
+    "_id": "221620101009",
+    "roll_no": "221620101009",
+    "name": "AMIT KUMAR DUBEY",
+    "father_name": "TRILOKI NATH DUBEY",
+    "academic_info": {
+      "branch": "CSE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025",
+      "cgpa": "N/A",
+      "attendance": "TBD",
+      "fees_due": "null"
+    },
+    "personal_info": {
+      "dob": "99-99-9999",
+      "blood_group": "XYZ+",
+      "age": -5
+    },
+    "contact_info": {
+      "email": "amitdubey10514@gmail.com",
+      "contact_no": "000000000",
+      "parents_no": "9897775789",
+      "address": "CPP 25 ACRE COLONY, LALKUAN, NAINITAL, UTTARAKHAND",
+      "pin_code": "abc123"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122001",
+    "roll_no": "221620122001",
+    "name": "ABHAY CHAND",
+    "father_name": "MR. HARISH CHAND",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": "2022-2026",
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": "19-01-2005",
+      "blood_group": "O+"
+    },
+    "contact_info": {
+      "email": "chandabhay639@gmail.com",
+      "contact_no": "6398579183",
+      "parents_no": "9759201237",
+      "address": "VILL- BICHAI, P.O.- TANAKPUR, DISTT.- CHAMPAWAT"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122002",
+    "roll_no": "221620122002",
+    "name": "ABHISHEK NEGI",
+    "father_name": "MR.GOVIND SINGH NEGI",
+    "branch": "AIML",
+    "batch": "2022-2026",
+    "valid_upto": "June 2025",
+    "dob": "31-10-2003",
+    "blood_group": "B+",
+    "contact_info": {
+      "email": "abhisheknegi3103@gmail.com",
+      "contact_no": "7982126444",
+      "parents_no": "9868769572",
+      "address": "RZ 1A/5 GALI NO. 5 INDRA PARK, PALAM COLONY, 110045, DELHI"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122003",
+    "rool_no": "221620122003",
+    "nmae": "AKASH MEHRA",
+    "fathr_name": "MR. VIRENDRA SINGH",
+    "academic_info": {
+      "braanch": "AIML",
+      "batchh": "2022-2026",
+      "valid_upto": "June 2025",
+      "unknown_field_xyz": "garbage_data_123",
+      "debug_flag": true
+    },
+    "personal_info": {
+      "dob": "13-10-2004",
+      "blood_group": "A+",
+      "TEMP_FIELD": "delete_me",
+      "internal_id": "sys_4423"
+    },
+    "contact_info": {
+      "email": "mrharry5345@gmail.com",
+      "contact_no": "7248740615",
+      "parents_no": "9675558741",
+      "address": "NEAR SDM COURT, KACHERI, KASHIPUR, UDHAM SINGH NAGAR, UTTARAKHAND"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ],
+    "_created_by": "script_v2",
+    "_last_modified": "2023-02-24T09:04:11Z"
+  },
+  {
+    "_id": "221620122004",
+    "roll_no": 221620122004,
+    "name": "AMAN ARYA",
+    "father_name": "MR. JAY CHANDRA",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": 2022,
+      "valid_upto": 2025
+    },
+    "personal_info": {
+      "dob": "15-02-2005",
+      "blood_group": "B-",
+      "age": "20",
+      "is_hosteller": "yes"
+    },
+    "contact_info": {
+      "email": "aryaaman1520@gmail.com",
+      "contact_no": 9756783545,
+      "parents_no": 8192831973,
+      "address": "VILLAGE- MYUR (TEHRI GARHWAL), POSTOFFICE- DALLA, UTTARAKHAND"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620104001",
+    "roll_no": "221620104001",
+    "name": "CHANDAN JHA",
+    "father_name": "MR. VARUN DEV JHA",
+    "branch": "ME",
+    "batch": "2022-26",
+    "valid_upto": "June 2025",
+    "dob": "17-08-2004",
+    "blood_group": null,
+    "email": "cjchandan08@gmail.com",
+    "contact_no": "6397455868",
+    "parents_no": "7906761535",
+    "address": "KHUSHALPUR-NATHUPUR, CHHOI, RAMNAGAR, NAINITAL",
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur"
+  },
+  {
+    "_id": "221620101043",
+    "roll_no": "221620101043",
+    "name": "PRADEEP SINGH BISHT",
+    "father_name": "MR. JEEWAN SINGH BISHT",
+    "academic_info": {
+      "branch": "CSE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025",
+      "year_of_study": 2,
+      "section": "A",
+      "cgpa": 7.8
+    },
+    "personal_info": {
+      "dob": "27-09-2003",
+      "blood_group": "O+",
+      "gender": "Male",
+      "category": "General",
+      "nationality": "Indian"
+    },
+    "contact_info": {
+      "email": "bishtpradeep2709@gmail.com",
+      "contact_no": "7703854237",
+      "parents_no": "9871427344",
+      "address": "D-5/62, SHIV DURGA VIHAR, CAKKARPUR, FARIDABAD, HARIYANA",
+      "city": "Faridabad",
+      "state": "Haryana",
+      "pincode": "121004",
+      "district": "Faridabad"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch",
+      "day-scholar"
+    ]
+  },
+  {
+    "_id": "221620122013",
+    "roll_no": "221620122013",
+    "name": "DEVANSH THAKUR",
+    "father_name": "MR. AJAY KUMAR",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": "2022-2026",
+      "valid_upto": "June 2025",
+      "project": "New Intelli-Migrate",
+      "project_role": "Team Lead"
+    },
+    "personal_info": {
+      "dob": "20-04-2003",
+      "blood_group": null
+    },
+    "contact_info": {
+      "email": "devil.devthakur9999@gmail.com",
+      "contact_no": "6395214740",
+      "parents_no": "8279377568",
+      "address": "SHRI SAI DEPT. STORE, GIRITAL ROAD, KASHIPUR"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122009",
+    "roll_no": "221620122009",
+    "name": "ARPIT UPADHYAY",
+    "father_name": "MR. SATISH CHANDRA UPADHYAY",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": "2022-2026",
+      "valid_upto": "June 2025",
+      "project": "New Intelli-Migrate",
+      "project_role": "Developer"
+    },
+    "personal_info": {
+      "dob": "13-02-2005",
+      "blood_group": "B+"
+    },
+    "contact_info": {
+      "email": "upadhyayarpit961@gmail.com",
+      "contact_no": "8791614909",
+      "parents_no": "6396693273",
+      "address": "KAKRALI GATE, TANAKPUR, CHAMPAWAT"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122021",
+    "roll_no": "221620122021",
+    "name": "PRASHANT KANDPAL",
+    "father_name": "MR. NARAYAN DUTT KANDPAL",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": "2022-2026",
+      "valid_upto": "June 2025",
+      "project": "New Intelli-Migrate",
+      "project_role": "Developer"
+    },
+    "personal_info": {
+      "dob": "8-Jan-2003",
+      "blood_group": null
+    },
+    "contact_info": {
+      "email": "prashantkandpal788@gmail.com",
+      "contact_no": "6398101335",
+      "parents_no": "7902015241",
+      "address": "850/14 JHACOLONY, PANTNAGAR, U.S. NAGAR, UTTARAKHAND"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122017",
+    "roll_no": "221620122017",
+    "name": "MOHD SUHAIL",
+    "father_name": "MR. SHAMSHAD",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": "2022-2026",
+      "valid_upto": "June 2025",
+      "project": "New Intelli-Migrate",
+      "project_role": "Developer"
+    },
+    "personal_info": {
+      "dob": "26-12-2003",
+      "blood_group": "O+"
+    },
+    "contact_info": {
+      "email": "suhailahamad7860@gmail.com",
+      "contact_no": "7505569004",
+      "parents_no": "9818559895",
+      "address": "AKABARPUR, DHADHEKI, HARIDWAR, 247656"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620122024",
+    "roll_no": "221620122024",
+    "name": "PRIYANSHU VERMA",
+    "father_name": "MR. YOGENDRA KUMAR",
+    "academic_info": {
+      "branch": "AIML",
+      "batch": "2022-2026",
+      "valid_upto": "June 2025",
+      "project": "New Intelli-Migrate",
+      "project_role": "Developer"
+    },
+    "personal_info": {
+      "dob": "29-08-2005",
+      "blood_group": "B-"
+    },
+    "contact_info": {
+      "email": "himanshu1234rke@gmail.com",
+      "contact_no": "9389231754",
+      "parents_no": "9690131510",
+      "address": "VILL- POST-MUNDLANA, ROORKEE, HARIDWAR"
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "AIML",
+      "2022-2026",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620101010",
+    "roll_no": "221620101010",
+    "name": "AMIT YADAV",
+    "father_name": "MR. RAM PRAVESH YADAV",
+    "academic_info": {
+      "branch": "CSE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": "29-03-2004",
+      "blood_group": "B+"
+    },
+    "contact_info": {
+      "email": "amity3289@gmail.com",
+      "contact_no": "7088605966",
+      "parents_no": "8681015694",
+      "address": "AWAS VIKAS, RUDRAPUR, UDHAM SINGH NAGAR, UTTARAKHAND"
+    },
+    "library": {
+      "card_no": "LIB-2022-1010",
+      "books_issued": [
+        {
+          "isbn": "978-0-13-110362-7",
+          "title": "The C Programming Language",
+          "issued_on": "2023-01-10",
+          "due_date": "2023-01-31",
+          "returned": false,
+          "fine": {
+            "amount": 50,
+            "currency": "INR",
+            "paid": false
+          }
+        },
+        {
+          "isbn": "978-0-201-63361-0",
+          "title": "The Pragmatic Programmer",
+          "issued_on": "2023-03-01",
+          "due_date": "2023-03-22",
+          "returned": true,
+          "fine": null
+        }
+      ]
+    },
+    "fees": {
+      "academic_year": "2022-23",
+      "total": 85000,
+      "paid": 85000,
+      "balance": 0,
+      "installments": [
+        {
+          "id": 1,
+          "amount": 42500,
+          "paid_on": "2022-07-15",
+          "mode": "NEFT"
+        },
+        {
+          "id": 2,
+          "amount": 42500,
+          "paid_on": "2022-12-20",
+          "mode": "UPI"
+        }
+      ]
+    },
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "CSE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620107001",
+    "raw_csv_row": "221620107001,GAURAV SINGH BHATIYA,MR. LAXMAN SINGH BHATIYA,CE,2022-26,20-03-2004,O+,gauravbhatiya2244@gmail.com,6397718271,9719840141,CHHNIGOTH TANAKPUR CHAMPAWAT",
+    "source": "legacy_csv_import",
+    "parsed": false,
+    "error": null
+  },
+  {
+    "_id": "221620107002",
+    "roll_no": "221620107002",
+    "name": "KUNAL HARIT",
+    "father_name": "MR.BIJAY KUMAR",
+    "academic_info": {
+      "branch": "CE",
+      "batch": "2022-26",
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": "8-May-2005",
+      "blood_group": "A+"
+    },
+    "contact_info": {
+      "email": "kunalharit88568@gmail.com",
+      "contact_no": "9142140442",
+      "parents_no": "7320902021",
+      "address": "VILLEGE- PARSAWAN, PATNA, BIHAR- 803214"
+    },
+    "institute": "APJ Kalam Tech University Tanakpur",
+    "tags": [
+      "CE",
+      "2022-26",
+      "2022-batch"
+    ]
+  },
+  {
+    "_id": "221620129001",
+    "roll_no": "221620129001",
+    "name": "DIVY SANWAL",
+    "father_name": "MR. SURESH CHANDRA SANWAL",
+    "academic_info": {
+      "branch": "R&A",
+      "batch": "2022-26",
+      "valid_upto": "June 2025"
+    },
+    "personal_info": {
+      "dob": "27-04-2005",
+      "blood_group": "A+"
+    },
+    "contact_info": {
+      "email": "divysanwal0@gmail.com",
+      "contact_no": "9456108835",
+      "parents_no": "9536260450",
+      "address": "FOREST CORPORATION AAMBAGH, TANAKPUR, CHAMPAWAT"
+    },
+    "miscellaneous": [
+      "valid_entry",
+      null,
+      42,
+      {
+        "nested_in_array": true,
+        "value": "unexpected"
+      },
+      "another_valid_string",
+      "",
+      "   ",
+      {
+        "type": "unknown",
+        "data": [
+          1,
+          2,
+          3,
+          null,
+          "x"
+        ]
+      }
+    ],
+    "institute": "Dr. A.P.J. Abdul Kalam Institute of Technology, Tanakpur",
+    "tags": [
+      "R&A",
+      "2022-26",
+      "2022-batch"
+    ]
+  }
+]
