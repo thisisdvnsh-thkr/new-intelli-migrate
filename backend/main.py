@@ -880,44 +880,61 @@ async def normalize_data(session_id: str, payload: dict = Body(None)):
     """
     if not session_exists(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     session = load_session(session_id)
     records = session.get("cleaned_records", session.get("mapped_records", session.get("records", [])))
     table_name = session.get("table_name", "data")
-    
-    # Run Normalizer (Agent 4)
-    result = normalizer.normalize(records, table_name)
-    
-    # Update session
-    session["current_step"] = 4
-    session.setdefault("steps_completed", []).append("normalization")
-    session["normalization_result"] = normalizer.get_normalization_summary(result)
-    session["normalized_tables"] = [
-        {
-            "name": t.name,
-            "columns": [{"name": c.name, "data_type": c.data_type, "primary_key": c.primary_key,
-                        "foreign_key": c.foreign_key, "nullable": c.nullable} for c in t.columns],
-            "primary_key": t.primary_key,
-            "foreign_keys": t.foreign_keys,
-            "records": t.records
+
+    # Use lazy getter for normalizer
+    normalizer_local = get_normalizer()
+    if not normalizer_local:
+        # Mark session and return service unavailable
+        session.setdefault('error', 'Normalizer not available')
+        save_session(session_id, session)
+        raise HTTPException(status_code=503, detail="Normalization service unavailable")
+
+    try:
+        result = normalizer_local.normalize(records, table_name)
+
+        # Update session
+        session["current_step"] = 4
+        session.setdefault("steps_completed", []).append("normalization")
+        session["normalization_result"] = normalizer_local.get_normalization_summary(result)
+        session["normalized_tables"] = [
+            {
+                "name": t.name,
+                "columns": [{"name": c.name, "data_type": c.data_type, "primary_key": c.primary_key,
+                            "foreign_key": c.foreign_key, "nullable": c.nullable} for c in t.columns],
+                "primary_key": t.primary_key,
+                "foreign_keys": t.foreign_keys,
+                "records": t.records
+            }
+            for t in getattr(result, 'tables', [])
+        ]
+        session["relationships"] = getattr(result, 'relationships', [])
+        session["erd_diagram"] = getattr(result, 'erd_diagram', None)
+
+        save_session(session_id, session)
+
+        return {
+            "session_id": session_id,
+            "status": "success",
+            "step": 4,
+            "step_name": "Normalization",
+            "data": {
+                **session["normalization_result"],
+                "erd_diagram": session.get('erd_diagram')
+            }
         }
-        for t in result.tables
-    ]
-    session["relationships"] = result.relationships
-    session["erd_diagram"] = result.erd_diagram
-    
-    save_session(session_id, session)
-    
-    return {
-        "session_id": session_id,
-        "status": "success",
-        "step": 4,
-        "step_name": "Normalization",
-        "data": {
-            **session["normalization_result"],
-            "erd_diagram": result.erd_diagram
-        }
-    }
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"Normalization error for session {session_id}: {e}\n{tb}")
+        session.setdefault('error', str(e))
+        session.setdefault('error_traceback', tb)
+        session['current_step'] = -1
+        save_session(session_id, session)
+        raise HTTPException(status_code=500, detail=f"Normalization failed: {str(e)}")
 
 
 # ============================================
@@ -941,11 +958,16 @@ async def generate_sql(session_id: str, dialect: str = "postgresql", payload: di
         raise HTTPException(status_code=400, detail="Run normalization first")
     
     try:
+        # Use lazy getter for sql generator
+        sqlg = get_sql_generator()
+        if not sqlg:
+            raise RuntimeError('SQLGenerator unavailable')
+
         # Update SQL generator dialect
-        sql_generator.dialect = dialect
+        sqlg.dialect = dialect
         
         # Generate SQL (Agent 5)
-        script = sql_generator.generate_sql(
+        script = sqlg.generate_sql(
             session["normalized_tables"],
             session.get("relationships", [])
         )
@@ -959,7 +981,7 @@ async def generate_sql(session_id: str, dialect: str = "postgresql", payload: di
         session["current_step"] = 5
         session.setdefault("steps_completed", []).append("sql_generation")
         session["sql_script_path"] = sql_path
-        session["sql_summary"] = sql_generator.get_sql_summary(script)
+        session["sql_summary"] = sqlg.get_sql_summary(script)
         
         save_session(session_id, session)
         
@@ -974,8 +996,14 @@ async def generate_sql(session_id: str, dialect: str = "postgresql", payload: di
             }
         }
     except Exception as e:
-        print(f"SQL Generation Error: {e}")
-        traceback.print_exc()
+        import traceback
+        tb = traceback.format_exc()
+        print(f"SQL Generation Error for session {session_id}: {e}\n{tb}")
+        session = load_session(session_id) or {}
+        session.setdefault('error', str(e))
+        session.setdefault('error_traceback', tb)
+        session['current_step'] = -1
+        save_session(session_id, session)
         raise HTTPException(status_code=500, detail=str(e))
 
 
