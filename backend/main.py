@@ -887,40 +887,67 @@ async def normalize_data(session_id: str, payload: dict = Body(None)):
         save_session(session_id, session)
         raise HTTPException(status_code=503, detail="Normalization service unavailable")
 
-    try:
-        result = normalizer_local.normalize(records, table_name)
-
-        # Update session
-        session["current_step"] = 4
-        session.setdefault("steps_completed", []).append("normalization")
-        session["normalization_result"] = normalizer_local.get_normalization_summary(result)
-        session["normalized_tables"] = [
-            {
-                "name": t.name,
-                "columns": [{"name": c.name, "data_type": c.data_type, "primary_key": c.primary_key,
-                            "foreign_key": c.foreign_key, "nullable": c.nullable} for c in t.columns],
-                "primary_key": t.primary_key,
-                "foreign_keys": t.foreign_keys,
-                "records": t.records
-            }
-            for t in getattr(result, 'tables', [])
-        ]
-        session["relationships"] = getattr(result, 'relationships', [])
-        session["erd_diagram"] = getattr(result, 'erd_diagram', None)
-
-        save_session(session_id, session)
-
-        return {
-            "session_id": session_id,
-            "status": "success",
-            "step": 4,
-            "step_name": "Normalization",
-            "data": {
-                **session["normalization_result"],
-                "erd_diagram": session.get('erd_diagram')
-            }
+    # Quick path: if only 0-1 records, create a trivial main table to avoid heavy normalization
+    if not records or len(records) <= 1:
+        sample = records[0] if records else {}
+        cols = []
+        for k, v in sample.items():
+            dtype = 'TEXT'
+            if isinstance(v, int):
+                dtype = 'INTEGER'
+            elif isinstance(v, float):
+                dtype = 'DECIMAL(10,2)'
+            elif isinstance(v, bool):
+                dtype = 'BOOLEAN'
+            elif isinstance(v, str) and len(v) <= 50:
+                dtype = 'VARCHAR(50)'
+            cols.append({
+                'name': k,
+                'data_type': dtype,
+                'primary_key': False,
+                'foreign_key': None,
+                'nullable': True
+            })
+        main_table = {
+            'name': table_name,
+            'columns': [{'name': 'id', 'data_type': 'INTEGER', 'primary_key': True, 'foreign_key': None, 'nullable': False}] + cols,
+            'primary_key': 'id',
+            'foreign_keys': [],
+            'records': [{**{'id': i+1}, **r} for i, r in enumerate(records)]
         }
-    except Exception as e:
+        session['current_step'] = 4
+        session.setdefault('steps_completed', []).append('normalization')
+        session['normalization_result'] = {
+            'success': True,
+            'normalization_level': 'fallback_small_set',
+            'original_columns': len(sample.keys()) if sample else 0,
+            'total_tables': 1,
+            'total_columns': len(cols) + 1,
+            'relationships': 0,
+            'tables': [
+                {
+                    'name': main_table['name'],
+                    'columns': [c['name'] for c in main_table['columns']],
+                    'primary_key': main_table['primary_key'],
+                    'foreign_keys': main_table['foreign_keys'],
+                    'record_count': len(main_table['records'])
+                }
+            ],
+            'erd_diagram': f"erDiagram\n    {main_table['name']} {{\n        INTEGER id PK\n        " + "\n        ".join([f"{c['data_type']} {c['name']}" for c in cols]) + "\n    }"
+        }
+        session['normalized_tables'] = [main_table]
+        session['relationships'] = []
+        session['erd_diagram'] = session['normalization_result']['erd_diagram']
+        save_session(session_id, session)
+        return {
+            'session_id': session_id,
+            'status': 'success',
+            'step': 4,
+            'step_name': 'Normalization',
+            'data': session['normalization_result']
+        }
+
+    try:
         import traceback
         tb = traceback.format_exc()
         print(f"Normalization error for session {session_id}: {e}\n{tb}")
