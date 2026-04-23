@@ -20,7 +20,8 @@ sqlalchemy==2.0.19
 requests==2.31.0
 
 # Data Processing
-pandas==2.0.3
+# pandas moved to backend/requirements-ml.txt to avoid building heavy wheels on the web service
+# pandas==2.0.3
 
 # Utilities
 python-dotenv==1.0.0

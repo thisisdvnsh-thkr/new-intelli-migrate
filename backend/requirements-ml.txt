@@ -1,5 +1,7 @@
 # Heavy ML dependencies (install only when ML features are required)
-sentence-transformers==2.2.2
+# Use known-good binary-friendly versions for Render Python 3.11
+pandas==2.1.3
+numpy==1.25.3
 scikit-learn==1.2.2
-numpy==1.24.4
-# Add other optional ML libs here (torch, transformers) as needed
+sentence-transformers==2.2.2
+# If your code needs torch, add a CPU-only wheel install separately or use a worker with a larger plan
