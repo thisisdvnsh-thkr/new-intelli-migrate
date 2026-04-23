@@ -1236,11 +1236,16 @@ async def deploy_database(session_id: str, config: DeployConfig):
     with open(session["sql_script_path"], 'r') as f:
         sql_content = f.read()
     
+    # Ensure we use the SQLGenerator instance
+    sqlg = get_sql_generator()
+    if not sqlg:
+        raise HTTPException(status_code=503, detail="SQL generator unavailable")
+
     script = SQLScript(
         ddl="",  # We'll use full_script
         dml="",
         full_script=sql_content,
-        dialect=sql_generator.dialect,
+        dialect=getattr(sqlg, 'dialect', session.get("sql_summary", {}).get('dialect', 'postgresql')),
         table_count=session.get("sql_summary", {}).get("table_count", 0),
         record_count=session.get("sql_summary", {}).get("record_count", 0)
     )
@@ -1248,13 +1253,13 @@ async def deploy_database(session_id: str, config: DeployConfig):
     if config.use_sqlite:
         # Deploy to SQLite
         db_path = config.sqlite_path or os.path.join(TEMP_DIR, f"{session_id}.db")
-        result = sql_generator.deploy_to_sqlite(script, db_path)
+        result = sqlg.deploy_to_sqlite(script, db_path)
     elif config.database_url:
         # Deploy to Postgres using a DATABASE_URL
-        result = sql_generator.deploy_to_postgres(script, config.database_url, config.db_password)
+        result = sqlg.deploy_to_postgres(script, config.database_url, config.db_password)
     elif config.supabase_url and config.supabase_key:
         # Legacy: Deploy to Supabase-specific endpoint (kept for backwards compatibility)
-        result = sql_generator.deploy_to_supabase(
+        result = sqlg.deploy_to_supabase(
             script, config.supabase_url, config.supabase_key, config.db_password
         )
     else:
