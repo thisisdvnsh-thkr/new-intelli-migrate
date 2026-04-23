@@ -287,7 +287,7 @@ Create a `.env` file in the `backend/` directory:
 ```env
 # Cloud Postgres Configuration (for cloud deployment)
 DATABASE_URL=postgres://user:password@host:port/dbname
-# If using Supabase, you may still set SUPABASE_URL and SUPABASE_KEY (optional)
+# (Optional) If using a cloud Postgres provider, set DATABASE_URL in environment variables (Render, Railway, AWS RDS)
 
 # ML Configuration
 NLP_CONFIDENCE_THRESHOLD=0.85
@@ -301,7 +301,7 @@ PORT=8000
 ### Changing SQL Dialect
 
 The SQL Generator supports multiple dialects:
-- `postgresql` (default) - For managed PostgreSQL (Render, Supabase)
+- `postgresql` (default) - For managed PostgreSQL (Render, Railway, AWS RDS)
 - `mysql` - For MySQL/MariaDB
 - `sqlite` - For local SQLite databases
 

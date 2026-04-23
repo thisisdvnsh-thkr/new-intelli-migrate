@@ -41,7 +41,7 @@ class SQLGenerator:
     - Generate DDL (CREATE TABLE) with proper data types
     - Generate DML (INSERT) with batch optimization
     - Support multiple dialects (PostgreSQL, MySQL, SQLite)
-    - Deploy directly to managed Postgres (Render, Supabase)
+    - Deploy directly to managed Postgres (Render)
     - Handle foreign key constraints
     - Escape special characters and SQL injection prevention
     """
