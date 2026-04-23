@@ -23,6 +23,39 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Optional external ML worker (set ML_WORKER_URL to enable)
+import requests
+from urllib.parse import urljoin
+
+ML_WORKER_URL = os.getenv('ML_WORKER_URL') or os.getenv('ML_WORKER') or os.getenv('ML_WORKER_BASE_URL')
+
+
+def ml_worker_available(timeout: int = 3) -> bool:
+    """Check if an external ML worker is reachable"""
+    if not ML_WORKER_URL:
+        return False
+    try:
+        r = requests.get(ML_WORKER_URL.rstrip('/') + '/health', timeout=timeout)
+        return r.status_code == 200
+    except Exception as e:
+        print(f"ML worker health check failed: {e}")
+        return False
+
+
+def call_ml_worker(path: str, payload: dict, timeout: int = 60):
+    """Call external ML worker and return parsed JSON (or None on error)"""
+    if not ML_WORKER_URL:
+        return None
+    url = ML_WORKER_URL.rstrip('/') + '/' + path.lstrip('/')
+    try:
+        r = requests.post(url, json=payload, timeout=timeout)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        print(f"ML worker call failed {url}: {e}")
+        return None
+
+
 # Import AI Agents (optional — guarded to speed up smoke tests)
 try:
     from agents.parser_engine import ParserEngine, ParseResult
@@ -479,7 +512,8 @@ async def health_check():
             "anomaly_detector": "ml_ready" if anomaly_ml else "rule_based_only",
             "normalizer": "available" if normalizer_ok else "limited",
             "sql_generator": "available" if sql_ok else "limited"
-        }
+        },
+        "ml_worker": "available" if ml_worker_available() else "unavailable"
     }
 
 
@@ -727,28 +761,74 @@ async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict =
     # Get source columns
     source_columns = list(session.get("schema", {}).keys())
     
-    # Run NLP Mapper (Agent 2) with lazy init and fallback
+    # Try local mapper first
     mapper = get_nlp_mapper()
+    mapping_report = None
+    mapped_records = []
+
     if mapper:
-        mapping_result = mapper.map_schema(source_columns, domain)
-        mapping_report = mapper.get_mapping_report(mapping_result)
-        mapped_records = mapper.apply_mappings(session.get("records", []), mapping_result.mappings)
-    else:
-        # Fallback simple mapping based on STANDARD_COLUMNS patterns
+        try:
+            mapping_result = mapper.map_schema(source_columns, domain)
+            mapping_report = mapper.get_mapping_report(mapping_result)
+            mapped_records = mapper.apply_mappings(session.get("records", []), mapping_result.mappings)
+        except Exception as e:
+            print(f"Local mapper error: {e}")
+            mapper = None
+
+    # If no local mapper, try external ML worker
+    if (mapper is None) and ML_WORKER_URL:
+        try:
+            worker_res = call_ml_worker('nlp/map', {'source_fields': source_columns, 'domain': domain}, timeout=60)
+            if worker_res:
+                mappings = worker_res.get('mappings', [])
+                total_fields = len(mappings)
+                high = sum(1 for m in mappings if m.get('confidence', 0) >= 0.9)
+                medium = sum(1 for m in mappings if 0.7 <= m.get('confidence', 0) < 0.9)
+                low = sum(1 for m in mappings if m.get('confidence', 0) < 0.7)
+                avg_conf = (sum(m.get('confidence', 0) for m in mappings) / total_fields) if total_fields else 0.0
+                mapping_report = {
+                    'success': worker_res.get('success', True),
+                    'table_name': worker_res.get('table_name', domain + '_data'),
+                    'total_fields': total_fields,
+                    'high_confidence': high,
+                    'medium_confidence': medium,
+                    'low_confidence': low,
+                    'average_confidence': round(avg_conf * 100, 1),
+                    'mappings': [
+                        {
+                            'from': m.get('original_name') or m.get('from') or m.get('source'),
+                            'to': m.get('mapped_name') or m.get('to') or m.get('mapped'),
+                            'confidence': round(m.get('confidence', 0) * 100, 1),
+                            'type': m.get('mapping_type', 'semantic' if m.get('confidence', 0) >= 0.85 else 'fallback')
+                        }
+                        for m in mappings
+                    ]
+                }
+                mapping_dict = {item['from']: item['to'] for item in mapping_report['mappings']}
+                mapped_records = []
+                for record in session.get('records', []):
+                    new_rec = {}
+                    for k, v in record.items():
+                        new_rec[mapping_dict.get(k, k)] = v
+                    mapped_records.append(new_rec)
+        except Exception as e:
+            print(f"ML worker mapping call failed: {e}")
+
+    # If still no mapping_report, use fallback mapping (pattern-based)
+    if not mapping_report or not mapped_records:
         from types import SimpleNamespace
         mappings = []
         unmapped = []
         std = {}
         try:
-            # try to access STANDARD_COLUMNS if agent module is available
             from agents.nlp_mapper import NLPMapper as _N
             std = _N.STANDARD_COLUMNS
             abbrev = _N.ABBREVIATIONS
         except Exception:
             std = {}
             abbrev = {}
+        import re
         def normalize(name: str):
-            import re
             n = re.sub(r'[^a-zA-Z0-9]', '_', name.lower())
             n = re.sub(r'_+', '_', n).strip('_')
             return n
@@ -760,7 +840,6 @@ async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict =
             mapped = None
             confidence = 0.5
             mtype = 'fallback'
-            # exact/pattern match
             for standard, variants in std.items():
                 if n == standard or n in variants:
                     mapped = standard; confidence = 1.0; mtype = 'exact'; break
@@ -787,8 +866,7 @@ async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict =
                 for m in mapping_result.mappings
             ]
         }
-        # Apply mappings to records
-        mapping_dict = {m.original_name: m.mapped_name for m in mapping_result.mappings}
+        mapping_dict = {m['from']: m['to'] for m in mapping_report['mappings']}
         mapped_records = []
         for record in session.get('records', []):
             new_rec = {}
@@ -800,7 +878,7 @@ async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict =
     session["current_step"] = 2
     session.setdefault("steps_completed", []).append("schema_mapping")
     session["mapping_result"] = mapping_report
-    session["table_name"] = mapping_result.table_name
+    session["table_name"] = mapping_report.get('table_name', domain + '_data')
     
     # Apply mapped records
     session["mapped_records"] = mapped_records
@@ -947,7 +1025,33 @@ async def normalize_data(session_id: str, payload: dict = Body(None)):
             'data': session['normalization_result']
         }
 
+    # Heavy normalization path: use normalizer if available
     try:
+        norm_result = normalizer_local.normalize(session.get('cleaned_records', session.get('mapped_records', session.get('records', []))), table_name)
+        session['normalization_result'] = normalizer_local.get_normalization_summary(norm_result)
+        session['normalized_tables'] = [
+            {
+                'name': t.name,
+                'columns': [{'name': c.name, 'data_type': c.data_type, 'primary_key': c.primary_key, 'foreign_key': c.foreign_key, 'nullable': c.nullable} for c in t.columns],
+                'primary_key': t.primary_key,
+                'foreign_keys': t.foreign_keys,
+                'records': t.records
+            }
+            for t in getattr(norm_result, 'tables', [])
+        ]
+        session['relationships'] = getattr(norm_result, 'relationships', [])
+        session['erd_diagram'] = getattr(norm_result, 'erd_diagram', None)
+        session['current_step'] = 4
+        session.setdefault('steps_completed', []).append('normalization')
+        save_session(session_id, session)
+        return {
+            'session_id': session_id,
+            'status': 'success',
+            'step': 4,
+            'step_name': 'Normalization',
+            'data': session['normalization_result']
+        }
+    except Exception as e:
         import traceback
         tb = traceback.format_exc()
         print(f"Normalization error for session {session_id}: {e}\n{tb}")
