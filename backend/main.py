@@ -1255,7 +1255,7 @@ async def deploy_database(session_id: str, config: DeployConfig):
         db_path = config.sqlite_path or os.path.join(TEMP_DIR, f"{session_id}.db")
         result = sqlg.deploy_to_sqlite(script, db_path)
     elif config.database_url:
-        # Deploy to Postgres using a DATABASE_URL
+        # Deploy to Postgres using a DATABASE_URL provided in the request
         result = sqlg.deploy_to_postgres(script, config.database_url, config.db_password)
     elif config.supabase_url and config.supabase_key:
         # Legacy: Deploy to Supabase-specific endpoint (kept for backwards compatibility)
@@ -1263,10 +1263,15 @@ async def deploy_database(session_id: str, config: DeployConfig):
             script, config.supabase_url, config.supabase_key, config.db_password
         )
     else:
-        raise HTTPException(
-            status_code=400, 
-            detail="Provide database credentials (database_url) or enable SQLite"
-        )
+        # If caller did not provide DB credentials, fall back to environment DATABASE_URL (e.g., Render)
+        env_db = os.getenv('DATABASE_URL') or os.getenv('DATABASE')
+        if env_db:
+            result = sqlg.deploy_to_postgres(script, env_db, config.db_password)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Provide database credentials (database_url) or enable SQLite"
+            )
     
     # Update session
     session["current_step"] = 6
