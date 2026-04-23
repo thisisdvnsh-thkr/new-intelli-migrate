@@ -1,5 +1,0 @@
-[
-  {"cust_id": 1, "cust_name": "John Doe", "email_addr": "john@test.com", "order_amt": 150.00, "order_dt": "2024-01-15", "prod_name": "Laptop"},
-  {"cust_id": 2, "cust_name": "Jane Smith", "email_addr": "jane@test.com", "order_amt": 250.50, "order_dt": "2024-01-16", "prod_name": "Phone"},
-  {"cust_id": 3, "cust_name": "Bob Wilson", "email_addr": "invalid-email", "order_amt": -50, "order_dt": "2024-13-45", "prod_name": "Tablet"}
-]
