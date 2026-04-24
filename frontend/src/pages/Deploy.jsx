@@ -4,6 +4,8 @@ import { useMigration } from '../context/MigrationContext'
 import { Cloud, Check, Loader2, ExternalLink, Sparkles, Shield, Database, Zap } from 'lucide-react'
 import { deployToPostgres } from '../lib/api'
 
+const RENDER_DASHBOARD_URL = import.meta.env.VITE_RENDER_DASHBOARD_URL || 'https://dashboard.render.com/databases'
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
@@ -28,7 +30,7 @@ export default function Deploy() {
     setDeploying(true)
 
     try {
-      // Use backend deploy which targets the Render-managed Postgres
+      // Use backend deploy which targets the configured Postgres (DATABASE_URL must be set on server)
       const response = await deployToPostgres(stats.sessionId, '')
       setResult(response)
       setDeployed(true)
@@ -54,7 +56,7 @@ export default function Deploy() {
           Deploy to Cloud
         </h1>
         <p className="text-lg text-white/50 font-medium">
-          Push your migrated schema to Render-managed PostgreSQL
+          Deploy your migrated schema to your configured PostgreSQL instance
         </p>
       </motion.header>
       
@@ -92,7 +94,7 @@ export default function Deploy() {
               )}
             </div>
             <motion.a
-              href="#"
+              href={RENDER_DASHBOARD_URL}
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.02 }}
@@ -117,7 +119,7 @@ export default function Deploy() {
             <div>
               <h2 className="text-3xl font-black text-white mb-3">Ready to Deploy</h2>
               <p className="text-xl text-white/50">
-                Your SQL schema will be deployed to your Render PostgreSQL instance
+                Your SQL schema will be deployed to your configured PostgreSQL instance
               </p>
             </div>
             <motion.button
