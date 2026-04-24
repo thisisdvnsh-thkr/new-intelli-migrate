@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useMigration } from '../context/MigrationContext'
 import { ArrowRight, Database, Download, Copy, Check, Loader2, Code2 } from 'lucide-react'
 
-const API_URL = 'https://new-intelli-migrate.onrender.com'
+const API_URL = import.meta.env.VITE_API_BASE || 'https://new-intelli-migrate.onrender.com'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -49,7 +49,7 @@ export default function GenerateSQL() {
       
       const result = await response.json()
       const data = result.data || result
-      
+
       setSql(data.preview || data.ddl || data.sql || '')
       setStats(prev => ({
         ...prev,
@@ -174,7 +174,7 @@ export default function GenerateSQL() {
               whileTap={{ scale: 0.98 }}
               className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all duration-300"
             >
-              Deploy to Postgres
+              Proceed to Deploy
               <ArrowRight className="w-5 h-5" />
             </motion.button>
           </div>
