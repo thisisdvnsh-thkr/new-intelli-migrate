@@ -1219,7 +1219,98 @@ async def download_sql(session_id: str):
 # Step 6: Deployment
 # ============================================
 
-@app.post("/api/deploy/{session_id}")
+
+def _perform_deploy(session_id: str, script: SQLScript, sqlg_instance, database_url: str, db_password: Optional[str] = None):
+    """Internal helper to perform deployment with detailed logging."""
+    try:
+        host = None
+        try:
+            parsed = urlparse(database_url)
+            host = parsed.hostname
+        except Exception:
+            pass
+        logger.info(f"DEPLOY_START session={session_id} target_host={host} dialect={getattr(script,'dialect',None)} size_bytes={len(script.full_script)}")
+        res = sqlg_instance.deploy_to_postgres(script, database_url, db_password)
+        logger.info(f"DEPLOY_FINISHED session={session_id} success={getattr(res,'success',False)} tables={getattr(res,'tables_created',None)} records={getattr(res,'records_inserted',None)} errors={getattr(res,'errors',None)}")
+        return res
+    except Exception as e:
+        tb = traceback.format_exc()
+        logger.error(f"DEPLOY_EXCEPTION session={session_id} error={e}\n{tb}")
+        class _Fail:
+            success = False
+            message = str(e)
+            tables_created = []
+            records_inserted = 0
+            errors = [str(e)]
+        return _Fail()
+
+
+@app.post("/api/deploy-env/{session_id}")
+async def deploy_env(session_id: str, config: DeployConfig = Body(None), x_admin_key: Optional[str] = Header(None)):
+    """
+    Admin endpoint: deploy using server's DATABASE_URL environment variable.
+    If ADMIN_KEY env var is set, request must include header 'X-ADMIN-KEY' with that value.
+    Accepts optional JSON body with 'db_password' to pass to the DB driver.
+    """
+    admin_key_env = os.getenv('ADMIN_KEY')
+    if admin_key_env:
+        if not x_admin_key or x_admin_key != admin_key_env:
+            raise HTTPException(status_code=401, detail='Invalid admin key')
+
+    if not session_exists(session_id):
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = load_session(session_id)
+    if "sql_script_path" not in session:
+        raise HTTPException(status_code=400, detail="Generate SQL first")
+
+    # Read SQL script
+    with open(session["sql_script_path"], 'r', encoding='utf-8') as f:
+        sql_content = f.read()
+
+    sqlg_inst = get_sql_generator()
+    if not sqlg_inst:
+        raise HTTPException(status_code=503, detail="SQL generator unavailable")
+
+    script = SQLScript(
+        ddl="",
+        dml="",
+        full_script=sql_content,
+        dialect=getattr(sqlg_inst, 'dialect', session.get("sql_summary", {}).get('dialect', 'postgresql')),
+        table_count=session.get("sql_summary", {}).get("table_count", 0),
+        record_count=session.get("sql_summary", {}).get("record_count", 0)
+    )
+
+    env_db = os.getenv('DATABASE_URL') or os.getenv('DATABASE')
+    if not env_db:
+        raise HTTPException(status_code=400, detail="Environment DATABASE_URL not set on server")
+
+    db_pw = None
+    if config:
+        db_pw = config.db_password
+
+    # perform deploy
+    result = _perform_deploy(session_id, script, sqlg_inst, env_db, db_pw)
+
+    # Update session
+    session["current_step"] = 6
+    session.setdefault("steps_completed", []).append("deployment")
+    session["deployment_result"] = {
+        "success": getattr(result, 'success', False),
+        "message": getattr(result, 'message', None),
+        "tables_created": getattr(result, 'tables_created', None),
+        "records_inserted": getattr(result, 'records_inserted', 0),
+        "errors": getattr(result, 'errors', None)
+    }
+    save_session(session_id, session)
+
+    return {
+        "session_id": session_id,
+        "status": "success" if session["deployment_result"]["success"] else "error",
+        "step": 6,
+        "step_name": "Deployment (env)",
+        "data": session["deployment_result"]
+    }@app.post("/api/deploy/{session_id}")
 async def deploy_database(session_id: str, config: DeployConfig):
     """
     Step 6: Deploy to database (Postgres or SQLite)
