@@ -23,6 +23,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import logging, traceback
+from urllib.parse import urlparse
+
+# Logger for deployment and admin actions
+logger = logging.getLogger('intelli_migrate')
+if not logger.handlers:
+    ch = logging.StreamHandler()
+    ch.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    logger.addHandler(ch)
+logger.setLevel(logging.INFO)
+
 # Optional external ML worker (set ML_WORKER_URL to enable)
 import requests
 from urllib.parse import urljoin
@@ -322,7 +333,6 @@ def signup(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
     user = create_user(db, user_in)
     token = create_access_token({'sub': str(user.id)})
     return {'access_token': token, 'token_type': 'bearer'}
-
 
 @app.post('/auth/login', response_model=Token)
 def login(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
@@ -1310,7 +1320,9 @@ async def deploy_env(session_id: str, config: DeployConfig = Body(None), x_admin
         "step": 6,
         "step_name": "Deployment (env)",
         "data": session["deployment_result"]
-    }@app.post("/api/deploy/{session_id}")
+    }
+
+@app.post("/api/deploy/{session_id}")
 async def deploy_database(session_id: str, config: DeployConfig):
     """
     Step 6: Deploy to database (Postgres or SQLite)
@@ -1414,7 +1426,6 @@ async def get_session(session_id: str):
             "deployment": session.get("deployment_result")
         }
     }
-
 
 @app.post("/api/session/{session_id}/run")
 async def run_session(session_id: str, background: BackgroundTasks, domain: str = "ecommerce", dialect: str = "postgresql", deploy_sqlite: bool = False):
@@ -1681,3 +1692,4 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
 
 # Reload trigger
+
