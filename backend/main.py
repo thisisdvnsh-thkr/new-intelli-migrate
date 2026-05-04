@@ -5,7 +5,7 @@ Main FastAPI Application - Orchestrates all 5 AI Agents
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import os
@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import logging, traceback
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin, urlencode, quote_plus
 
 # Logger for deployment and admin actions
 logger = logging.getLogger('intelli_migrate')
@@ -36,9 +36,14 @@ logger.setLevel(logging.INFO)
 
 # Optional external ML worker (set ML_WORKER_URL to enable)
 import requests
-from urllib.parse import urljoin
 
 ML_WORKER_URL = os.getenv('ML_WORKER_URL') or os.getenv('ML_WORKER') or os.getenv('ML_WORKER_BASE_URL')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://new-intelli-migrate.pages.dev')
+BACKEND_PUBLIC_URL = os.getenv('BACKEND_PUBLIC_URL', 'https://new-intelli-migrate.onrender.com')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
+GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
 
 
 def ml_worker_available(timeout: int = 3) -> bool:
@@ -239,6 +244,8 @@ class UserCreate(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    target_database: Optional[str] = None
 
 class UserOut(BaseModel):
     id: int
@@ -331,6 +338,26 @@ def signup(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
     if existing:
         raise HTTPException(status_code=400, detail='Email already registered')
     user = create_user(db, user_in)
+    # Save onboarding defaults in settings if provided
+    defaults = {}
+    if user_in.date_of_birth:
+        defaults['date_of_birth'] = user_in.date_of_birth
+    if user_in.target_database:
+        defaults['defaultDatabase'] = user_in.target_database
+        defaults['databaseProvider'] = user_in.target_database
+    if defaults:
+        settings = db.query(Settings).filter(Settings.user_id == user.id).first()
+        if not settings:
+            settings = Settings(user_id=user.id, settings_json=json.dumps(defaults))
+            db.add(settings)
+        else:
+            try:
+                existing_settings = json.loads(settings.settings_json or '{}')
+            except Exception:
+                existing_settings = {}
+            existing_settings.update(defaults)
+            settings.settings_json = json.dumps(existing_settings)
+        db.commit()
     token = create_access_token({'sub': str(user.id)})
     return {'access_token': token, 'token_type': 'bearer'}
 
@@ -341,6 +368,177 @@ def login(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
         raise HTTPException(status_code=401, detail='Invalid credentials')
     token = create_access_token({'sub': str(user.id)})
     return {'access_token': token, 'token_type': 'bearer'}
+
+
+def _oauth_error_redirect(message: str):
+    url = f"{FRONTEND_URL.rstrip('/')}/login?oauth_error={quote_plus(message)}"
+    return RedirectResponse(url=url)
+
+
+def _create_oauth_state(provider: str) -> str:
+    payload = {
+        'provider': provider,
+        'exp': datetime.utcnow() + timedelta(minutes=10)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def _verify_oauth_state(provider: str, state: str) -> None:
+    payload = jwt.decode(state, SECRET_KEY, algorithms=[ALGORITHM])
+    if payload.get('provider') != provider:
+        raise HTTPException(status_code=400, detail='Invalid OAuth state')
+
+
+def _upsert_oauth_user(db: Session, email: str, full_name: Optional[str]) -> User:
+    user = get_user_by_email(db, email)
+    if user:
+        if full_name and not user.full_name:
+            user.full_name = full_name
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+    generated_password = uuid.uuid4().hex + uuid.uuid4().hex
+    user_in = UserCreate(email=email, password=generated_password, full_name=full_name)
+    return create_user(db, user_in)
+
+
+@app.get('/auth/oauth/{provider}/start')
+def oauth_start(provider: str):
+    provider = provider.lower()
+    if provider not in ('google', 'github'):
+        raise HTTPException(status_code=400, detail='Unsupported OAuth provider')
+
+    state = _create_oauth_state(provider)
+
+    if provider == 'google':
+        if not GOOGLE_CLIENT_ID:
+            raise HTTPException(status_code=503, detail='Google OAuth is not configured')
+        redirect_uri = f"{BACKEND_PUBLIC_URL.rstrip('/')}/auth/oauth/google/callback"
+        params = {
+            'client_id': GOOGLE_CLIENT_ID,
+            'redirect_uri': redirect_uri,
+            'response_type': 'code',
+            'scope': 'openid email profile',
+            'state': state,
+            'access_type': 'online',
+            'prompt': 'consent'
+        }
+        url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+        return RedirectResponse(url=url)
+
+    if not GITHUB_CLIENT_ID:
+        raise HTTPException(status_code=503, detail='GitHub OAuth is not configured')
+    redirect_uri = f"{BACKEND_PUBLIC_URL.rstrip('/')}/auth/oauth/github/callback"
+    params = {
+        'client_id': GITHUB_CLIENT_ID,
+        'redirect_uri': redirect_uri,
+        'scope': 'read:user user:email',
+        'state': state
+    }
+    url = "https://github.com/login/oauth/authorize?" + urlencode(params)
+    return RedirectResponse(url=url)
+
+
+@app.get('/auth/oauth/{provider}/callback')
+def oauth_callback(
+    provider: str,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    db: Session = Depends(lambda: next(get_db()))
+):
+    provider = provider.lower()
+    if provider not in ('google', 'github'):
+        raise HTTPException(status_code=400, detail='Unsupported OAuth provider')
+
+    if error:
+        return _oauth_error_redirect(error)
+    if not code or not state:
+        return _oauth_error_redirect('Missing OAuth code/state')
+
+    try:
+        _verify_oauth_state(provider, state)
+    except Exception:
+        return _oauth_error_redirect('Invalid OAuth state')
+
+    try:
+        if provider == 'google':
+            redirect_uri = f"{BACKEND_PUBLIC_URL.rstrip('/')}/auth/oauth/google/callback"
+            token_res = requests.post(
+                'https://oauth2.googleapis.com/token',
+                data={
+                    'code': code,
+                    'client_id': GOOGLE_CLIENT_ID,
+                    'client_secret': GOOGLE_CLIENT_SECRET,
+                    'redirect_uri': redirect_uri,
+                    'grant_type': 'authorization_code'
+                },
+                timeout=20
+            )
+            token_res.raise_for_status()
+            access_token = token_res.json().get('access_token')
+            if not access_token:
+                return _oauth_error_redirect('Google token exchange failed')
+            user_res = requests.get(
+                'https://www.googleapis.com/oauth2/v2/userinfo',
+                headers={'Authorization': f'Bearer {access_token}'},
+                timeout=20
+            )
+            user_res.raise_for_status()
+            profile = user_res.json()
+            email = profile.get('email')
+            full_name = profile.get('name')
+        else:
+            redirect_uri = f"{BACKEND_PUBLIC_URL.rstrip('/')}/auth/oauth/github/callback"
+            token_res = requests.post(
+                'https://github.com/login/oauth/access_token',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': GITHUB_CLIENT_ID,
+                    'client_secret': GITHUB_CLIENT_SECRET,
+                    'code': code,
+                    'redirect_uri': redirect_uri,
+                    'state': state
+                },
+                timeout=20
+            )
+            token_res.raise_for_status()
+            access_token = token_res.json().get('access_token')
+            if not access_token:
+                return _oauth_error_redirect('GitHub token exchange failed')
+            user_res = requests.get(
+                'https://api.github.com/user',
+                headers={'Authorization': f'Bearer {access_token}', 'Accept': 'application/vnd.github+json'},
+                timeout=20
+            )
+            user_res.raise_for_status()
+            profile = user_res.json()
+            email = profile.get('email')
+            if not email:
+                emails_res = requests.get(
+                    'https://api.github.com/user/emails',
+                    headers={'Authorization': f'Bearer {access_token}', 'Accept': 'application/vnd.github+json'},
+                    timeout=20
+                )
+                emails_res.raise_for_status()
+                emails = emails_res.json()
+                primary = next((item for item in emails if item.get('primary') and item.get('verified')), None)
+                fallback = next((item for item in emails if item.get('verified')), None)
+                email = (primary or fallback or {}).get('email')
+            full_name = profile.get('name') or profile.get('login')
+
+        if not email:
+            return _oauth_error_redirect('Email is not available from OAuth provider')
+
+        user = _upsert_oauth_user(db, email=email, full_name=full_name)
+        token = create_access_token({'sub': str(user.id)})
+        redirect_url = f"{FRONTEND_URL.rstrip('/')}/oauth-callback?token={quote_plus(token)}"
+        return RedirectResponse(url=redirect_url)
+    except Exception as e:
+        logger.error(f"OAUTH_CALLBACK_ERROR provider={provider} error={e}")
+        return _oauth_error_redirect('OAuth login failed')
 
 
 @app.get('/auth/me', response_model=UserOut)
@@ -358,6 +556,10 @@ async def change_password(payload: ChangePasswordIn, current_user: User = Depend
     # Verify old password
     if not verify_password(payload.old_password, current_user.hashed_password):
         raise HTTPException(status_code=401, detail='Invalid current password')
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail='New password must be at least 8 characters')
+    if payload.new_password == payload.old_password:
+        raise HTTPException(status_code=400, detail='New password must be different from current password')
     # Update password
     current_user.hashed_password = get_password_hash(payload.new_password)
     db.add(current_user)
@@ -1359,7 +1561,7 @@ async def deploy_database(session_id: str, config: DeployConfig):
         result = sqlg.deploy_to_sqlite(script, db_path)
     elif config.database_url:
         # Deploy to Postgres using a DATABASE_URL provided in the request
-        result = sqlg.deploy_to_postgres(script, config.database_url, config.db_password)
+        result = _perform_deploy(session_id, script, sqlg, config.database_url, config.db_password)
     elif config.supabase_url and config.supabase_key:
         # Legacy: Deploy to Supabase-specific endpoint (kept for backwards compatibility)
         result = sqlg.deploy_to_supabase(
@@ -1369,7 +1571,7 @@ async def deploy_database(session_id: str, config: DeployConfig):
         # If caller did not provide DB credentials, fall back to environment DATABASE_URL (e.g., Render)
         env_db = os.getenv('DATABASE_URL') or os.getenv('DATABASE')
         if env_db:
-            result = sqlg.deploy_to_postgres(script, env_db, config.db_password)
+            result = _perform_deploy(session_id, script, sqlg, env_db, config.db_password)
         else:
             raise HTTPException(
                 status_code=400,

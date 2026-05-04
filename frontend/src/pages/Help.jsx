@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  HelpCircle, Book, MessageCircle, Mail, ChevronDown, ChevronRight,
-  Upload, Database, AlertTriangle, Sparkles, Cloud, Zap, ExternalLink
+import {
+  HelpCircle, Book, MessageCircle, Mail, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap, Users, ExternalLink
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -14,69 +13,68 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.1 } }
 }
 
+const supportEmail = 'thisisdvnsh.thkr@gmail.com'
+const projectRepo = 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate'
+
+const teamMembers = [
+  { name: 'Devansh', role: 'Agent 5: SQL Generator + Integration' },
+  { name: 'Arpit', role: 'Agent 1: Parser Engine + Frontend' },
+  { name: 'Prashant', role: 'Agent 2: NLP Schema Mapper' },
+  { name: 'Mohd Suhail', role: 'Agent 3: Anomaly Detector' },
+  { name: 'Priyanshu', role: 'Agent 4: Normalizer' }
+]
+
 const faqs = [
   {
-    question: "What file formats are supported?",
-    answer: "Intelli-Migrate supports JSON, CSV, and XML file formats. Our AI parser automatically detects the schema and handles nested structures, arrays, and complex data types."
+    question: 'What does confidence mean in schema mapping?',
+    answer: 'Confidence is the AI score for how strongly a source field matches a standardized SQL field. High confidence means semantic certainty; lower scores should be reviewed.'
   },
   {
-    question: "How does the NLP schema mapping work?",
-    answer: "We use sentence-transformers (all-MiniLM-L6-v2) to convert your messy column names into semantic embeddings. These are then matched against standard SQL column names with 95%+ accuracy."
+    question: 'Which data formats can I upload?',
+    answer: 'JSON, CSV, and XML are supported. The platform parses the file and previews rows, columns, and schema details before mapping.'
   },
   {
-    question: "What is anomaly detection?",
-    answer: "Our IsolationForest ML model scans your data for outliers, missing values, invalid formats, and data quality issues. It flags problems before migration so you can fix them."
-  },
-  {
-    question: "What is 3NF normalization?",
-    answer: "Third Normal Form (3NF) is a database design principle that eliminates redundancy. Our AI automatically decomposes your flat data into properly normalized tables with foreign key relationships."
-  },
-  {
-    question: "How do I deploy to Render Postgres?",
-    answer: "After generating SQL, click 'Deploy'. The backend will push DDL/DML to your managed PostgreSQL (Render). Ensure your Render DATABASE_URL is configured in the backend."
-  },
-  {
-    question: "Is my data secure?",
-    answer: "Yes! Your data is processed securely on the server. We use SSL for transfers, tokens for auth, and you can delete your session data at any time."
+    question: 'Can I deploy directly to every database?',
+    answer: 'Direct deploy currently supports PostgreSQL providers (Render, Supabase, Neon, Railway, generic Postgres). For Microsoft Access, download SQL and import manually.'
   }
 ]
 
 const guides = [
   {
-    title: "Getting Started",
+    title: 'Getting Started',
     icon: Zap,
-    description: "Learn the basics of Intelli-Migrate",
-    steps: ["Upload your data file", "Select your domain", "Run through the 6-step pipeline", "Deploy to your database"]
+    description: 'Upload, map, detect anomalies, generate SQL, deploy',
+    steps: ['Upload file', 'Review preview', 'Run 5-agent pipeline', 'Deploy or download SQL']
   },
   {
-    title: "File Upload",
-    icon: Upload,
-    description: "How to prepare and upload your data",
-    steps: ["Support for JSON, CSV, XML", "Max file size: 100MB", "Nested structures are auto-flattened", "Select the right domain for best results"]
-  },
-  {
-    title: "Schema Mapping",
+    title: 'Schema Mapping',
     icon: Sparkles,
-    description: "Understanding AI-powered column mapping",
-    steps: ["NLP maps messy names to SQL standards", "Review mappings with confidence scores", "Edit any incorrect mappings", "Proceed when satisfied"]
+    description: 'Understanding interactive confidence and field mapping',
+    steps: ['Run mapping', 'Review confidence bars', 'Confirm mapped fields', 'Move to anomaly scan']
   },
   {
-    title: "Anomaly Detection",
+    title: 'Anomaly Detection',
     icon: AlertTriangle,
-    description: "Catching data quality issues",
-    steps: ["ML scans for outliers", "Flags missing/invalid data", "Shows severity levels", "Fix issues before migration"]
+    description: 'Data quality and severity visualization',
+    steps: ['Run detector', 'Review severity distribution', 'Inspect flagged records', 'Continue to SQL generation']
   },
   {
-    title: "SQL Generation",
-    icon: Database,
-    description: "Creating normalized database scripts",
-    steps: ["Auto-generates DDL statements", "Creates proper table relationships", "Includes INSERT statements", "Download or copy SQL"]
-  },
-  {
-    title: "Cloud Deployment",
+    title: 'Deployment',
     icon: Cloud,
-    description: "Deploying to managed PostgreSQL",
-    steps: ["Connect your managed Postgres (Render)", "Tables created automatically by backend", "Data inserted in batches", "View in your database dashboard"]
+    description: 'Deploy to chosen database provider',
+    steps: ['Configure provider in Settings', 'Add DB URL/API key', 'Run Deploy', 'Verify tables in dashboard']
+  },
+  {
+    title: 'Upload & Preview',
+    icon: Upload,
+    description: 'Visual preview and metadata',
+    steps: ['Upload file', 'Inspect rows/cols/size', 'Check detected columns', 'Continue to mapping']
+  },
+  {
+    title: 'SQL Output',
+    icon: Database,
+    description: 'Generated DDL + DML scripts',
+    steps: ['Generate SQL', 'Review stats', 'Copy/download script', 'Deploy or import manually']
   }
 ]
 
@@ -85,45 +83,48 @@ export default function Help() {
   const [selectedGuide, setSelectedGuide] = useState(null)
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={stagger}
-      className="space-y-8"
-    >
-      {/* Header */}
+    <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
       <motion.header variants={fadeInUp}>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
-          Help Center
-        </h1>
-        <p className="text-lg text-white/50 font-medium">
-          Guides, FAQs, and support resources
-        </p>
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Help Center</h1>
+        <p className="text-lg text-white/50 font-medium">Guides, FAQs, and Team Intelli-Migrate support.</p>
       </motion.header>
 
-      {/* Quick Actions */}
       <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { icon: Book, label: "Documentation", href: "#guides", color: "blue" },
-          { icon: MessageCircle, label: "FAQs", href: "#faqs", color: "purple" },
-          { icon: Mail, label: "Contact Support", href: "mailto:support@intelli-migrate.com", color: "green" }
-        ].map((item, i) => (
-          <motion.a
-            key={i}
-            href={item.href}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`p-6 rounded-3xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] transition-all duration-300 flex items-center gap-4`}
-          >
-            <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center`}>
-              <item.icon className={`w-6 h-6 text-${item.color}-400`} />
-            </div>
-            <span className="text-lg font-semibold text-white">{item.label}</span>
-          </motion.a>
-        ))}
+        <ActionCard icon={Book} label="Documentation" href="#guides" />
+        <ActionCard icon={MessageCircle} label="FAQs" href="#faqs" />
+        <ActionCard icon={Mail} label="Contact Support" href={`mailto:${supportEmail}`} />
       </motion.div>
 
-      {/* Guides */}
+      <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="w-5 h-5 text-purple-300" />
+          <h2 className="text-2xl font-bold text-white">Team Intelli-Migrate</h2>
+        </div>
+        <img
+          src="/team-photo.png"
+          alt="Team Intelli-Migrate group photo"
+          className="w-full max-w-4xl rounded-2xl border border-white/10 mb-6"
+        />
+        <div className="grid md:grid-cols-2 gap-3">
+          {teamMembers.map((member) => (
+            <div key={member.name} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
+              <p className="text-white font-semibold">{member.name}</p>
+              <p className="text-sm text-white/45">{member.role}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <a href={projectRepo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">
+            <ExternalLink className="w-4 h-4" />
+            Project Repository
+          </a>
+          <a href={`mailto:${supportEmail}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-colors">
+            <Mail className="w-4 h-4" />
+            {supportEmail}
+          </a>
+        </div>
+      </motion.section>
+
       <motion.section variants={fadeInUp} id="guides">
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Book className="w-6 h-6 text-blue-400" />
@@ -132,16 +133,16 @@ export default function Help() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {guides.map((guide, i) => (
             <motion.button
-              key={i}
+              key={guide.title}
               onClick={() => setSelectedGuide(selectedGuide === i ? null : i)}
               whileHover={{ scale: 1.01 }}
               className={`p-6 rounded-3xl text-left transition-all duration-300 ${
-                selectedGuide === i 
-                  ? 'bg-blue-500/10 border-2 border-blue-500/30' 
+                selectedGuide === i
+                  ? 'bg-blue-500/10 border-2 border-blue-500/30'
                   : 'bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04]'
               }`}
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
                   <guide.icon className="w-5 h-5 text-blue-400" />
                 </div>
@@ -149,7 +150,6 @@ export default function Help() {
               </div>
               <h3 className="text-lg font-bold text-white mb-1">{guide.title}</h3>
               <p className="text-sm text-white/40">{guide.description}</p>
-              
               <AnimatePresence>
                 {selectedGuide === i && (
                   <motion.div
@@ -159,11 +159,9 @@ export default function Help() {
                     className="mt-4 pt-4 border-t border-white/10"
                   >
                     <ul className="space-y-2">
-                      {guide.steps.map((step, j) => (
-                        <li key={j} className="flex items-center gap-2 text-sm text-white/60">
-                          <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-xs text-blue-400 font-bold">
-                            {j + 1}
-                          </div>
+                      {guide.steps.map((step, idx) => (
+                        <li key={step} className="text-sm text-white/60 flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center">{idx + 1}</span>
                           {step}
                         </li>
                       ))}
@@ -176,7 +174,6 @@ export default function Help() {
         </div>
       </motion.section>
 
-      {/* FAQs */}
       <motion.section variants={fadeInUp} id="faqs">
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <HelpCircle className="w-6 h-6 text-purple-400" />
@@ -184,10 +181,7 @@ export default function Help() {
         </h2>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <motion.div
-              key={i}
-              className="rounded-2xl bg-white/[0.02] border border-white/[0.08] overflow-hidden"
-            >
+            <div key={faq.question} className="rounded-2xl bg-white/[0.02] border border-white/[0.08] overflow-hidden">
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
@@ -207,23 +201,24 @@ export default function Help() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           ))}
         </div>
       </motion.section>
-
-      {/* Contact */}
-      <motion.section variants={fadeInUp} className="rounded-3xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/10 p-8 text-center">
-        <h2 className="text-2xl font-bold text-white mb-2">Still need help?</h2>
-        <p className="text-white/50 mb-6">Our support team is here to assist you</p>
-        <a
-          href="mailto:support@intelli-migrate.com"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
-        >
-          <Mail className="w-5 h-5" />
-          Contact Support
-        </a>
-      </motion.section>
     </motion.div>
+  )
+}
+
+function ActionCard({ icon: Icon, label, href }) {
+  return (
+    <a
+      href={href}
+      className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] transition-all duration-300 flex items-center gap-4"
+    >
+      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+        <Icon className="w-6 h-6 text-blue-300" />
+      </div>
+      <span className="text-lg font-semibold text-white">{label}</span>
+    </a>
   )
 }

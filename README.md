@@ -208,6 +208,11 @@ Once the backend is running at `http://localhost:8000`:
 | `/api/generate-sql/{session_id}` | POST | SQL generation (Step 5) |
 | `/api/download-sql/{session_id}` | GET | Download SQL script |
 | `/api/deploy/{session_id}` | POST | Deploy to database (Step 6) |
+| `/api/deploy-env/{session_id}` | POST | Admin deploy using server `DATABASE_URL` |
+| `/auth/signup` | POST | Create account (email/password + onboarding fields) |
+| `/auth/login` | POST | Login with email/password |
+| `/auth/oauth/{provider}/start` | GET | Start OAuth login (`google` or `github`) |
+| `/auth/oauth/{provider}/callback` | GET | OAuth callback and frontend token redirect |
 | `/api/migrate` | POST | Full pipeline in one request |
 
 ---
@@ -296,6 +301,14 @@ ANOMALY_CONTAMINATION=0.1
 # Server Configuration
 HOST=0.0.0.0
 PORT=8000
+
+# OAuth + redirect configuration
+FRONTEND_URL=https://new-intelli-migrate.pages.dev
+BACKEND_PUBLIC_URL=https://new-intelli-migrate.onrender.com
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 ```
 
 ### Changing SQL Dialect

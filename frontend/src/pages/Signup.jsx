@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Database, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Database, Mail, Lock, User, ArrowRight, Eye, EyeOff, CalendarDays, Server } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { signup as apiSignup, getMe } from '../lib/api'
+import { signup as apiSignup, getMe, getOAuthStartUrl } from '../lib/api'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -14,6 +14,8 @@ export default function Signup() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const [name, setName] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
+  const [targetDatabase, setTargetDatabase] = useState('postgresql')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,7 +28,7 @@ export default function Signup() {
     setError('')
     
     try {
-      const data = await apiSignup(email, password, name)
+      const data = await apiSignup(email, password, name, dateOfBirth, targetDatabase)
       const me = await getMe()
       login(me, data.access_token)
       navigate('/dashboard?onboarding=true')
@@ -38,7 +40,8 @@ export default function Signup() {
   }
   
   const handleSocialLogin = (provider) => {
-    setError('Social signup is not enabled')
+    setError('')
+    window.location.href = getOAuthStartUrl(provider)
   }
   
   return (
@@ -64,8 +67,8 @@ export default function Signup() {
         {/* Card */}
         <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-2xl shadow-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black text-white mb-2">Create Account</h1>
-            <p className="text-white/50">Start your free trial today</p>
+            <h1 className="text-3xl font-black text-white mb-2">Get Started</h1>
+            <p className="text-white/50">Create your Intelli-Migrate account</p>
           </div>
           
           {/* Social Login */}
@@ -119,6 +122,33 @@ export default function Signup() {
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
               />
             </div>
+
+            <div className="relative group">
+              <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+              <input
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                required
+                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+              />
+            </div>
+
+            <div className="relative group">
+              <Server className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+              <select
+                value={targetDatabase}
+                onChange={(e) => setTargetDatabase(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+              >
+                <option value="postgresql">PostgreSQL</option>
+                <option value="render">Render Postgres</option>
+                <option value="supabase">Supabase</option>
+                <option value="neon">Neon</option>
+                <option value="railway">Railway</option>
+                <option value="access">Microsoft Access</option>
+              </select>
+            </div>
             
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
@@ -167,7 +197,7 @@ export default function Signup() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>Create Account <ArrowRight className="w-5 h-5" /></>
+                <>Get Started <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
           </form>

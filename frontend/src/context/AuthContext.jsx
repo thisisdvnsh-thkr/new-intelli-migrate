@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import api, { setAuthToken, getMe } from '../lib/api'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { setAuthToken } from '../lib/api'
 
 const AuthContext = createContext(null)
 
@@ -7,24 +7,24 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const setAuthState = useCallback((userObj, token) => {
+    setUser(userObj)
+    if (token) setAuthToken(token)
+    localStorage.setItem('intelli-auth', JSON.stringify({ user: userObj, token }))
+  }, [])
+
   useEffect(() => {
     const stored = localStorage.getItem('intelli-auth')
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
         setAuthState(parsed.user, parsed.token)
-      } catch (e) {
+      } catch {
         localStorage.removeItem('intelli-auth')
       }
     }
     setLoading(false)
-  }, [])
-
-  const setAuthState = (userObj, token) => {
-    setUser(userObj)
-    if (token) setAuthToken(token)
-    localStorage.setItem('intelli-auth', JSON.stringify({ user: userObj, token }))
-  }
+  }, [setAuthState])
 
   const login = (userObj, token) => {
     setAuthState(userObj, token)

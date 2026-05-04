@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Database, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { login as apiLogin, getMe } from '../lib/api'
+import { login as apiLogin, getMe, getOAuthStartUrl } from '../lib/api'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -12,12 +12,20 @@ const fadeInUp = {
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const oauthError = searchParams.get('oauth_error')
+    if (oauthError) {
+      setError(decodeURIComponent(oauthError))
+    }
+  }, [searchParams])
   
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -38,8 +46,8 @@ export default function Login() {
   }
   
   const handleSocialLogin = (provider) => {
-    // Social flows not implemented yet
-    setError('Social login is not enabled. Use email/password.')
+    setError('')
+    window.location.href = getOAuthStartUrl(provider)
   }
   
   return (

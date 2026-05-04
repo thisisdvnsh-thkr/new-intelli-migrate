@@ -11,6 +11,32 @@
     scroll-behavior: smooth;
   }
 
+  html.theme-light body {
+    background-color: #f7f8fc;
+    color: #111827;
+  }
+
+  html.theme-light .bg-black,
+  html.theme-light .bg-\[\#0a0a0b\] {
+    background-color: #f7f8fc !important;
+  }
+
+  html.theme-light [class*="text-white"] {
+    color: #111827 !important;
+  }
+
+  html.theme-light [class*="text-white\\/"] {
+    color: rgba(17, 24, 39, 0.7) !important;
+  }
+
+  html.theme-light [class*="bg-white\\/"] {
+    background-color: rgba(17, 24, 39, 0.06) !important;
+  }
+
+  html.theme-light [class*="border-white"] {
+    border-color: rgba(17, 24, 39, 0.12) !important;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
     background-color: #000000;

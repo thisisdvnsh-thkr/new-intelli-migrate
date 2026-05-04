@@ -1,137 +1,147 @@
-import { NavLink, useLocation, Link } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Database, Plus, LogOut, Settings as SettingsIcon, HelpCircle, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { motion } from 'framer-motion'
-import { 
-  LayoutDashboard, 
-  Upload, 
-  GitBranch, 
-  AlertTriangle, 
-  Database,
-  Cloud,
-  LogOut,
-  Zap,
-  Settings as SettingsIcon,
-  HelpCircle
-} from 'lucide-react'
+import { useMigration } from '../context/MigrationContext'
 
-const navItems = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/upload', icon: Upload, label: 'Upload' },
-  { path: '/schema-map', icon: GitBranch, label: 'Schema Map' },
-  { path: '/anomalies', icon: AlertTriangle, label: 'Anomalies' },
-  { path: '/generate-sql', icon: Database, label: 'SQL Output' },
-  { path: '/deploy', icon: Cloud, label: 'Deploy' },
-]
+function formatAgo(isoDate) {
+  if (!isoDate) return 'now'
+  const delta = Math.max(0, Date.now() - new Date(isoDate).getTime())
+  const minutes = Math.floor(delta / 60000)
+  if (minutes < 1) return 'now'
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h`
+  const days = Math.floor(hours / 24)
+  return `${days}d`
+}
 
 export default function Sidebar() {
-  const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
-  
+  const { sessionHistory, activeSessionId, setActiveSession, resetSession } = useMigration()
+
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-72 bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50">
-      {/* Logo */}
-      <div className="px-6 py-8">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
-            <Zap className="w-5 h-5 text-white" />
+    <aside className="fixed left-0 top-0 bottom-0 w-80 bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50">
+      <div className="px-6 py-7 border-b border-white/[0.06]">
+        <Link to="/" className="flex items-center gap-3 mb-5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+            <Database className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-black text-white tracking-tight">Intelli-Migrate</h1>
-            <p className="text-xs text-white/40 font-medium">AI Migration Platform</p>
+            <p className="text-xs text-white/40">Session Workspace</p>
           </div>
         </Link>
+
+        <button
+          onClick={() => {
+            resetSession()
+            navigate('/upload')
+          }}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white text-black font-bold hover:bg-white/90 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          New Migration
+        </button>
       </div>
-      
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-2">
-        <p className="px-4 py-2 text-xs font-semibold text-white/30 uppercase tracking-wider">Main</p>
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            
-            return (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  className={`
-                    relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium
-                    transition-all duration-300 group
-                    ${isActive 
-                      ? 'text-white bg-white/10' 
-                      : 'text-white/50 hover:text-white hover:bg-white/5'
-                    }
-                  `}
+
+      <div className="px-4 py-4 flex items-center gap-2 border-b border-white/[0.06]">
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            `px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`
+          }
+        >
+          <span className="inline-flex items-center gap-2"><LayoutDashboard className="w-4 h-4" /> Dashboard</span>
+        </NavLink>
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `p-2 rounded-xl transition-colors ${
+              isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`
+          }
+          title="Settings"
+        >
+          <SettingsIcon className="w-4 h-4" />
+        </NavLink>
+        <NavLink
+          to="/help"
+          className={({ isActive }) =>
+            `p-2 rounded-xl transition-colors ${
+              isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`
+          }
+          title="Help Center"
+        >
+          <HelpCircle className="w-4 h-4" />
+        </NavLink>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        <p className="px-3 text-xs font-semibold text-white/35 uppercase tracking-wider mb-3">Sessions</p>
+        {sessionHistory.length === 0 ? (
+          <div className="mx-2 mt-2 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-sm text-white/40">
+            No sessions yet. Start a migration to see your history.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sessionHistory.map((item) => {
+              const isActive = activeSessionId === item.sessionId
+              return (
+                <motion.button
+                  key={item.sessionId}
+                  onClick={() => {
+                    setActiveSession(item.sessionId)
+                    navigate('/dashboard')
+                  }}
+                  whileHover={{ scale: 1.01 }}
+                  className={`w-full text-left p-3 rounded-2xl border transition-colors ${
+                    isActive
+                      ? 'bg-blue-500/10 border-blue-500/30'
+                      : 'bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05]'
+                  }`}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-full"
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : ''}`} strokeWidth={1.5} />
-                  <span>{item.label}</span>
-                </NavLink>
-              </li>
-            )
-          })}
-        </ul>
-        
-        <div className="mt-8">
-          <p className="px-4 py-2 text-xs font-semibold text-white/30 uppercase tracking-wider">Support</p>
-          <ul className="space-y-1">
-            <li>
-              <NavLink 
-                to="/help" 
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 ${
-                  isActive ? 'text-white bg-white/10' : 'text-white/50 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <HelpCircle className="w-5 h-5" strokeWidth={1.5} />
-                <span>Help Center</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink 
-                to="/settings" 
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 ${
-                  isActive ? 'text-white bg-white/10' : 'text-white/50 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <SettingsIcon className="w-5 h-5" strokeWidth={1.5} />
-                <span>Settings</span>
-              </NavLink>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      
-      {/* User Section */}
-      <div className="px-4 py-6 border-t border-white/[0.08]">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-white truncate">{item.fileName || 'Untitled file'}</p>
+                    <span className="text-[11px] text-white/35">{formatAgo(item.updatedAt || item.createdAt)}</span>
+                  </div>
+                  <p className="text-xs text-white/45 mt-1">
+                    Step {item.currentStep || 0}/6 • {item.rows || 0} rows • {item.cols || 0} cols
+                  </p>
+                </motion.button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="px-4 py-5 border-t border-white/[0.08]">
         {user ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-3 px-3">
+            <div className="flex items-center gap-3 px-2">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
-                {user.name?.charAt(0).toUpperCase() || 'U'}
+                {(user.full_name || user.name || 'U').charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{user.name || 'User'}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
                 <p className="text-xs text-white/40 truncate">{user.email}</p>
               </div>
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-white/50 hover:text-red-400 rounded-2xl hover:bg-red-500/10 transition-all duration-300"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
+              Sign Out
             </button>
           </div>
         ) : (
           <Link
             to="/login"
-            className="flex items-center justify-center w-full py-3 text-sm font-bold bg-white text-black rounded-2xl hover:bg-white/90 hover:scale-[1.02] transition-all duration-300"
+            className="flex items-center justify-center w-full py-3 text-sm font-bold bg-white text-black rounded-2xl hover:bg-white/90 transition-colors"
           >
             Sign In
           </Link>

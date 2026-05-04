@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { MigrationProvider } from './context/MigrationContext'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Upload from './pages/Upload'
@@ -13,6 +13,7 @@ import Deploy from './pages/Deploy'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Landing from './pages/Landing'
+import OAuthCallback from './pages/OAuthCallback'
 import Settings from './pages/Settings'
 import Help from './pages/Help'
 import { checkHealth } from './lib/api'
@@ -153,7 +154,7 @@ function DashboardLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-[#0a0a0b]">
       <Sidebar />
-      <main className="flex-1 ml-72 min-h-screen">
+      <main className="flex-1 ml-80 min-h-screen">
         <div className="max-w-7xl mx-auto px-8 py-8">
           <PageTransition>{children}</PageTransition>
         </div>
@@ -174,10 +175,6 @@ function PublicLayout({ children }) {
 function AppRoutes() {
   const location = useLocation()
   
-  // Public routes (no sidebar)
-  const publicRoutes = ['/', '/login', '/signup']
-  const isPublicRoute = publicRoutes.includes(location.pathname)
-  
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
@@ -185,6 +182,7 @@ function AppRoutes() {
         <Route path="/" element={<PublicLayout><Landing /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
         <Route path="/signup" element={<PublicLayout><Signup /></PublicLayout>} />
+        <Route path="/oauth-callback" element={<PublicLayout><OAuthCallback /></PublicLayout>} />
         
         {/* Dashboard Routes */}
         <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
@@ -202,15 +200,8 @@ function AppRoutes() {
 
 export default function App() {
   const [backendReady, setBackendReady] = useState(false)
-  const [skipLoader, setSkipLoader] = useState(false)
-
-  // Skip loader for public pages on initial load
-  useEffect(() => {
-    const path = window.location.pathname
-    if (path === '/' || path === '/login' || path === '/signup') {
-      setSkipLoader(true)
-    }
-  }, [])
+  const publicPaths = ['/', '/login', '/signup', '/oauth-callback']
+  const [skipLoader] = useState(() => publicPaths.includes(window.location.pathname))
 
   // Show loader only for dashboard routes
   if (!backendReady && !skipLoader) {

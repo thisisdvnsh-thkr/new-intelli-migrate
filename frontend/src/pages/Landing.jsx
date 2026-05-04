@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { 
-  Sparkles, Database, Shield, Zap, ArrowRight, Check, 
-  ChevronDown, Play, Star, Users, Clock
+  Sparkles, Database, Shield, Zap, ArrowRight,
+  ChevronDown, Star, Users
 } from 'lucide-react'
 
 // Animation variants
@@ -53,7 +53,6 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-white/60 hover:text-white font-medium transition-colors">Features</a>
           <a href="#how-it-works" className="text-white/60 hover:text-white font-medium transition-colors">How it Works</a>
-          <a href="#pricing" className="text-white/60 hover:text-white font-medium transition-colors">Pricing</a>
         </div>
         
         <div className="flex items-center gap-4">
@@ -122,13 +121,9 @@ function Hero() {
               to="/signup"
               className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-2xl shadow-white/20"
             >
-              Start Free Trial
+              Get Started
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <button className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/5 text-white font-bold rounded-full border border-white/10 hover:bg-white/10 hover:scale-105 transition-all duration-300 backdrop-blur-xl">
-              <Play className="w-5 h-5" />
-              Watch Demo
-            </button>
           </motion.div>
           
           {/* Stats */}
@@ -294,112 +289,6 @@ function HowItWorks() {
   )
 }
 
-// Pricing Section
-function Pricing() {
-  const plans = [
-    {
-      name: 'Basic',
-      price: '$0',
-      period: '/month',
-      description: 'Perfect for trying out Intelli-Migrate',
-      features: ['5 migrations/month', '10MB file size', 'Email support', 'SQLite export'],
-      cta: 'Start Free',
-      popular: false
-    },
-    {
-      name: 'Pro',
-      price: '$29',
-      period: '/month',
-      description: 'For growing teams and projects',
-      features: ['Unlimited migrations', '100MB file size', 'Priority support', 'Managed Postgres deploy', 'API access', 'Team collaboration'],
-      cta: 'Start Pro Trial',
-      popular: true
-    },
-    {
-      name: 'Enterprise',
-      price: 'Contact',
-      period: '',
-      description: 'For large-scale operations',
-      features: ['Everything in Pro', 'Unlimited file size', 'Dedicated support', 'Custom integrations', 'SLA guarantee', 'On-premise option'],
-      cta: 'Contact Sales',
-      popular: false
-    },
-  ]
-  
-  return (
-    <section id="pricing" className="py-32 relative">
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={stagger}
-          className="text-center mb-20"
-        >
-          <motion.p variants={fadeInUp} className="text-green-400 font-semibold mb-4">PRICING</motion.p>
-          <motion.h2 variants={fadeInUp} className="text-5xl md:text-6xl font-black text-white tracking-tight">
-            Simple, Transparent Pricing
-          </motion.h2>
-        </motion.div>
-        
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={stagger}
-          className="grid md:grid-cols-3 gap-6"
-        >
-          {plans.map((plan, i) => (
-            <motion.div
-              key={i}
-              variants={scaleIn}
-              whileHover={{ scale: 1.02, y: -5 }}
-              className={`relative p-8 rounded-3xl border backdrop-blur-xl transition-all duration-500 ${
-                plan.popular 
-                  ? 'bg-gradient-to-b from-blue-500/10 to-purple-500/10 border-blue-500/30 shadow-2xl shadow-blue-500/20' 
-                  : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05]'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full text-sm font-bold text-white shadow-lg">
-                  Most Popular
-                </div>
-              )}
-              
-              <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mb-2">
-                <span className="text-5xl font-black text-white">{plan.price}</span>
-                <span className="text-white/50">{plan.period}</span>
-              </div>
-              <p className="text-white/50 mb-8">{plan.description}</p>
-              
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature, j) => (
-                  <li key={j} className="flex items-center gap-3 text-white/70">
-                    <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              
-              <Link
-                to="/signup"
-                className={`block w-full py-4 rounded-2xl font-bold text-center transition-all duration-300 hover:scale-105 ${
-                  plan.popular 
-                    ? 'bg-white text-black hover:bg-white/90' 
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
 // Footer
 function Footer() {
   return (
@@ -439,7 +328,6 @@ export default function Landing() {
       <Hero />
       <Features />
       <HowItWorks />
-      <Pricing />
       <Footer />
     </div>
   )

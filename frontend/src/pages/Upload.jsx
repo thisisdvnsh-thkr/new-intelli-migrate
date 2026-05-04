@@ -1,257 +1,257 @@
-import { useState, useCallback } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Upload as UploadIcon, File, X, ArrowRight, CheckCircle2, Eye } from 'lucide-react'
 import { useMigration } from '../context/MigrationContext'
-import { Upload as UploadIcon, File, X, Loader2, Check, ArrowRight, ShoppingCart, Heart, Wallet } from 'lucide-react'
-
-const API_URL = 'https://new-intelli-migrate.onrender.com'
+import { uploadFile } from '../lib/api'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 }
 
-const stagger = {
-  visible: { transition: { staggerChildren: 0.1 } }
+function CircularProgress({ progress }) {
+  const radius = 42
+  const circumference = 2 * Math.PI * radius
+  const dash = circumference - (progress / 100) * circumference
+  return (
+    <div className="relative w-28 h-28">
+      <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r={radius} stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="none" />
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          stroke="url(#grad)"
+          strokeWidth="8"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dash}
+        />
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#a855f7" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-white font-bold">
+        {progress}%
+      </div>
+    </div>
+  )
 }
 
 export default function Upload() {
   const navigate = useNavigate()
-  const { setStats, setCurrentStep } = useMigration()
+  const { addOrActivateSession, setStepWithSession, updateStats, updateSessionMeta, stats } = useMigration()
   const [file, setFile] = useState(null)
-  const [domain, setDomain] = useState('ecommerce')
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadResponse, setUploadResponse] = useState(null)
+  const [error, setError] = useState('')
+
+  const previewColumns = useMemo(() => uploadResponse?.data?.columns || [], [uploadResponse])
+  const rowCount = uploadResponse?.data?.record_count || 0
+
   const handleDrag = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else {
-      setDragActive(false)
-    }
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true)
+    else setDragActive(false)
   }, [])
-  
+
   const handleDrop = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setFile(e.dataTransfer.files[0])
+      setUploadResponse(null)
+      setError('')
     }
   }, [])
-  
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
+      setUploadResponse(null)
+      setError('')
     }
   }
-  
+
   const handleUpload = async () => {
     if (!file) return
     setUploading(true)
-    
+    setUploadProgress(0)
+    setError('')
+
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('domain', domain)
-      
-      const response = await fetch(API_URL + '/api/upload', {
-        method: 'POST',
-        body: formData,
+      const data = await uploadFile(file, (percent) => {
+        setUploadProgress(Math.min(99, percent))
       })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`)
-      }
-      
-      const data = await response.json()
-      setStats(prev => ({
-        ...prev,
-        filesProcessed: prev.filesProcessed + 1,
-        sessionId: data.session_id,
-        recordsProcessed: data.data?.record_count || 0
-      }))
-      setCurrentStep(1)
-      setSuccess(true)
-      setTimeout(() => navigate('/schema-map'), 1500)
-    } catch (error) {
-      console.error('Upload error:', error)
-      alert(`Upload failed: ${error.message}`)
+
+      setUploadProgress(100)
+      setUploadResponse(data)
+
+      const columns = data?.data?.columns || []
+      const records = data?.data?.record_count || 0
+      const fileType = data?.data?.file_type || file.name.split('.').pop()
+      const sessionId = data?.session_id
+
+      addOrActivateSession({
+        sessionId,
+        fileName: file.name,
+        fileSizeBytes: file.size,
+        rows: records,
+        cols: columns.length,
+        fileType,
+        currentStep: 1,
+        status: 'uploaded'
+      })
+
+      updateStats({
+        sessionId,
+        recordsProcessed: records,
+        fileName: file.name,
+        fileType,
+        fileSizeBytes: file.size,
+        rows: records,
+        cols: columns.length
+      })
+      setStepWithSession(1, { rows: records, cols: columns.length, status: 'uploaded' })
+      updateSessionMeta(sessionId, { schemaPreview: columns.slice(0, 12) })
+    } catch (e) {
+      setError(e?.response?.data?.detail || e.message || 'Upload failed')
     } finally {
       setUploading(false)
     }
   }
 
-  const domains = [
-    { id: 'ecommerce', label: 'E-Commerce', desc: 'Orders, products, customers', icon: ShoppingCart, gradient: 'from-blue-500 to-cyan-500' },
-    { id: 'healthcare', label: 'Healthcare', desc: 'Patient records, treatments', icon: Heart, gradient: 'from-pink-500 to-rose-500' },
-    { id: 'finance', label: 'Finance', desc: 'Transactions, accounts', icon: Wallet, gradient: 'from-green-500 to-emerald-500' },
-  ]
-  
   return (
-    <motion.div 
-      initial="hidden"
-      animate="visible"
-      variants={stagger}
-      className="space-y-10"
-    >
-      {/* Header */}
+    <motion.div initial="hidden" animate="visible" className="space-y-8">
       <motion.header variants={fadeInUp}>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
-          Upload Data
-        </h1>
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Upload Data</h1>
         <p className="text-lg text-white/50 font-medium">
-          Import your JSON, CSV, or XML files to begin the AI-powered migration
+          Upload JSON, CSV, or XML and preview extracted structure instantly.
         </p>
       </motion.header>
-      
-      {/* Domain Selection */}
-      <motion.section variants={fadeInUp} className="space-y-4">
-        <label className="block text-sm font-semibold text-white/40 uppercase tracking-wider">
-          Select Domain
-        </label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {domains.map((d) => {
-            const Icon = d.icon
-            const isSelected = domain === d.id
-            return (
-              <motion.button
-                key={d.id}
-                onClick={() => setDomain(d.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`
-                  relative p-6 rounded-3xl text-left transition-all duration-300 group
-                  ${isSelected 
-                    ? 'bg-white/[0.08] border-2 border-blue-500/50' 
-                    : 'bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.05]'
-                  }
-                `}
-              >
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${d.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-lg font-bold text-white mb-1">{d.label}</p>
-                <p className="text-sm text-white/40">{d.desc}</p>
-                {isSelected && (
-                  <motion.div 
-                    layoutId="domain-indicator"
-                    className="absolute top-4 right-4 w-3 h-3 rounded-full bg-blue-500"
-                  />
-                )}
-              </motion.button>
-            )
-          })}
-        </div>
-      </motion.section>
-      
-      {/* Drop Zone */}
+
       <motion.section
         variants={fadeInUp}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`
-          relative rounded-3xl p-12 md:p-16 text-center transition-all duration-300 cursor-pointer
-          ${dragActive 
-            ? 'bg-blue-500/10 border-2 border-dashed border-blue-500' 
-            : file 
-              ? 'bg-green-500/5 border-2 border-dashed border-green-500/50'
+        className={`rounded-3xl p-12 md:p-16 text-center transition-all duration-300 ${
+          dragActive
+            ? 'bg-blue-500/10 border-2 border-dashed border-blue-500'
+            : file
+              ? 'bg-green-500/5 border-2 border-dashed border-green-500/40'
               : 'bg-white/[0.02] border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
-          }
-        `}
+        }`}
       >
-        <input
-          type="file"
-          accept=".json,.csv,.xml"
-          onChange={handleFileChange}
-          className="hidden"
-          id="file-upload"
-        />
-        
-        {file ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center"
-          >
-            <div className="w-20 h-20 rounded-3xl bg-green-500/20 flex items-center justify-center mb-6">
-              <File className="w-10 h-10 text-green-400" strokeWidth={1.5} />
-            </div>
-            <p className="text-2xl font-bold text-white mb-2">{file.name}</p>
-            <p className="text-white/40 mb-6">{(file.size / 1024).toFixed(1)} KB</p>
-            <button
-              onClick={(e) => { e.stopPropagation(); setFile(null) }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-300"
-            >
-              <X className="w-4 h-4" />
-              Remove
-            </button>
-          </motion.div>
-        ) : (
-          <label htmlFor="file-upload" className="cursor-pointer block">
-            <motion.div 
-              className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6"
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <UploadIcon className="w-10 h-10 text-white/30" strokeWidth={1.5} />
-            </motion.div>
-            <p className="text-2xl font-bold text-white mb-2">
-              Drag and drop your file here
-            </p>
-            <p className="text-white/40 mb-8">or click to browse your computer</p>
-            <div className="flex justify-center gap-3">
-              {['JSON', 'CSV', 'XML'].map(fmt => (
-                <span key={fmt} className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/50 font-medium">
-                  {fmt}
+        <input type="file" accept=".json,.csv,.xml" onChange={handleFileChange} className="hidden" id="file-upload" />
+
+        {!uploading && !uploadResponse && (
+          <>
+            <label htmlFor="file-upload" className="cursor-pointer block">
+              <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6">
+                <UploadIcon className="w-10 h-10 text-white/30" strokeWidth={1.5} />
+              </div>
+              <p className="text-2xl font-bold text-white mb-2">Drag & drop your file here</p>
+              <p className="text-white/40 mb-8">or click to browse your computer</p>
+            </label>
+            {file && (
+              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/5 border border-white/10">
+                <File className="w-4 h-4 text-white/50" />
+                <span className="text-sm text-white">{file.name}</span>
+                <button onClick={() => setFile(null)} className="text-white/40 hover:text-red-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {uploading && (
+          <div className="space-y-6 flex flex-col items-center">
+            <CircularProgress progress={uploadProgress} />
+            <p className="text-white font-semibold">Parsing and profiling your file...</p>
+          </div>
+        )}
+
+        {uploadResponse && (
+          <div className="space-y-4">
+            <CheckCircle2 className="w-14 h-14 text-green-400 mx-auto" />
+            <p className="text-2xl font-black text-white">Upload successful</p>
+            <p className="text-white/50">Preview loaded below. Continue to schema mapping.</p>
+          </div>
+        )}
+      </motion.section>
+
+      {error && (
+        <motion.div variants={fadeInUp} className="rounded-2xl p-4 bg-red-500/10 border border-red-500/30 text-red-300">
+          {error}
+        </motion.div>
+      )}
+
+      {uploadResponse && (
+        <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Eye className="w-5 h-5 text-blue-400" />
+            <h2 className="text-xl font-bold text-white">File Preview</h2>
+          </div>
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <PreviewStat label="File Name" value={file?.name || stats.fileName || '-'} />
+            <PreviewStat label="File Size" value={file ? `${(file.size / 1024).toFixed(1)} KB` : '-'} />
+            <PreviewStat label="Rows" value={String(rowCount)} />
+            <PreviewStat label="Columns" value={String(previewColumns.length)} />
+          </div>
+          <div>
+            <p className="text-sm text-white/50 mb-2">Detected Columns</p>
+            <div className="flex flex-wrap gap-2">
+              {previewColumns.slice(0, 20).map((col) => (
+                <span key={col} className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium">
+                  {col}
                 </span>
               ))}
             </div>
-          </label>
+          </div>
+        </motion.section>
+      )}
+
+      <motion.div variants={fadeInUp} className="flex justify-end gap-3">
+        {file && !uploadResponse && (
+          <button
+            onClick={handleUpload}
+            disabled={uploading}
+            className="px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-colors disabled:opacity-60"
+          >
+            Upload & Parse
+          </button>
         )}
-      </motion.section>
-      
-      {/* Upload Button */}
-      <motion.div variants={fadeInUp}>
-        <motion.button
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          whileHover={file && !uploading ? { scale: 1.02 } : {}}
-          whileTap={file && !uploading ? { scale: 0.98 } : {}}
-          className={`
-            w-full py-5 rounded-3xl text-lg font-bold flex items-center justify-center gap-3 transition-all duration-300
-            ${success
-              ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
-              : file && !uploading
-                ? 'bg-white text-black hover:bg-white/90 shadow-lg shadow-white/10'
-                : 'bg-white/5 text-white/30 cursor-not-allowed border border-white/10'
-            }
-          `}
-        >
-          {success ? (
-            <>
-              <Check className="w-6 h-6" />
-              Upload Complete — Redirecting...
-            </>
-          ) : uploading ? (
-            <>
-              <Loader2 className="w-6 h-6 animate-spin" />
-              Processing with AI...
-            </>
-          ) : (
-            <>
-              Upload & Parse
-              <ArrowRight className="w-5 h-5" />
-            </>
-          )}
-        </motion.button>
+        {uploadResponse && (
+          <button
+            onClick={() => navigate('/schema-map')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-colors"
+          >
+            Continue to Schema Mapping
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        )}
       </motion.div>
     </motion.div>
+  )
+}
+
+function PreviewStat({ label, value }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-4">
+      <p className="text-xs text-white/45 mb-1">{label}</p>
+      <p className="text-sm font-semibold text-white break-all">{value}</p>
+    </div>
   )
 }

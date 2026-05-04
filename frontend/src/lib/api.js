@@ -15,14 +15,18 @@ export function setAuthToken(token) {
 }
 
 // Auth
-export const signup = async (email, password, full_name) => {
-  const response = await api.post('/auth/signup', { email, password, full_name })
+export const signup = async (email, password, full_name, date_of_birth, target_database) => {
+  const response = await api.post('/auth/signup', { email, password, full_name, date_of_birth, target_database })
   return response.data
 }
 
 export const login = async (email, password) => {
   const response = await api.post('/auth/login', { email, password })
   return response.data
+}
+
+export const getOAuthStartUrl = (provider) => {
+  return `${API_BASE}/auth/oauth/${provider}/start`
 }
 
 export const getMe = async () => {
@@ -67,8 +71,8 @@ export const uploadFile = async (file, onProgress) => {
   return response.data
 }
 
-export const mapSchema = async (sessionId, domain = 'ecommerce') => {
-  const response = await api.post(`/api/map-schema/${sessionId}?domain=${domain}`)
+export const mapSchema = async (sessionId) => {
+  const response = await api.post(`/api/map-schema/${sessionId}`)
   return response.data
 }
 
@@ -87,8 +91,13 @@ export const generateSQL = async (sessionId, dialect = 'postgresql') => {
   return response.data
 }
 
-export const deployToPostgres = async (sessionId, db_password) => {
-  const response = await api.post(`/api/deploy/${sessionId}`, { db_password })
+export const deployToPostgres = async (sessionId, config = {}) => {
+  const response = await api.post(`/api/deploy/${sessionId}`, config)
+  return response.data
+}
+
+export const deployToEnv = async (sessionId, config = {}) => {
+  const response = await api.post(`/api/deploy-env/${sessionId}`, config)
   return response.data
 }
 
