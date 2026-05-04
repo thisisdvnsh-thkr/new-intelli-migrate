@@ -12,11 +12,13 @@ import GenerateSQL from './pages/GenerateSQL'
 import Deploy from './pages/Deploy'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import OAuthCallback from './pages/OAuthCallback'
 import Landing from './pages/Landing'
 import OAuthCallback from './pages/OAuthCallback'
 import Settings from './pages/Settings'
 import Help from './pages/Help'
 import { checkHealth } from './lib/api'
+import BrandLogo from './components/BrandLogo'
 
 // Backend Wake-up Loading Screen
 function BackendLoader({ onReady }) {
@@ -66,10 +68,8 @@ function BackendLoader({ onReady }) {
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-purple-500"
             />
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-              </svg>
+            <div className="absolute inset-2 flex items-center justify-center">
+              <BrandLogo size={72} showText={false} interactive={false} />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Intelli-Migrate</h1>

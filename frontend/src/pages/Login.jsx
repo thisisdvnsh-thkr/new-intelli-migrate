@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Database, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { login as apiLogin, getMe, getOAuthStartUrl } from '../lib/api'
 
@@ -34,7 +34,7 @@ export default function Login() {
     
     try {
       const data = await apiLogin(email, password)
-      // fetch user
+      setAuthToken(data.access_token)
       const me = await getMe()
       login(me, data.access_token)
       navigate('/dashboard')
@@ -64,10 +64,7 @@ export default function Login() {
       >
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-3 mb-12">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-            <Database className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-black text-white tracking-tight">Intelli-Migrate</span>
+          <BrandLogo />
         </Link>
         
         {/* Card */}

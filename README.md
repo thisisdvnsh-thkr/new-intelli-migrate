@@ -294,6 +294,14 @@ Create a `.env` file in the `backend/` directory:
 DATABASE_URL=postgres://user:password@host:port/dbname
 # (Optional) If using a cloud Postgres provider, set DATABASE_URL in environment variables (Render, Railway, AWS RDS)
 
+# OAuth + URLs (set once in Render for permanent login/signup)
+FRONTEND_URL=https://new-intelli-migrate.pages.dev
+BACKEND_PUBLIC_URL=https://new-intelli-migrate.onrender.com
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
 # ML Configuration
 NLP_CONFIDENCE_THRESHOLD=0.85
 ANOMALY_CONTAMINATION=0.1
@@ -309,6 +317,14 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
+```
+
+### Cloudflare Pages Build Variables
+
+Set this in **Cloudflare Pages → Project → Settings → Environment variables**:
+
+```env
+VITE_API_BASE=https://new-intelli-migrate.onrender.com
 ```
 
 ### Changing SQL Dialect

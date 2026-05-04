@@ -13,6 +13,8 @@ import json
 import uuid
 from datetime import datetime, timedelta
 import shutil
+import logging
+from urllib.parse import urlencode, quote_plus
 
 # Database and auth
 from sqlalchemy import create_engine
@@ -131,6 +133,45 @@ normalizer = None
 sql_generator = None
 
 # Getter factories that instantiate agents on first use
+# Worker proxy classes (call ML worker service if configured)
+import requests
+
+WORKER_URL = os.getenv('WORKER_URL')
+USE_ML_WORKER = os.getenv('USE_ML_WORKER', '0') == '1'
+
+class NLPMapperProxy:
+    def __init__(self, base):
+        self.base = base.rstrip('/')
+    def map_schema(self, source_fields, domain='ecommerce'):
+        resp = requests.post(f"{self.base}/nlp/map", json={'source_fields': source_fields, 'domain': domain}, timeout=60)
+        resp.raise_for_status()
+        return resp.json()
+
+class AnomalyDetectorProxy:
+    def __init__(self, base):
+        self.base = base.rstrip('/')
+    def detect_anomalies(self, records, schema=None):
+        resp = requests.post(f"{self.base}/anomaly/detect", json={'records': records, 'schema': schema}, timeout=120)
+        resp.raise_for_status()
+        return resp.json()
+
+class NormalizerProxy:
+    def __init__(self, base):
+        self.base = base.rstrip('/')
+    def normalize(self, records, table_name='main'):
+        resp = requests.post(f"{self.base}/normalize", json={'records': records, 'table_name': table_name}, timeout=120)
+        resp.raise_for_status()
+        return resp.json()
+
+class SQLGeneratorProxy:
+    def __init__(self, base):
+        self.base = base.rstrip('/')
+    def generate_sql(self, normalized_tables):
+        resp = requests.post(f"{self.base}/generate-sql", json={'normalized_tables': normalized_tables}, timeout=120)
+        resp.raise_for_status()
+        return resp.json()
+
+
 def get_parser_engine():
     global parser_engine
     if parser_engine is None and ParserEngine:
@@ -143,42 +184,75 @@ def get_parser_engine():
 
 def get_nlp_mapper():
     global nlp_mapper
-    if nlp_mapper is None and NLPMapper:
-        try:
-            nlp_mapper = NLPMapper(confidence_threshold=0.85)
-        except Exception as e:
-            print(f"NLPMapper init failed: {e}")
-            nlp_mapper = None
+    if nlp_mapper is None:
+        # Prefer ML worker proxy if configured
+        if USE_ML_WORKER and WORKER_URL:
+            try:
+                nlp_mapper = NLPMapperProxy(WORKER_URL)
+                return nlp_mapper
+            except Exception as e:
+                print(f"NLP worker proxy init failed: {e}")
+                nlp_mapper = None
+        if NLPMapper:
+            try:
+                nlp_mapper = NLPMapper(confidence_threshold=0.85)
+            except Exception as e:
+                print(f"NLPMapper init failed: {e}")
+                nlp_mapper = None
     return nlp_mapper
 
 def get_anomaly_detector():
     global anomaly_detector
-    if anomaly_detector is None and AnomalyDetector:
-        try:
-            anomaly_detector = AnomalyDetector(contamination=0.1)
-        except Exception as e:
-            print(f"AnomalyDetector init failed: {e}")
-            anomaly_detector = None
+    if anomaly_detector is None:
+        if USE_ML_WORKER and WORKER_URL:
+            try:
+                anomaly_detector = AnomalyDetectorProxy(WORKER_URL)
+                return anomaly_detector
+            except Exception as e:
+                print(f"Anomaly worker proxy init failed: {e}")
+                anomaly_detector = None
+        if AnomalyDetector:
+            try:
+                anomaly_detector = AnomalyDetector(contamination=0.1)
+            except Exception as e:
+                print(f"AnomalyDetector init failed: {e}")
+                anomaly_detector = None
     return anomaly_detector
 
 def get_normalizer():
     global normalizer
-    if normalizer is None and Normalizer:
-        try:
-            normalizer = Normalizer()
-        except Exception as e:
-            print(f"Normalizer init failed: {e}")
-            normalizer = None
+    if normalizer is None:
+        if USE_ML_WORKER and WORKER_URL:
+            try:
+                normalizer = NormalizerProxy(WORKER_URL)
+                return normalizer
+            except Exception as e:
+                print(f"Normalizer worker proxy init failed: {e}")
+                normalizer = None
+        if Normalizer:
+            try:
+                normalizer = Normalizer()
+            except Exception as e:
+                print(f"Normalizer init failed: {e}")
+                normalizer = None
     return normalizer
 
 def get_sql_generator():
     global sql_generator
-    if sql_generator is None and SQLGenerator:
-        try:
-            sql_generator = SQLGenerator(dialect='postgresql')
-        except Exception as e:
-            print(f"SQLGenerator init failed: {e}")
-            sql_generator = None
+    if sql_generator is None:
+        if USE_ML_WORKER and WORKER_URL:
+            try:
+                sql_generator = SQLGeneratorProxy(WORKER_URL)
+                return sql_generator
+            except Exception as e:
+                print(f"SQLGenerator worker proxy init failed: {e}")
+                sql_generator = None
+        if SQLGenerator:
+            try:
+                sql_generator = SQLGenerator(dialect='postgresql')
+            except Exception as e:
+                print(f"SQLGenerator init failed: {e}")
+                sql_generator = None
     return sql_generator
 
 # Persistent session storage using files (survives Render restarts)
@@ -1169,73 +1243,95 @@ async def normalize_data(session_id: str, payload: dict = Body(None)):
     records = session.get("cleaned_records", session.get("mapped_records", session.get("records", [])))
     table_name = session.get("table_name", "data")
 
-    # Use lazy getter for normalizer
     normalizer_local = get_normalizer()
     if not normalizer_local:
-        # Mark session and return service unavailable
-        session.setdefault('error', 'Normalizer not available')
+        session.setdefault("error", "Normalizer not available")
         save_session(session_id, session)
         raise HTTPException(status_code=503, detail="Normalization service unavailable")
 
-    # Quick path: if only 0-1 records, create a trivial main table to avoid heavy normalization
-    if not records or len(records) <= 1:
-        sample = records[0] if records else {}
-        cols = []
-        for k, v in sample.items():
-            dtype = 'TEXT'
-            if isinstance(v, int):
-                dtype = 'INTEGER'
-            elif isinstance(v, float):
-                dtype = 'DECIMAL(10,2)'
-            elif isinstance(v, bool):
-                dtype = 'BOOLEAN'
-            elif isinstance(v, str) and len(v) <= 50:
-                dtype = 'VARCHAR(50)'
-            cols.append({
-                'name': k,
-                'data_type': dtype,
-                'primary_key': False,
-                'foreign_key': None,
-                'nullable': True
-            })
-        main_table = {
-            'name': table_name,
-            'columns': [{'name': 'id', 'data_type': 'INTEGER', 'primary_key': True, 'foreign_key': None, 'nullable': False}] + cols,
-            'primary_key': 'id',
-            'foreign_keys': [],
-            'records': [{**{'id': i+1}, **r} for i, r in enumerate(records)]
+    try:
+        normalization_result = normalizer_local.normalize(records, table_name)
+        summary = normalizer_local.get_normalization_summary(normalization_result)
+
+        session["current_step"] = 4
+        session.setdefault("steps_completed", []).append("normalization")
+        session["normalization_result"] = summary
+        session["normalized_tables"] = normalization_result.tables
+        session["relationships"] = normalization_result.relationships
+        session["erd_diagram"] = normalizer_local.generate_erd(normalization_result)
+        save_session(session_id, session)
+
+        return {
+            "session_id": session_id,
+            "status": "success",
+            "step": 4,
+            "step_name": "Normalization",
+            "data": {
+                **summary,
+                "erd_diagram": session["erd_diagram"],
+            },
         }
-        session['current_step'] = 4
-        session.setdefault('steps_completed', []).append('normalization')
-        session['normalization_result'] = {
-            'success': True,
-            'normalization_level': 'fallback_small_set',
-            'original_columns': len(sample.keys()) if sample else 0,
-            'total_tables': 1,
-            'total_columns': len(cols) + 1,
-            'relationships': 0,
-            'tables': [
+    except Exception as e:
+        logger.error(f"NORMALIZE_ERROR session={session_id} error={e}")
+
+        cols = []
+        sample = records[0] if records else {}
+        for k, v in sample.items():
+            dtype = "TEXT"
+            if isinstance(v, int):
+                dtype = "INTEGER"
+            elif isinstance(v, float):
+                dtype = "DECIMAL(10,2)"
+            elif isinstance(v, bool):
+                dtype = "BOOLEAN"
+            elif isinstance(v, str) and len(v) <= 50:
+                dtype = "VARCHAR(50)"
+            cols.append({
+                "name": k,
+                "data_type": dtype,
+                "primary_key": False,
+                "foreign_key": None,
+                "nullable": True,
+            })
+
+        main_table = {
+            "name": table_name,
+            "columns": [{"name": "id", "data_type": "INTEGER", "primary_key": True, "foreign_key": None, "nullable": False}] + cols,
+            "primary_key": "id",
+            "foreign_keys": [],
+            "records": [{**{"id": i + 1}, **r} for i, r in enumerate(records)],
+        }
+        erd = (
+            f"erDiagram\n    {main_table['name']} {{\n        INTEGER id PK\n        "
+            + "\n        ".join([f"{c['data_type']} {c['name']}" for c in cols])
+            + "\n    }"
+        )
+
+        session["current_step"] = 4
+        session.setdefault("steps_completed", []).append("normalization")
+        session["normalization_result"] = {
+            "success": False,
+            "normalization_level": "fallback",
+            "original_columns": len(sample.keys()) if sample else 0,
+            "total_tables": 1,
+            "total_columns": len(cols) + 1,
+            "relationships": 0,
+            "tables": [
                 {
-                    'name': main_table['name'],
-                    'columns': [c['name'] for c in main_table['columns']],
-                    'primary_key': main_table['primary_key'],
-                    'foreign_keys': main_table['foreign_keys'],
-                    'record_count': len(main_table['records'])
+                    "name": main_table["name"],
+                    "columns": [c["name"] for c in main_table["columns"]],
+                    "primary_key": main_table["primary_key"],
+                    "foreign_keys": main_table["foreign_keys"],
+                    "record_count": len(main_table["records"]),
                 }
             ],
-            'erd_diagram': f"erDiagram\n    {main_table['name']} {{\n        INTEGER id PK\n        " + "\n        ".join([f"{c['data_type']} {c['name']}" for c in cols]) + "\n    }"
+            "erd_diagram": erd,
         }
-        session['normalized_tables'] = [main_table]
-        session['relationships'] = []
-        session['erd_diagram'] = session['normalization_result']['erd_diagram']
+        session["normalized_tables"] = [main_table]
+        session["relationships"] = []
+        session["erd_diagram"] = erd
+        session.setdefault("error", str(e))
         save_session(session_id, session)
-        return {
-            'session_id': session_id,
-            'status': 'success',
-            'step': 4,
-            'step_name': 'Normalization',
-            'data': session['normalization_result']
-        }
 
     # Heavy normalization path: use normalizer if available
     try:
@@ -1334,8 +1430,8 @@ async def normalize_data(session_id: str, payload: dict = Body(None)):
             "data": {
                 "message": "Normalization failed; fallback main table created",
                 "error": str(e),
-                "erd_diagram": session.get('erd_diagram')
-            }
+                "erd_diagram": session.get("erd_diagram"),
+            },
         }
 
 
@@ -1527,7 +1623,7 @@ async def deploy_env(session_id: str, config: DeployConfig = Body(None), x_admin
 @app.post("/api/deploy/{session_id}")
 async def deploy_database(session_id: str, config: DeployConfig):
     """
-    Step 6: Deploy to database (Postgres or SQLite)
+    Step 6: Deploy using user-provided config.
     """
     if not session_exists(session_id):
         raise HTTPException(status_code=404, detail="Session not found")

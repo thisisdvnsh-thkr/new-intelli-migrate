@@ -58,10 +58,7 @@ export default function Signup() {
       >
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-3 mb-12">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
-            <Database className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-black text-white tracking-tight">Intelli-Migrate</span>
+          <BrandLogo />
         </Link>
         
         {/* Card */}
