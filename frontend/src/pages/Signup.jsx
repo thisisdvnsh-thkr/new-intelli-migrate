@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Database, Mail, Lock, User, ArrowRight, Eye, EyeOff, CalendarDays, Server } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { signup as apiSignup, getMe, getOAuthStartUrl } from '../lib/api'
+import BrandLogo from '../components/BrandLogo'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },

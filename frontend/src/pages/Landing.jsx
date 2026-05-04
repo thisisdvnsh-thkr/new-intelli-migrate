@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
-  Sparkles, Database, Shield, Zap, ArrowRight,
-  ChevronDown, Star, Users
+  Sparkles, ArrowRight, ChevronDown, Workflow, Bot, ShieldCheck, LineChart
 } from 'lucide-react'
+import BrandLogo from '../components/BrandLogo'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 36 },

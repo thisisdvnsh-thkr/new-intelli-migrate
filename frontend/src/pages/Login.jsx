@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { login as apiLogin, getMe, getOAuthStartUrl } from '../lib/api'
+import { login as apiLogin, getMe, getOAuthStartUrl, setAuthToken } from '../lib/api'
+import BrandLogo from '../components/BrandLogo'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
