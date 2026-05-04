@@ -101,11 +101,6 @@ export const deployToEnv = async (sessionId, config = {}) => {
   return response.data
 }
 
-export const deployToEnv = async (sessionId, config = {}) => {
-  const response = await api.post(`/api/deploy-env/${sessionId}`, config)
-  return response.data
-}
-
 export const downloadSQL = async (sessionId) => {
   const response = await api.get(`/api/download-sql/${sessionId}`, {
     responseType: 'blob'
