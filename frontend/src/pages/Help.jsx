@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  HelpCircle, Book, MessageCircle, Mail, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap, Users, ExternalLink
+  HelpCircle, Book, MessageCircle, Mail, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap, Users, ExternalLink, PhoneCall
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -17,7 +17,7 @@ const supportEmail = 'thisisdvnsh.thkr@gmail.com'
 const projectRepo = 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate'
 
 const teamMembers = [
-  { name: 'Devansh', role: 'Agent 5: SQL Generator + Integration' },
+  { name: 'Devansh', role: 'Team Lead • Agent 5: SQL Generator + Integration' },
   { name: 'Arpit', role: 'Agent 1: Parser Engine + Frontend' },
   { name: 'Prashant', role: 'Agent 2: NLP Schema Mapper' },
   { name: 'Mohd Suhail', role: 'Agent 3: Anomaly Detector' },
@@ -27,15 +27,27 @@ const teamMembers = [
 const faqs = [
   {
     question: 'What does confidence mean in schema mapping?',
-    answer: 'Confidence is the AI score for how strongly a source field matches a standardized SQL field. High confidence means semantic certainty; lower scores should be reviewed.'
+    answer: 'Confidence is the semantic match score between your source field and the standardized SQL field. Higher confidence means a stronger mapping match.'
   },
   {
     question: 'Which data formats can I upload?',
-    answer: 'JSON, CSV, and XML are supported. The platform parses the file and previews rows, columns, and schema details before mapping.'
+    answer: 'JSON, CSV, and XML are supported. The upload stage profiles your file and extracts rows, columns, and preview metadata.'
   },
   {
     question: 'Can I deploy directly to every database?',
-    answer: 'Direct deploy currently supports PostgreSQL providers (Render, Supabase, Neon, Railway, generic Postgres). For Microsoft Access, download SQL and import manually.'
+    answer: 'Direct deploy supports PostgreSQL providers like Render, Supabase, Neon, Railway, and generic Postgres URLs. For Microsoft Access, export SQL and import manually.'
+  },
+  {
+    question: 'Why do I see migration sessions in the sidebar?',
+    answer: 'Each uploaded file creates a session. Sessions preserve file metadata and pipeline step progress so you can reopen previous runs quickly.'
+  },
+  {
+    question: 'Why can upload processing take longer for big files?',
+    answer: 'The parser, profiling, and anomaly pipelines run on actual file data. Larger files naturally take more time due to row volume and schema complexity.'
+  },
+  {
+    question: 'How do I report an issue to Team Intelli-Migrate?',
+    answer: 'Use the support email below with screenshots and your session ID. This helps us trace logs and provide faster fixes.'
   }
 ]
 
@@ -92,7 +104,7 @@ export default function Help() {
       <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <ActionCard icon={Book} label="Documentation" href="#guides" />
         <ActionCard icon={MessageCircle} label="FAQs" href="#faqs" />
-        <ActionCard icon={Mail} label="Contact Support" href={`mailto:${supportEmail}`} />
+        <ActionCard icon={Mail} label="Contact Support" href="#contact-support" />
       </motion.div>
 
       <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
@@ -103,7 +115,7 @@ export default function Help() {
         <img
           src="/team-photo.png"
           alt="Team Intelli-Migrate group photo"
-          className="w-full max-w-4xl rounded-2xl border border-white/10 mb-6"
+          className="w-full max-w-4xl max-h-[360px] object-cover rounded-2xl border border-white/10 mb-6"
         />
         <div className="grid md:grid-cols-2 gap-3">
           {teamMembers.map((member) => (
@@ -113,15 +125,26 @@ export default function Help() {
             </div>
           ))}
         </div>
-        <div className="mt-5 flex flex-wrap gap-3">
+      </motion.section>
+
+      <motion.section variants={fadeInUp} id="contact-support" className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
+        <h2 className="text-2xl font-bold text-white mb-4">Contact Support</h2>
+        <p className="text-white/55 mb-4">
+          For enterprise coordination, integration support, and deployment issues, contact Team Intelli-Migrate directly.
+        </p>
+        <div className="flex flex-wrap gap-3">
           <a href={projectRepo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">
             <ExternalLink className="w-4 h-4" />
-            Project Repository
+            View Full Project Files
           </a>
           <a href={`mailto:${supportEmail}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-colors">
             <Mail className="w-4 h-4" />
             {supportEmail}
           </a>
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-white/70">
+            <PhoneCall className="w-4 h-4" />
+            Team Lead: Devansh
+          </span>
         </div>
       </motion.section>
 

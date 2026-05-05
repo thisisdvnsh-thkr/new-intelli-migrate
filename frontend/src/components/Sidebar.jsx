@@ -1,7 +1,9 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Database, Plus, LogOut, Settings as SettingsIcon, HelpCircle, LayoutDashboard } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Plus, LogOut, Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useMigration } from '../context/MigrationContext'
+import BrandLogo from './BrandLogo'
 
 function formatAgo(isoDate) {
   if (!isoDate) return 'now'
@@ -23,13 +25,10 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-80 bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50">
       <div className="px-6 py-7 border-b border-white/[0.06]">
-        <Link to="/" className="flex items-center gap-3 mb-5">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-            <Database className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black text-white tracking-tight">Intelli-Migrate</h1>
-            <p className="text-xs text-white/40">Session Workspace</p>
+        <Link to="/" className="mb-5 inline-block">
+          <div className="flex flex-col items-start gap-2">
+            <BrandLogo />
+            <p className="text-xs text-white/40 pl-1">Session Workspace</p>
           </div>
         </Link>
 
@@ -55,28 +54,6 @@ export default function Sidebar() {
           }
         >
           <span className="inline-flex items-center gap-2"><LayoutDashboard className="w-4 h-4" /> Dashboard</span>
-        </NavLink>
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `p-2 rounded-xl transition-colors ${
-              isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`
-          }
-          title="Settings"
-        >
-          <SettingsIcon className="w-4 h-4" />
-        </NavLink>
-        <NavLink
-          to="/help"
-          className={({ isActive }) =>
-            `p-2 rounded-xl transition-colors ${
-              isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`
-          }
-          title="Help Center"
-        >
-          <HelpCircle className="w-4 h-4" />
         </NavLink>
       </div>
 
@@ -118,18 +95,44 @@ export default function Sidebar() {
         )}
       </div>
 
-      <div className="px-4 py-5 border-t border-white/[0.08]">
+      <div className="px-4 py-5 border-t border-white/[0.08] space-y-3">
+        <div className="space-y-1.5">
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                isActive ? 'bg-white/10 text-white' : 'text-white/65 hover:text-white hover:bg-white/5'
+              }`
+            }
+          >
+            <SettingsIcon className="w-4 h-4" />
+            Settings
+          </NavLink>
+          <NavLink
+            to="/help"
+            className={({ isActive }) =>
+              `w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                isActive ? 'bg-white/10 text-white' : 'text-white/65 hover:text-white hover:bg-white/5'
+              }`
+            }
+          >
+            <HelpCircle className="w-4 h-4" />
+            Help Center
+          </NavLink>
+        </div>
+
         {user ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-3 px-2">
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/[0.05] transition-colors"
+            >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
                 {(user.full_name || user.name || 'U').charAt(0).toUpperCase()}
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
-                <p className="text-xs text-white/40 truncate">{user.email}</p>
-              </div>
-            </div>
+              <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
+              <UserCircle2 className="w-4 h-4 text-white/35 ml-auto" />
+            </button>
             <button
               onClick={logout}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:text-red-400 hover:bg-red-500/10 transition-colors"

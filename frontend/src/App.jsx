@@ -16,6 +16,7 @@ import OAuthCallback from './pages/OAuthCallback'
 import Landing from './pages/Landing'
 import Settings from './pages/Settings'
 import Help from './pages/Help'
+import UserProfile from './pages/UserProfile'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
 
@@ -192,6 +193,7 @@ function AppRoutes() {
         <Route path="/deploy" element={<DashboardLayout><Deploy /></DashboardLayout>} />
         <Route path="/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
         <Route path="/help" element={<DashboardLayout><Help /></DashboardLayout>} />
+        <Route path="/profile" element={<DashboardLayout><UserProfile /></DashboardLayout>} />
       </Routes>
     </AnimatePresence>
   )

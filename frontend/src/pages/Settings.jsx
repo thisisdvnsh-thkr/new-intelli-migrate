@@ -3,7 +3,7 @@ import { getUserSettings, saveUserSettings, changePassword, deleteAccount } from
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import {
-  User, Bell, Shield, Database, Palette, Save, Check, Moon, Sun, Key, Trash2, Link2, Server
+  User, Bell, Shield, Database, Palette, Save, Check, Moon, Sun, Key, Trash2, Link2
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -36,7 +36,6 @@ export default function Settings() {
     databaseProvider: 'postgresql',
     databaseUrl: '',
     dbPassword: '',
-    projectRepository: 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate',
     supportEmail: 'thisisdvnsh.thkr@gmail.com'
   })
   const [passwordForm, setPasswordForm] = useState({
@@ -258,13 +257,6 @@ export default function Settings() {
         </div>
       </Section>
 
-      <Section icon={Server} title="Project">
-        <Input
-          label="Project Repository"
-          value={settings.projectRepository}
-          onChange={(value) => setSettings({ ...settings, projectRepository: value })}
-        />
-      </Section>
     </motion.div>
   )
 }
