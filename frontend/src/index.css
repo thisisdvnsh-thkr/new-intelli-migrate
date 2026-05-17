@@ -38,7 +38,8 @@
     background-color: #f4f7ff !important;
   }
 
-  html.theme-light [class*="text-white"] {
+  html.theme-light [class*="text-white"],
+  html.theme-light [class*="text-gray-"] {
     color: #111827 !important;
   }
 
@@ -50,8 +51,39 @@
     background-color: rgba(17, 24, 39, 0.04) !important;
   }
 
+  html.theme-light .bg-white {
+    background-color: #0f172a !important;
+  }
+
+  html.theme-light .text-black {
+    color: #f8fafc !important;
+  }
+
   html.theme-light [class*="border-white"] {
     border-color: rgba(17, 24, 39, 0.12) !important;
+  }
+
+  html.theme-light input,
+  html.theme-light textarea,
+  html.theme-light select {
+    background-color: rgba(15, 23, 42, 0.06) !important;
+    color: #0f172a !important;
+    border-color: rgba(15, 23, 42, 0.18) !important;
+  }
+
+  html.theme-light input::placeholder,
+  html.theme-light textarea::placeholder {
+    color: rgba(15, 23, 42, 0.45) !important;
+  }
+
+  html.theme-light select option {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+
+  html.theme-light .shadow-2xl,
+  html.theme-light .shadow-lg {
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
   }
 
   html.theme-light [class*="from-blue-500"],

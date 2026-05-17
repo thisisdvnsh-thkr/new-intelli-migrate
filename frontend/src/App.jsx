@@ -24,9 +24,11 @@ import Privacy from './pages/Privacy'
 import ContactSupport from './pages/ContactSupport'
 import Documentation from './pages/Documentation'
 import ParseReview from './pages/ParseReview'
+import SessionDashboard from './pages/SessionDashboard'
 import SupportChatWidget from './components/SupportChatWidget'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
+import { PanelLeftOpen } from 'lucide-react'
 
 // Backend Wake-up Loading Screen
 function BackendLoader({ onReady }) {
@@ -159,10 +161,18 @@ function PageTransition({ children }) {
 
 // Layout with sidebar for dashboard pages
 function DashboardLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   return (
     <div className="flex min-h-screen bg-[#0a0a0b]">
-      <Sidebar />
-      <main className="flex-1 ml-80 min-h-screen">
+      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
+      <button
+        onClick={() => setSidebarOpen((v) => !v)}
+        className="fixed top-4 left-4 z-40 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.12] text-white/75 hover:text-white hover:bg-white/[0.06]"
+      >
+        <PanelLeftOpen className="w-4 h-4" />
+        {sidebarOpen ? 'Drawer' : 'Open'}
+      </button>
+      <main className={`flex-1 min-h-screen transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
         <div className="max-w-7xl mx-auto px-8 py-8">
           <PageTransition>{children}</PageTransition>
         </div>
@@ -198,6 +208,7 @@ function AppRoutes() {
         
         {/* Dashboard Routes */}
         <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+        <Route path="/session/:sessionId" element={<DashboardLayout><SessionDashboard /></DashboardLayout>} />
         <Route path="/upload" element={<DashboardLayout><Upload /></DashboardLayout>} />
         <Route path="/parse-review" element={<DashboardLayout><ParseReview /></DashboardLayout>} />
         <Route path="/schema-map" element={<DashboardLayout><SchemaMap /></DashboardLayout>} />

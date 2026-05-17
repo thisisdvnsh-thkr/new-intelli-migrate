@@ -15,8 +15,8 @@ export function setAuthToken(token) {
 }
 
 // Auth
-export const signup = async (email, password, name, target_database) => {
-  const response = await api.post('/auth/signup', { email, password, name, target_database })
+export const signup = async (email, password, name, target_database, dbDetails = {}) => {
+  const response = await api.post('/auth/signup', { email, password, name, target_database, ...dbDetails })
   return response.data
 }
 
@@ -66,8 +66,8 @@ export const saveUserSettings = async (settings) => {
   return response.data
 }
 
-export const supportChat = async (message, history = []) => {
-  const response = await api.post('/api/support-chat', { message, history })
+export const supportChat = async (message, history = [], currentPath = '') => {
+  const response = await api.post('/api/support-chat', { message, history, current_path: currentPath })
   return response.data
 }
 

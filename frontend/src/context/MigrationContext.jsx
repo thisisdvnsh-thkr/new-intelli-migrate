@@ -27,9 +27,7 @@ export function MigrationProvider({ children }) {
   const [deployResult, setDeployResult] = useState(null)
 
   const [sessionHistory, setSessionHistory] = useState(() => loadStoredSessions())
-  const [activeSessionId, setActiveSessionId] = useState(
-    () => loadStoredSessions()[0]?.sessionId || null
-  )
+  const [activeSessionId, setActiveSessionId] = useState(null)
 
   const [stats, setStats] = useState({
     sessionId: null,

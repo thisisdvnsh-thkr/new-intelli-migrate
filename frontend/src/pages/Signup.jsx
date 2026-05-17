@@ -16,6 +16,9 @@ export default function Signup() {
   const { login } = useAuth()
   const [name, setName] = useState('')
   const [targetDatabase, setTargetDatabase] = useState('supabase')
+  const [providerApiKey, setProviderApiKey] = useState('')
+  const [providerProjectId, setProviderProjectId] = useState('')
+  const [databaseUrl, setDatabaseUrl] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +31,12 @@ export default function Signup() {
     setError('')
     
     try {
-      const data = await apiSignup(email, password, name, targetDatabase)
+      const dbDetails = {
+        provider_api_key: providerApiKey || undefined,
+        provider_project_id: providerProjectId || undefined,
+        database_url: databaseUrl || undefined
+      }
+      const data = await apiSignup(email, password, name, targetDatabase, dbDetails)
       const me = await getMe()
       login(me, data.access_token)
       navigate('/dashboard?onboarding=true')
@@ -43,6 +51,9 @@ export default function Signup() {
     setError('')
     window.location.href = getOAuthStartUrl(provider)
   }
+
+  const isApiProvider = targetDatabase === 'supabase' || targetDatabase === 'neon'
+  const isCustomProvider = targetDatabase === 'custom_postgresql' || targetDatabase === 'custom_mysql'
   
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden">
@@ -126,14 +137,63 @@ export default function Signup() {
                 value={targetDatabase}
                 onChange={(e) => setTargetDatabase(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+                className="w-full pl-12 pr-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+                style={{ colorScheme: 'dark' }}
               >
-                <option value="supabase">Supabase</option>
-                <option value="neon">Neon</option>
-                <option value="custom_postgresql">Custom PostgreSQL</option>
-                <option value="custom_mysql">Custom MySQL</option>
+                <option className="bg-[#0f1115] text-white" value="supabase">Supabase</option>
+                <option className="bg-[#0f1115] text-white" value="neon">Neon</option>
+                <option className="bg-[#0f1115] text-white" value="custom_postgresql">Custom PostgreSQL</option>
+                <option className="bg-[#0f1115] text-white" value="custom_mysql">Custom MySQL</option>
               </select>
             </div>
+
+            {isApiProvider && (
+              <>
+                <div className="relative group">
+                  <Server className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                  <input
+                    type="text"
+                    value={providerProjectId}
+                    onChange={(e) => setProviderProjectId(e.target.value)}
+                    placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} Project ID`}
+                    required
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+                  />
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                  <input
+                    type="text"
+                    value={providerApiKey}
+                    onChange={(e) => setProviderApiKey(e.target.value)}
+                    placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} API Key`}
+                    required
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+                  />
+                </div>
+              </>
+            )}
+
+            {isCustomProvider && (
+              <>
+                <div className="rounded-xl border border-yellow-400/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-100">
+                  Use a restricted database user (read/write only for migration), not an admin/root credential.
+                </div>
+                <div className="relative group">
+                  <Server className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                  <input
+                    type="text"
+                    value={databaseUrl}
+                    onChange={(e) => setDatabaseUrl(e.target.value)}
+                    placeholder={targetDatabase === 'custom_mysql'
+                      ? 'mysql://user:password@host:3306/database'
+                      : 'postgresql://user:password@host:5432/database'}
+                    required
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+                  />
+                </div>
+              </>
+            )}
             
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />

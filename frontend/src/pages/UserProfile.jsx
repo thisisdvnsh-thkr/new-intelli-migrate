@@ -5,7 +5,7 @@ import {
   UserCircle2, Mail, Database, ShieldCheck, Link2, Save, Check, LogOut, Server, Key, AlertTriangle
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getUserSettings, saveUserSettings } from '../lib/api'
+import { getMe, getUserSettings, saveUserSettings } from '../lib/api'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -21,7 +21,8 @@ const providerOptions = [
 
 export default function UserProfile() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, updateUser } = useAuth()
+  const [profileEmail, setProfileEmail] = useState(user?.email || '')
   const [settings, setSettings] = useState({
     name: '',
     notifications: true,
@@ -38,12 +39,17 @@ export default function UserProfile() {
   useEffect(() => {
     const load = async () => {
       try {
+        const me = await getMe()
+        setProfileEmail(me?.email || '')
+        if (me) {
+          updateUser(me)
+        }
         const res = await getUserSettings()
         const incoming = res?.settings || {}
         setSettings((prev) => ({
           ...prev,
           ...incoming,
-          name: incoming.name || user?.full_name || user?.name || prev.name
+          name: incoming.name || me?.full_name || me?.name || user?.full_name || user?.name || prev.name
         }))
       } catch {
         setSettings((prev) => ({
@@ -53,7 +59,7 @@ export default function UserProfile() {
       }
     }
     load()
-  }, [user])
+  }, [user, updateUser])
 
   const provider = settings.databaseProvider || settings.defaultDatabase || 'supabase'
   const providerLabel = useMemo(() => providerOptions.find((p) => p.value === provider)?.label || provider, [provider])
@@ -83,6 +89,12 @@ export default function UserProfile() {
         defaultDatabase: provider
       }
       await saveUserSettings(payload)
+      updateUser({
+        ...(user || {}),
+        full_name: payload.name,
+        name: payload.name,
+        email: profileEmail || user?.email || ''
+      })
       setSaved(true)
       setTimeout(() => setSaved(false), 1800)
     } catch {
@@ -113,7 +125,7 @@ export default function UserProfile() {
           <button
             onClick={() => {
               logout()
-              navigate('/login')
+              navigate('/')
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20"
           >
@@ -142,7 +154,7 @@ export default function UserProfile() {
             onChange={(value) => setSettings((prev) => ({ ...prev, name: value }))}
             required
           />
-          <ReadOnlyCard icon={Mail} label="Email" value={user?.email || '-'} />
+          <ReadOnlyCard icon={Mail} label="Email" value={profileEmail || user?.email || '-'} />
           <ReadOnlyCard icon={ShieldCheck} label="Notifications" value={settings.notifications ? 'Enabled' : 'Disabled'} />
           <ReadOnlyCard icon={ShieldCheck} label="Auto-save SQL" value={settings.autoSave ? 'Enabled' : 'Disabled'} />
         </div>

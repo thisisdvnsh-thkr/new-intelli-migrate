@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getUserSettings, saveUserSettings, changePassword, deleteAccount } from '../lib/api'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -15,19 +15,14 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.1 } }
 }
 
-function applyTheme(darkModeEnabled) {
-  const root = document.documentElement
-  if (darkModeEnabled) root.classList.remove('theme-light')
-  else root.classList.add('theme-light')
-}
-
 export default function Settings() {
-  const { logout } = useAuth()
+  const { logout, setTheme } = useAuth()
+  const defaultDarkMode = useMemo(() => !document.documentElement.classList.contains('theme-light'), [])
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
     notifications: true,
-    darkMode: true,
+    darkMode: defaultDarkMode,
     autoSave: true
   })
   const [passwordForm, setPasswordForm] = useState({
@@ -42,9 +37,6 @@ export default function Settings() {
         const res = await getUserSettings()
         if (res?.settings) {
           setSettings((prev) => ({ ...prev, ...res.settings }))
-          if (typeof res.settings.darkMode === 'boolean') {
-            applyTheme(res.settings.darkMode)
-          }
         }
       } catch {
         // keep defaults
@@ -54,8 +46,8 @@ export default function Settings() {
   }, [])
 
   useEffect(() => {
-    applyTheme(settings.darkMode)
-  }, [settings.darkMode])
+    setTheme(settings.darkMode)
+  }, [settings.darkMode, setTheme])
 
   const handleSave = async () => {
     setSaving(true)

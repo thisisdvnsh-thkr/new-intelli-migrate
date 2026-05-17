@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HelpCircle, Book, MessageCircle, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -79,8 +79,17 @@ const guides = [
 ]
 
 export default function Help() {
+  const location = useLocation()
   const [openFaq, setOpenFaq] = useState(null)
   const [selectedGuide, setSelectedGuide] = useState(null)
+  
+  useEffect(() => {
+    if (!location.hash) return
+    const target = document.querySelector(location.hash)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [location.hash])
 
   return (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
@@ -91,7 +100,10 @@ export default function Help() {
 
       <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <ActionCard icon={Book} label="Documentation" to="/documentation" />
-        <ActionCard icon={MessageCircle} label="FAQs" to="/help#faqs" />
+        <ActionCard icon={MessageCircle} label="FAQs" to="/help#faqs" onClick={() => {
+          const target = document.getElementById('faqs')
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }} />
         <ActionCard icon={HelpCircle} label="Contact Support" to="/contact-support" />
       </motion.div>
 
@@ -179,10 +191,11 @@ export default function Help() {
   )
 }
 
-function ActionCard({ icon: Icon, label, to }) {
+function ActionCard({ icon: Icon, label, to, onClick }) {
   return (
     <Link
       to={to}
+      onClick={onClick}
       className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] transition-all duration-300 flex items-center gap-4"
     >
       <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">

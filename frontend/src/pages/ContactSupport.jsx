@@ -11,25 +11,25 @@ const members = [
     thought: 'Intelli-Migrate was built to turn migration complexity into a confident, guided flow. The strongest part of this project is how independent agents behave like one focused engineering team for real user outcomes.'
   },
   {
-    name: 'Arpit Sharma',
+    name: 'Arpit Upadhyay',
     role: 'Parser and frontend workflow implementation',
     contribution: 'Worked on ingestion reliability and visual flow interactions to keep file parsing transparent and user-friendly.',
     thought: 'Our goal was to make migration feel understandable at each stage, not like a black box.'
   },
   {
-    name: 'Prashant Kumar',
+    name: 'Prashant Kandpal',
     role: 'Schema intelligence and mapping logic',
     contribution: 'Contributed to semantic mapping behaviors and confidence-aware field conversion strategy.',
     thought: 'The mapping layer is where messy data starts becoming structured intelligence.'
   },
   {
-    name: 'Mohd Suhail Khan',
+    name: 'Mohd. Suhail',
     role: 'Data quality and anomaly workflow',
     contribution: 'Focused on anomaly inspection flow and quality surfacing to reduce deployment risk.',
     thought: 'Reliable migration starts with clear quality signals before table generation.'
   },
   {
-    name: 'Priyanshu Singh',
+    name: 'Priyanshu Verma',
     role: 'Normalization and relational modeling',
     contribution: 'Built normalization experience and relational preparation for SQL generation stages.',
     thought: 'Normalization gives long-term value by making migrated data maintainable and query-ready.'
@@ -58,7 +58,7 @@ export default function ContactSupport() {
         <img
           src="/team-photo.png"
           alt="Team Intelli-Migrate"
-          className="w-full max-w-2xl max-h-[220px] object-cover rounded-2xl border border-white/10"
+          className="w-full max-w-2xl h-[220px] object-contain rounded-2xl border border-white/10 bg-white/[0.03]"
         />
       </section>
 

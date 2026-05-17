@@ -49,10 +49,14 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
 SMTP_HOST = os.getenv('SMTP_HOST')
-SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
-SMTP_USER = os.getenv('SMTP_USER')
-SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
-SMTP_FROM = os.getenv('SMTP_FROM') or SMTP_USER
+SMTP_HOST = SMTP_HOST or os.getenv('SMTP_SERVER') or os.getenv('MAIL_SERVER')
+SMTP_PORT = int(os.getenv('SMTP_PORT') or os.getenv('MAIL_PORT') or '587')
+SMTP_USER = os.getenv('SMTP_USER') or os.getenv('SMTP_USERNAME') or os.getenv('MAIL_USERNAME')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD') or os.getenv('SMTP_PASS') or os.getenv('MAIL_PASSWORD')
+SMTP_FROM = os.getenv('SMTP_FROM') or os.getenv('MAIL_FROM') or SMTP_USER
+SMTP_USE_TLS = (os.getenv('SMTP_USE_TLS', 'true').lower() in ('1', 'true', 'yes'))
+SMTP_USE_SSL = (os.getenv('SMTP_USE_SSL', 'false').lower() in ('1', 'true', 'yes'))
+SMTP_TIMEOUT = int(os.getenv('SMTP_TIMEOUT', '20'))
 SUPPORT_GITHUB_URL = os.getenv('SUPPORT_GITHUB_URL', 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues')
 SUPPORT_AI_MODEL = os.getenv('SUPPORT_AI_MODEL', 'gpt-4o-mini')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -329,6 +333,9 @@ class UserCreate(BaseModel):
     password: str
     name: str
     target_database: str
+    provider_api_key: Optional[str] = None
+    provider_project_id: Optional[str] = None
+    database_url: Optional[str] = None
 
 class LoginIn(BaseModel):
     email: str
@@ -345,6 +352,7 @@ class UserOut(BaseModel):
     id: int
     email: str
     full_name: Optional[str]
+    name: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
@@ -356,6 +364,7 @@ class SettingsIn(BaseModel):
 class SupportChatIn(BaseModel):
     message: str
     history: Optional[List[Dict[str, str]]] = None
+    current_path: Optional[str] = None
 
 # --- Database setup ---
 DATABASE_URL = os.getenv('DATABASE_URL') or f"sqlite:///" + os.path.join(os.path.dirname(__file__), '..', 'temp', 'intelli.db')
@@ -404,18 +413,35 @@ def decode_password_reset_token(token: str) -> int:
         raise HTTPException(status_code=400, detail="Invalid reset token payload")
     return int(user_id)
 
-def send_email_message(to_email: str, subject: str, body: str) -> None:
-    if not (SMTP_HOST and SMTP_USER and SMTP_PASSWORD and SMTP_FROM):
-        raise HTTPException(status_code=503, detail="SMTP email service is not configured")
+def smtp_service_configured() -> bool:
+    return bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD and SMTP_FROM)
+
+def send_email_message(to_email: str, subject: str, body: str) -> bool:
+    if not smtp_service_configured():
+        logger.warning("SMTP_NOT_CONFIGURED host=%s user=%s from=%s", SMTP_HOST, SMTP_USER, SMTP_FROM)
+        return False
     msg = EmailMessage()
     msg["From"] = SMTP_FROM
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.set_content(body)
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
+    try:
+        if SMTP_USE_SSL:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.send_message(msg)
+                return True
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
+            server.ehlo()
+            if SMTP_USE_TLS:
+                server.starttls()
+                server.ehlo()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+            return True
+    except Exception as e:
+        logger.error("SMTP_SEND_FAILED to=%s subject=%s error=%s", to_email, subject, e)
+        return False
 
 def notifications_enabled_for_email(email: str) -> bool:
     db = SessionLocal()
@@ -439,9 +465,11 @@ def send_user_notification(email: Optional[str], subject: str, body: str) -> Non
     if not notifications_enabled_for_email(email):
         return
     try:
-        send_email_message(email, subject, body)
+        delivered = send_email_message(email, subject, body)
+        if not delivered:
+            logger.warning("EMAIL_NOTIFICATION_UNDELIVERED email=%s subject=%s", email, subject)
     except Exception as e:
-        logger.error(f"EMAIL_NOTIFICATION_ERROR email={email} subject={subject} error={e}")
+        logger.error("EMAIL_NOTIFICATION_ERROR email=%s subject=%s error=%s", email, subject, e)
 
 # --- DB helpers ---
 
@@ -514,8 +542,15 @@ def signup(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
         'defaultDatabase': user_in.target_database,
         'databaseProvider': user_in.target_database,
         'notifications': True,
-        'autoSave': True
+        'autoSave': True,
+        'name': user_in.name
     }
+    if user_in.provider_api_key:
+        defaults['providerApiKey'] = user_in.provider_api_key
+    if user_in.provider_project_id:
+        defaults['providerProjectId'] = user_in.provider_project_id
+    if user_in.database_url:
+        defaults['databaseUrl'] = user_in.database_url
     settings = db.query(Settings).filter(Settings.user_id == user.id).first()
     if not settings:
         settings = Settings(user_id=user.id, settings_json=json.dumps(defaults))
@@ -557,7 +592,7 @@ def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(lambda: nex
         return {'status': 'ok', 'message': 'If the email is registered, a reset link has been sent.'}
     token = create_password_reset_token(user.id)
     reset_link = f"{FRONTEND_URL.rstrip('/')}/reset-password?token={quote_plus(token)}"
-    send_email_message(
+    delivered = send_email_message(
         user.email,
         "Reset your Intelli-Migrate password",
         (
@@ -567,6 +602,8 @@ def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(lambda: nex
             "This link expires in 30 minutes. If this was not you, ignore this email."
         )
     )
+    if not delivered:
+        logger.warning("PASSWORD_RESET_EMAIL_UNDELIVERED email=%s", user.email)
     return {'status': 'ok', 'message': 'If the email is registered, a reset link has been sent.'}
 
 @app.post('/auth/reset-password')
@@ -766,7 +803,12 @@ def oauth_callback(
 
 @app.get('/auth/me', response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
-    return {'id': current_user.id, 'email': current_user.email, 'full_name': current_user.full_name}
+    return {
+        'id': current_user.id,
+        'email': current_user.email,
+        'full_name': current_user.full_name,
+        'name': current_user.full_name
+    }
 
 
 # Change password endpoint
@@ -835,11 +877,68 @@ def put_settings(payload: SettingsIn, current_user: User = Depends(get_current_u
         db.add(settings)
     else:
         settings.settings_json = sjson
+    if merged.get("name"):
+        current_user.full_name = str(merged.get("name")).strip()
+        db.add(current_user)
     db.commit()
     return {'settings': merged}
 
-def support_kb_answer(message: str) -> Optional[str]:
+def build_user_support_snapshot(user_email: str) -> Dict[str, Any]:
+    snapshot = {
+        "session_count": 0,
+        "completed_sessions": 0,
+        "total_rows": 0,
+        "avg_confidence": 0.0,
+        "last_file": None,
+        "last_step": 0,
+    }
+    if not user_email:
+        return snapshot
+    confidences: List[float] = []
+    latest_created = ""
+    try:
+        for fname in os.listdir(SESSIONS_DIR):
+            if not fname.endswith(".json"):
+                continue
+            fpath = os.path.join(SESSIONS_DIR, fname)
+            with open(fpath, "r", encoding="utf-8") as f:
+                session = json.load(f)
+            if session.get("user_email") != user_email:
+                continue
+            snapshot["session_count"] += 1
+            step = int(session.get("current_step", 0) or 0)
+            if step >= 6:
+                snapshot["completed_sessions"] += 1
+            rows = session.get("parse_result", {}).get("record_count", 0) or 0
+            snapshot["total_rows"] += int(rows)
+            confidence = session.get("mapping_result", {}).get("average_confidence")
+            if isinstance(confidence, (int, float)):
+                confidences.append(float(confidence))
+            created_at = session.get("created_at", "")
+            if created_at >= latest_created:
+                latest_created = created_at
+                snapshot["last_file"] = session.get("file_name")
+                snapshot["last_step"] = step
+        if confidences:
+            snapshot["avg_confidence"] = round(sum(confidences) / len(confidences), 1)
+    except Exception as e:
+        logger.error("SUPPORT_SNAPSHOT_ERROR email=%s error=%s", user_email, e)
+    return snapshot
+
+def support_kb_answer(message: str, user_snapshot: Optional[Dict[str, Any]] = None) -> Optional[str]:
     text = (message or '').lower()
+    if text.strip() in ("hi", "hello", "hey", "tell me", "tell me?", "help"):
+        return (
+            "I can help with upload, schema mapping, anomaly detection, SQL generation, deployment, account settings, "
+            "and password recovery. Ask a specific question and I will guide step-by-step."
+        )
+    if user_snapshot and any(k in text for k in ["my", "mine", "progress", "session", "dashboard", "stats"]):
+        return (
+            f"Your workspace currently has {user_snapshot.get('session_count', 0)} session(s), "
+            f"{user_snapshot.get('completed_sessions', 0)} completed, total rows processed {user_snapshot.get('total_rows', 0)}, "
+            f"and average mapping confidence {user_snapshot.get('avg_confidence', 0)}%. "
+            f"Latest file: {user_snapshot.get('last_file') or 'N/A'}."
+        )
     kb = [
         (['upload', 'file', 'json', 'csv', 'xml'], "Upload JSON/CSV/XML from Upload page, then continue through mapping, anomalies, SQL generation, and deploy."),
         (['schema', 'confidence', 'map'], "Confidence is the semantic certainty score for field mapping. Higher values mean stronger mapping quality."),
@@ -854,16 +953,18 @@ def support_kb_answer(message: str) -> Optional[str]:
             return answer
     return None
 
-def openai_support_answer(message: str, history: Optional[List[Dict[str, str]]] = None) -> Optional[str]:
+def openai_support_answer(message: str, history: Optional[List[Dict[str, str]]] = None, user_context: Optional[str] = None) -> Optional[str]:
     if not OPENAI_API_KEY:
         return None
     try:
+        context_line = f"User context: {user_context}" if user_context else "User context: anonymous user"
         messages = [
             {
                 "role": "system",
                 "content": (
                     "You are Intelli-Migrate Support Agent. Answer only platform-related queries: upload, agents, mapping, anomalies, SQL, deploy, auth, settings, help center."
-                    " If question is outside scope, say you cannot answer and suggest GitHub support."
+                    " Give direct, practical answers and avoid vague fallback responses."
+                    f" {context_line}"
                 )
             }
         ]
@@ -887,16 +988,29 @@ def openai_support_answer(message: str, history: Optional[List[Dict[str, str]]] 
         return None
 
 @app.post('/api/support-chat')
-def support_chat(payload: SupportChatIn):
-    ai_answer = openai_support_answer(payload.message, payload.history)
+def support_chat(payload: SupportChatIn, current_user: Optional[User] = Depends(get_optional_user)):
+    user_snapshot = build_user_support_snapshot(current_user.email) if current_user else None
+    user_context = None
+    if current_user:
+        user_context = (
+            f"email={current_user.email}; sessions={user_snapshot.get('session_count', 0)}; "
+            f"completed={user_snapshot.get('completed_sessions', 0)}; "
+            f"avg_confidence={user_snapshot.get('avg_confidence', 0)}; "
+            f"last_file={user_snapshot.get('last_file') or 'N/A'}; path={payload.current_path or 'unknown'}"
+        )
+
+    ai_answer = openai_support_answer(payload.message, payload.history, user_context)
     if ai_answer:
-        return {"answer": ai_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL}
-    kb_answer = support_kb_answer(payload.message)
+        return {"answer": ai_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL, "user_context_used": bool(current_user)}
+    kb_answer = support_kb_answer(payload.message, user_snapshot)
     if kb_answer:
-        return {"answer": kb_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL}
+        return {"answer": kb_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL, "user_context_used": bool(current_user)}
     return {
-        "answer": "I couldn't confidently answer that. Please share your question on GitHub issues for the Team Intelli-Migrate support thread.",
-        "can_answer": False,
+        "answer": (
+            "I can still help if you ask with more detail (for example: 'how to fix SMTP', "
+            "'how to map schema', or 'how to deploy to Supabase')."
+        ),
+        "can_answer": True,
         "github_support_url": SUPPORT_GITHUB_URL
     }
 
@@ -1022,7 +1136,8 @@ async def health_check():
             "normalizer": "available" if normalizer_ok else "limited",
             "sql_generator": "available" if sql_ok else "limited"
         },
-        "ml_worker": "available" if ml_worker_available() else "unavailable"
+        "ml_worker": "available" if ml_worker_available() else "unavailable",
+        "smtp": "configured" if smtp_service_configured() else "unavailable"
     }
 
 

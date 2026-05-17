@@ -13,6 +13,12 @@ export default function SupportChatWidget() {
     }
   ])
   const [githubUrl, setGithubUrl] = useState('https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues')
+  const quickPrompts = [
+    'How do I upload and parse?',
+    'How is confidence calculated?',
+    'How do I deploy to Supabase?',
+    'Show my session progress'
+  ]
   const listRef = useRef(null)
 
   useEffect(() => {
@@ -35,12 +41,11 @@ export default function SupportChatWidget() {
     setInput('')
     setLoading(true)
     try {
-      const res = await supportChat(text, nextHistory.slice(-8))
+      const res = await supportChat(text, nextHistory.slice(-8), window.location.pathname)
       setGithubUrl(res.github_support_url || githubUrl)
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: res.answer || 'No answer available.' },
-        ...(res.can_answer ? [] : [{ role: 'assistant', content: `If needed, report here: ${res.github_support_url || githubUrl}` }])
+        { role: 'assistant', content: res.answer || 'No answer available.' }
       ])
     } catch (e) {
       setMessages((prev) => [
@@ -92,6 +97,17 @@ export default function SupportChatWidget() {
           </div>
 
           <div className="p-3 border-t border-white/10">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {quickPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => setInput(prompt)}
+                  className="text-[11px] px-2 py-1 rounded-lg bg-white/[0.05] border border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08]"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
             <div className="flex items-center gap-2">
               <input
                 value={input}
