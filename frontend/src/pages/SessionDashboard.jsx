@@ -17,7 +17,7 @@ const steps = [
 export default function SessionDashboard() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
-  const { setActiveSession, activeSession } = useMigration()
+  const { setActiveSession, activeSession, removeSession } = useMigration()
   const [sessionData, setSessionData] = useState(null)
   const [error, setError] = useState('')
 
@@ -34,11 +34,14 @@ export default function SessionDashboard() {
         setSessionData(data)
         setError('')
       } catch (e) {
+        if ((e?.response?.status || 0) === 404) {
+          removeSession(sessionId)
+        }
         setError(e?.response?.data?.detail || 'Session not found')
       }
     }
     load()
-  }, [sessionId])
+  }, [sessionId, removeSession])
 
   const summary = useMemo(() => {
     const mapping = sessionData?.results?.mapping || {}
@@ -83,7 +86,7 @@ export default function SessionDashboard() {
       <section className="grid md:grid-cols-3 gap-4">
         <Metric label="Tables Generated" value={summary.tablesGenerated} />
         <Metric label="Anomalies Found" value={summary.anomaliesFound} />
-        <Metric label="Confidence" value={`${summary.confidence}%`} />
+        <Metric label="Confidence" value={`${Number(summary.confidence || 0).toFixed(1)}%`} />
       </section>
 
       <section className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">

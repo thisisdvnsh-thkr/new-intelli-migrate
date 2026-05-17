@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Cloud, Check, Loader2, ExternalLink, Database, HardDrive, Download } from 'lucide-react'
 import { useMigration } from '../context/MigrationContext'
@@ -18,6 +19,7 @@ const providerMeta = {
 }
 
 export default function Deploy() {
+  const navigate = useNavigate()
   const { stats, setStepWithSession, updateSessionMeta } = useMigration()
   const [deploying, setDeploying] = useState(false)
   const [deployed, setDeployed] = useState(false)
@@ -25,6 +27,7 @@ export default function Deploy() {
   const [settings, setSettings] = useState({})
   const [error, setError] = useState('')
   const [deployProgress, setDeployProgress] = useState(0)
+  const [showCredentialModal, setShowCredentialModal] = useState(false)
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -43,11 +46,44 @@ export default function Deploy() {
   const ProviderIcon = providerInfo.icon
 
   const canDeployDirectly = provider !== 'access' && provider !== 'custom_mysql'
-  const savedConnection = settings.databaseUrl || ''
+  const savedConnection = String(settings.databaseUrl || '').trim()
+  const hasApiCredentials = Boolean(settings.providerApiKey && settings.providerProjectId)
+  const requiresApiCredentials = provider === 'supabase' || provider === 'neon'
+  const requiresConnectionUrl = provider === 'supabase' || provider === 'neon' || provider === 'custom_postgresql'
+  const missingApiCreds = requiresApiCredentials && !hasApiCredentials
+  const missingConnection = requiresConnectionUrl && !savedConnection
+  const missingCredentialReason = missingApiCreds
+    ? `Add ${providerInfo.label} API key and project ID in your profile before deploying.`
+    : (missingConnection ? 'Add your database connection string in profile before deploying.' : '')
 
   const deploy = async () => {
+    let effectiveSettings = settings
+    try {
+      const fresh = await getUserSettings()
+      effectiveSettings = fresh?.settings || settings
+      setSettings(effectiveSettings)
+    } catch {
+      effectiveSettings = settings
+    }
+
+    const effectiveProvider = effectiveSettings.databaseProvider || effectiveSettings.defaultDatabase || 'postgresql'
+    const effectiveSavedConnection = String(effectiveSettings.databaseUrl || '').trim()
+    const effectiveMissingApiCreds = (effectiveProvider === 'supabase' || effectiveProvider === 'neon') &&
+      !(effectiveSettings.providerApiKey && effectiveSettings.providerProjectId)
+    const effectiveMissingConnection = (effectiveProvider === 'supabase' || effectiveProvider === 'neon' || effectiveProvider === 'custom_postgresql') &&
+      !effectiveSavedConnection
+    const effectiveCanDeployDirectly = effectiveProvider !== 'access' && effectiveProvider !== 'custom_mysql'
+    const effectiveMissingReason = effectiveMissingApiCreds
+      ? `Add ${(providerMeta[effectiveProvider] || providerInfo).label} API key and project ID in your profile before deploying.`
+      : (effectiveMissingConnection ? 'Add your database connection string in profile before deploying.' : '')
+
     if (!stats.sessionId) {
       setError('Please complete previous steps first.')
+      return
+    }
+    if (effectiveMissingReason) {
+      setError(effectiveMissingReason)
+      setShowCredentialModal(true)
       return
     }
     setDeploying(true)
@@ -55,26 +91,26 @@ export default function Deploy() {
     setError('')
     const start = Date.now()
     const progressTimer = setInterval(() => {
-      setDeployProgress((prev) => Math.min(94, prev + 2))
+      setDeployProgress((prev) => Math.min(96, prev + 2))
     }, 140)
     try {
       let response
-      if (!canDeployDirectly) {
+      if (!effectiveCanDeployDirectly) {
         setError('Microsoft Access uses SQL export. Download SQL and import it into Access.')
         return
       }
-      if (savedConnection) {
+      if (effectiveSavedConnection) {
         response = await deployToPostgres(stats.sessionId, {
-          database_url: savedConnection,
-          db_password: settings.dbPassword || null,
-          provider_api_key: settings.providerApiKey || null,
-          provider_project_id: settings.providerProjectId || null
+          database_url: effectiveSavedConnection,
+          db_password: effectiveSettings.dbPassword || null,
+          provider_api_key: effectiveSettings.providerApiKey || null,
+          provider_project_id: effectiveSettings.providerProjectId || null
         })
       } else {
         response = await deployToEnv(stats.sessionId, {
-          db_password: settings.dbPassword || null,
-          provider_api_key: settings.providerApiKey || null,
-          provider_project_id: settings.providerProjectId || null
+          db_password: effectiveSettings.dbPassword || null,
+          provider_api_key: effectiveSettings.providerApiKey || null,
+          provider_project_id: effectiveSettings.providerProjectId || null
         })
       }
       const elapsed = Date.now() - start
@@ -82,10 +118,17 @@ export default function Deploy() {
         await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed))
       }
       setDeployProgress(100)
-      setResult(response?.data || response)
-      setDeployed(Boolean((response?.data || response)?.success))
-      setStepWithSession(6, { status: 'deployed', provider })
-      updateSessionMeta(stats.sessionId, { deployed: true, provider })
+      const deployData = response?.data || response
+      setResult(deployData)
+      const success = Boolean(deployData?.success)
+      setDeployed(success)
+      if (success) {
+        setStepWithSession(6, { status: 'deployed', provider: effectiveProvider })
+        updateSessionMeta(stats.sessionId, { deployed: true, provider: effectiveProvider })
+      } else {
+        const deployMessage = deployData?.message || (Array.isArray(deployData?.errors) ? deployData.errors.join(', ') : '') || 'Deployment could not be completed.'
+        setError(deployMessage)
+      }
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || 'Deployment failed')
     } finally {
@@ -188,6 +231,34 @@ export default function Deploy() {
         <InfoCard label="Connection" value={savedConnection ? 'Custom URL configured' : 'Server env fallback'} />
         <InfoCard label="Session" value={stats.sessionId || 'None'} />
       </section>
+
+      {showCredentialModal && (
+        <div className="fixed inset-0 z-[120] bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-3xl bg-[#0d0d10] border border-white/10 p-6">
+            <h3 className="text-xl font-black text-white mb-2">Database credentials required</h3>
+            <p className="text-white/65 mb-5">
+              {error || missingCredentialReason || 'Please add your database connection details in profile before deploying this session.'}
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowCredentialModal(false)}
+                className="px-4 py-2 rounded-xl border border-white/15 text-white/80 hover:text-white hover:bg-white/5"
+              >
+                Not now
+              </button>
+              <button
+                onClick={() => {
+                  setShowCredentialModal(false)
+                  navigate('/profile')
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold"
+              >
+                Add it right now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }

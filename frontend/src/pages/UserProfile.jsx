@@ -71,8 +71,8 @@ export default function UserProfile() {
       alert('Name is required.')
       return
     }
-    if (isApiProvider && (!settings.providerApiKey || !settings.providerProjectId)) {
-      alert('API key and project ID are required for this provider.')
+    if (isApiProvider && (!settings.providerApiKey || !settings.providerProjectId || !settings.databaseUrl)) {
+      alert('API key, project ID, and database URL are required for this provider.')
       return
     }
     if (isCustomProvider && !settings.databaseUrl) {
@@ -175,7 +175,7 @@ export default function UserProfile() {
             <select
               value={provider}
               onChange={(e) => setSettings((prev) => ({ ...prev, databaseProvider: e.target.value, defaultDatabase: e.target.value }))}
-              className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500/50"
+              className="theme-aware-select w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500/50"
             >
               {providerOptions.map((item) => (
                 <option key={item.value} value={item.value}>{item.label}</option>
@@ -199,6 +199,16 @@ export default function UserProfile() {
                 value={settings.providerProjectId || ''}
                 onChange={(value) => setSettings((prev) => ({ ...prev, providerProjectId: value }))}
                 placeholder="Enter project ID"
+                required
+              />
+              <Input
+                icon={Link2}
+                label="Direct Database URL"
+                value={settings.databaseUrl || ''}
+                onChange={(value) => setSettings((prev) => ({ ...prev, databaseUrl: value }))}
+                placeholder={provider === 'neon'
+                  ? 'postgresql://user:password@ep-xxxx.region.aws.neon.tech/dbname'
+                  : 'postgresql://postgres:[password]@db.<project>.supabase.co:5432/postgres'}
                 required
               />
             </div>

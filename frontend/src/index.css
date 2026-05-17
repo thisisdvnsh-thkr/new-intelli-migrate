@@ -81,6 +81,19 @@
     color: #0f172a;
   }
 
+  html.theme-light select,
+  html.theme-light .theme-aware-select {
+    color-scheme: light !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  html.theme-light .theme-aware-select option,
+  html.theme-light select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+
   html.theme-light .shadow-2xl,
   html.theme-light .shadow-lg {
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;

@@ -137,8 +137,7 @@ export default function Signup() {
                 value={targetDatabase}
                 onChange={(e) => setTargetDatabase(e.target.value)}
                 required
-                className="w-full pl-12 pr-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
-                style={{ colorScheme: 'dark' }}
+                className="theme-aware-select w-full pl-12 pr-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
               >
                 <option className="bg-[#0f1115] text-white" value="supabase">Supabase</option>
                 <option className="bg-[#0f1115] text-white" value="neon">Neon</option>
@@ -167,6 +166,19 @@ export default function Signup() {
                     value={providerApiKey}
                     onChange={(e) => setProviderApiKey(e.target.value)}
                     placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} API Key`}
+                    required
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
+                  />
+                </div>
+                <div className="relative group">
+                  <Server className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                  <input
+                    type="text"
+                    value={databaseUrl}
+                    onChange={(e) => setDatabaseUrl(e.target.value)}
+                    placeholder={targetDatabase === 'neon'
+                      ? 'postgresql://user:password@ep-xxxx.region.aws.neon.tech/dbname'
+                      : 'postgresql://postgres:[password]@db.<project>.supabase.co:5432/postgres'}
                     required
                     className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
                   />

@@ -5,12 +5,14 @@ import { Plus, Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle
 import { useAuth } from '../context/AuthContext'
 import { useMigration } from '../context/MigrationContext'
 import BrandLogo from './BrandLogo'
+import { getSession } from '../lib/api'
 
 export default function Sidebar({ isOpen, onToggle }) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { sessionHistory, activeSessionId, setActiveSession, resetSession } = useMigration()
+  const { sessionHistory, activeSessionId, setActiveSession, resetSession, removeSession } = useMigration()
   const [query, setQuery] = useState('')
+  const [sessionNotice, setSessionNotice] = useState('')
 
   const filteredSessions = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -79,14 +81,33 @@ export default function Sidebar({ isOpen, onToggle }) {
           </div>
         ) : (
           <div className="space-y-1.5">
+            {sessionNotice && (
+              <div className="mx-2 mb-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/25 text-xs text-yellow-200">
+                {sessionNotice}
+              </div>
+            )}
             {filteredSessions.map((item) => {
               const isActive = activeSessionId === item.sessionId
               return (
                 <motion.button
                   key={item.sessionId}
-                  onClick={() => {
-                    setActiveSession(item.sessionId)
-                    navigate(`/session/${item.sessionId}`)
+                  onClick={async () => {
+                    const targetSessionId = item.sessionId
+                    if (!targetSessionId) {
+                      removeSession(item.sessionId)
+                      setSessionNotice('Removed an invalid local session entry.')
+                      return
+                    }
+                    try {
+                      await getSession(targetSessionId)
+                      setSessionNotice('')
+                      setActiveSession(targetSessionId)
+                      navigate(`/session/${targetSessionId}`)
+                    } catch {
+                      removeSession(targetSessionId)
+                      setSessionNotice('This session is no longer available on server, so it was removed.')
+                      navigate('/dashboard')
+                    }
                   }}
                   whileHover={{ scale: 1.01 }}
                   className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${

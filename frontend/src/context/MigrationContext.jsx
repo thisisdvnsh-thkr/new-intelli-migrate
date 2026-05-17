@@ -3,11 +3,33 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 const MigrationContext = createContext(null)
 const SESSIONS_STORAGE_KEY = 'intelli-session-history'
 
+function normalizeSessionShape(item) {
+  if (!item || typeof item !== 'object') return null
+  const sessionId = item.sessionId || item.session_id || item.id
+  if (!sessionId || typeof sessionId !== 'string') return null
+
+  return {
+    ...item,
+    sessionId,
+    fileName: item.fileName || item.file_name || item.name || 'Untitled file',
+    fileSizeBytes: Number(item.fileSizeBytes || item.file_size_bytes || 0) || 0,
+    rows: Number(item.rows || item.record_count || 0) || 0,
+    cols: Number(item.cols || item.column_count || 0) || 0,
+    fileType: item.fileType || item.file_type || 'unknown',
+    currentStep: Number(item.currentStep || item.current_step || 0) || 0,
+    status: item.status || 'active',
+    provider: item.provider || item.defaultDatabase || 'postgresql',
+    mappingConfidence: Number(item.mappingConfidence ?? item.mapping_confidence ?? item.confidence ?? 0) || 0,
+    qualityScore: Number(item.qualityScore ?? item.quality_score ?? 0) || 0
+  }
+}
+
 function loadStoredSessions() {
   try {
     const raw = localStorage.getItem(SESSIONS_STORAGE_KEY)
     const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(normalizeSessionShape).filter(Boolean)
   } catch {
     return []
   }
@@ -40,10 +62,10 @@ export function MigrationProvider({ children }) {
     fileType: null,
     fileSizeBytes: 0,
     rows: 0,
-    cols: 0,
-    provider: 'postgresql',
-    qualityScore: 100
-  })
+      cols: 0,
+      provider: 'postgresql',
+      qualityScore: 0
+    })
 
   useEffect(() => {
     localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessionHistory))
@@ -72,12 +94,12 @@ export function MigrationProvider({ children }) {
       fileType: null,
       fileSizeBytes: 0,
       rows: 0,
-      cols: 0,
-      tablesGenerated: 0,
-      anomaliesFound: 0,
-      confidence: 0,
-      qualityScore: 100
-    }))
+        cols: 0,
+        tablesGenerated: 0,
+        anomaliesFound: 0,
+        confidence: 0,
+        qualityScore: 0
+      }))
   }, [])
 
   const updateStats = useCallback((newStats) => {
@@ -99,7 +121,7 @@ export function MigrationProvider({ children }) {
       updatedAt: createdAt,
       createdAt,
       mappingConfidence: 0,
-      qualityScore: 100
+      qualityScore: 0
     }
 
     setSessionHistory((prev) => {
@@ -132,6 +154,13 @@ export function MigrationProvider({ children }) {
     )
   }, [])
 
+  const removeSession = useCallback((sessionId) => {
+    if (!sessionId) return
+    setSessionHistory((prev) => prev.filter((item) => item.sessionId !== sessionId))
+    setActiveSessionId((prev) => (prev === sessionId ? null : prev))
+    setSession((prev) => (prev === sessionId ? null : prev))
+  }, [])
+
   const setActiveSession = useCallback((sessionId) => {
     setActiveSessionId(sessionId)
     const selected = sessionHistory.find((item) => item.sessionId === sessionId)
@@ -147,8 +176,8 @@ export function MigrationProvider({ children }) {
       rows: selected.rows || 0,
       cols: selected.cols || 0,
       provider: selected.provider || prev.provider,
-      confidence: selected.mappingConfidence || prev.confidence,
-      qualityScore: selected.qualityScore || prev.qualityScore
+      confidence: selected.mappingConfidence ?? prev.confidence,
+      qualityScore: selected.qualityScore ?? prev.qualityScore
     }))
   }, [sessionHistory])
 
@@ -178,6 +207,7 @@ export function MigrationProvider({ children }) {
     setActiveSessionId,
     addOrActivateSession,
     updateSessionMeta,
+    removeSession,
     setActiveSession,
     setStepWithSession
   }
