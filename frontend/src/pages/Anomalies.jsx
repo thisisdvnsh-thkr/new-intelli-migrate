@@ -46,8 +46,8 @@ export default function Anomalies() {
       const result = await detectAnomalies(stats.sessionId)
       setPhase('Classifying anomaly severity...')
       const elapsed = Date.now() - start
-      if (elapsed < 1300) {
-        await new Promise((resolve) => setTimeout(resolve, 1300 - elapsed))
+      if (elapsed < 5000) {
+        await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed))
       }
 
       const data = result.data || {}

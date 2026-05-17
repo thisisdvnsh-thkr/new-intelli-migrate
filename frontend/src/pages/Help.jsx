@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  HelpCircle, Book, MessageCircle, Mail, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap, Users, ExternalLink, PhoneCall
-} from 'lucide-react'
+import { HelpCircle, Book, MessageCircle, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -13,41 +12,30 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.1 } }
 }
 
-const supportEmail = 'thisisdvnsh.thkr@gmail.com'
-const projectRepo = 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate'
-
-const teamMembers = [
-  { name: 'Devansh', role: 'Team Lead • Agent 5: SQL Generator + Integration' },
-  { name: 'Arpit', role: 'Agent 1: Parser Engine + Frontend' },
-  { name: 'Prashant', role: 'Agent 2: NLP Schema Mapper' },
-  { name: 'Mohd Suhail', role: 'Agent 3: Anomaly Detector' },
-  { name: 'Priyanshu', role: 'Agent 4: Normalizer' }
-]
-
 const faqs = [
   {
     question: 'What does confidence mean in schema mapping?',
-    answer: 'Confidence is the semantic match score between your source field and the standardized SQL field. Higher confidence means a stronger mapping match.'
+    answer: 'Confidence is the semantic match score between source and target field names. High confidence means the mapping is highly reliable.'
   },
   {
     question: 'Which data formats can I upload?',
-    answer: 'JSON, CSV, and XML are supported. The upload stage profiles your file and extracts rows, columns, and preview metadata.'
+    answer: 'JSON, CSV, and XML are supported. Upload page parses file structure and displays a schema preview.'
   },
   {
-    question: 'Can I deploy directly to every database?',
-    answer: 'Direct deploy supports PostgreSQL providers like Render, Supabase, Neon, Railway, and generic Postgres URLs. For Microsoft Access, export SQL and import manually.'
+    question: 'How do I recover my account password?',
+    answer: 'Use Forgot Password on login. The platform sends a time-limited reset link to your registered email.'
   },
   {
-    question: 'Why do I see migration sessions in the sidebar?',
-    answer: 'Each uploaded file creates a session. Sessions preserve file metadata and pipeline step progress so you can reopen previous runs quickly.'
+    question: 'How can I contact the development team?',
+    answer: 'Open Contact Support to view team info and direct GitHub comments/suggestions channel.'
   },
   {
-    question: 'Why can upload processing take longer for big files?',
-    answer: 'The parser, profiling, and anomaly pipelines run on actual file data. Larger files naturally take more time due to row volume and schema complexity.'
+    question: 'Can I use custom PostgreSQL/MySQL?',
+    answer: 'Yes. Configure custom connection string in user profile database section and use restricted DB credentials.'
   },
   {
-    question: 'How do I report an issue to Team Intelli-Migrate?',
-    answer: 'Use the support email below with screenshots and your session ID. This helps us trace logs and provide faster fixes.'
+    question: 'Where can I see project report and research?',
+    answer: 'Open Documentation from this page. It is prepared for interactive report and research display.'
   }
 ]
 
@@ -61,32 +49,32 @@ const guides = [
   {
     title: 'Schema Mapping',
     icon: Sparkles,
-    description: 'Understanding interactive confidence and field mapping',
-    steps: ['Run mapping', 'Review confidence bars', 'Confirm mapped fields', 'Move to anomaly scan']
+    description: 'Understanding confidence and field mapping',
+    steps: ['Run mapping', 'Review confidence bars', 'Confirm mapped fields', 'Continue to anomalies']
   },
   {
     title: 'Anomaly Detection',
     icon: AlertTriangle,
     description: 'Data quality and severity visualization',
-    steps: ['Run detector', 'Review severity distribution', 'Inspect flagged records', 'Continue to SQL generation']
+    steps: ['Run detector', 'Inspect flagged records', 'Review quality score', 'Continue to SQL']
   },
   {
     title: 'Deployment',
     icon: Cloud,
-    description: 'Deploy to chosen database provider',
-    steps: ['Configure provider in Settings', 'Add DB URL/API key', 'Run Deploy', 'Verify tables in dashboard']
+    description: 'Deploy to your selected provider',
+    steps: ['Configure provider in profile', 'Add key/connection', 'Run Deploy', 'Verify tables']
   },
   {
-    title: 'Upload & Preview',
+    title: 'Upload & Parse',
     icon: Upload,
-    description: 'Visual preview and metadata',
-    steps: ['Upload file', 'Inspect rows/cols/size', 'Check detected columns', 'Continue to mapping']
+    description: 'Visual preview and metadata extraction',
+    steps: ['Upload file', 'Watch extraction visual', 'Check rows/cols', 'Continue to mapping']
   },
   {
     title: 'SQL Output',
     icon: Database,
     description: 'Generated DDL + DML scripts',
-    steps: ['Generate SQL', 'Review stats', 'Copy/download script', 'Deploy or import manually']
+    steps: ['Generate SQL', 'Copy/download scripts', 'Auto-save support', 'Deploy or import']
   }
 ]
 
@@ -98,55 +86,14 @@ export default function Help() {
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
       <motion.header variants={fadeInUp}>
         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Help Center</h1>
-        <p className="text-lg text-white/50 font-medium">Guides, FAQs, and Team Intelli-Migrate support.</p>
+        <p className="text-lg text-white/50 font-medium">Guides, FAQs, and direct support paths.</p>
       </motion.header>
 
       <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <ActionCard icon={Book} label="Documentation" href="#guides" />
-        <ActionCard icon={MessageCircle} label="FAQs" href="#faqs" />
-        <ActionCard icon={Mail} label="Contact Support" href="#contact-support" />
+        <ActionCard icon={Book} label="Documentation" to="/documentation" />
+        <ActionCard icon={MessageCircle} label="FAQs" to="/help#faqs" />
+        <ActionCard icon={HelpCircle} label="Contact Support" to="/contact-support" />
       </motion.div>
-
-      <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5 text-purple-300" />
-          <h2 className="text-2xl font-bold text-white">Team Intelli-Migrate</h2>
-        </div>
-        <img
-          src="/team-photo.png"
-          alt="Team Intelli-Migrate group photo"
-          className="w-full max-w-4xl max-h-[360px] object-cover rounded-2xl border border-white/10 mb-6"
-        />
-        <div className="grid md:grid-cols-2 gap-3">
-          {teamMembers.map((member) => (
-            <div key={member.name} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
-              <p className="text-white font-semibold">{member.name}</p>
-              <p className="text-sm text-white/45">{member.role}</p>
-            </div>
-          ))}
-        </div>
-      </motion.section>
-
-      <motion.section variants={fadeInUp} id="contact-support" className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
-        <h2 className="text-2xl font-bold text-white mb-4">Contact Support</h2>
-        <p className="text-white/55 mb-4">
-          For enterprise coordination, integration support, and deployment issues, contact Team Intelli-Migrate directly.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <a href={projectRepo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">
-            <ExternalLink className="w-4 h-4" />
-            View Full Project Files
-          </a>
-          <a href={`mailto:${supportEmail}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-colors">
-            <Mail className="w-4 h-4" />
-            {supportEmail}
-          </a>
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-white/70">
-            <PhoneCall className="w-4 h-4" />
-            Team Lead: Devansh
-          </span>
-        </div>
-      </motion.section>
 
       <motion.section variants={fadeInUp} id="guides">
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
@@ -232,16 +179,16 @@ export default function Help() {
   )
 }
 
-function ActionCard({ icon: Icon, label, href }) {
+function ActionCard({ icon: Icon, label, to }) {
   return (
-    <a
-      href={href}
+    <Link
+      to={to}
       className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] transition-all duration-300 flex items-center gap-4"
     >
       <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
         <Icon className="w-6 h-6 text-blue-300" />
       </div>
       <span className="text-lg font-semibold text-white">{label}</span>
-    </a>
+    </Link>
   )
 }

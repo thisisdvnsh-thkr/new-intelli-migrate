@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Sparkles, ArrowRight, ChevronDown, Workflow, Bot, ShieldCheck, LineChart, DatabaseZap, Cpu, Rocket, HelpCircle
+  Sparkles, ArrowRight, ChevronDown, Workflow, Bot, ShieldCheck, LineChart, DatabaseZap, Cpu, Rocket, HelpCircle, MessageCircle
 } from 'lucide-react'
 import BrandLogo from '../components/BrandLogo'
 
@@ -13,6 +13,10 @@ const fadeInUp = {
 
 const stagger = {
   visible: { transition: { staggerChildren: 0.1 } }
+}
+
+function openSupportChat() {
+  window.dispatchEvent(new Event('open-support-chat'))
 }
 
 function Navbar() {
@@ -44,7 +48,10 @@ function Navbar() {
           <a href="#use-cases" className="text-white/70 hover:text-white font-medium transition-colors">Use Cases</a>
           <a href="#architecture" className="text-white/70 hover:text-white font-medium transition-colors">Architecture</a>
           <a href="#faqs" className="text-white/70 hover:text-white font-medium transition-colors">FAQs</a>
-          <a href="#support" className="text-white/70 hover:text-white font-medium transition-colors">Support</a>
+          <button onClick={openSupportChat} className="text-white/70 hover:text-white font-medium transition-colors inline-flex items-center gap-1">
+            <MessageCircle className="w-4 h-4" />
+            Support
+          </button>
         </div>
 
         <Link
@@ -132,16 +139,11 @@ function Hero() {
               </div>
             ))}
           </motion.div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.3 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
-        >
-          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-            <ChevronDown className="w-8 h-8 text-white/30" />
+          <motion.div variants={fadeInUp} className="flex justify-center pt-2">
+            <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+              <ChevronDown className="w-8 h-8 text-white/30" />
+            </motion.div>
           </motion.div>
         </motion.div>
       </div>
@@ -291,18 +293,66 @@ function Architecture() {
 
 function QuickFaq() {
   const faqs = [
-    'What does schema confidence mean?',
-    'Can I deploy to Supabase/Render/Neon?',
-    'Will sessions remain visible in sidebar history?'
+    {
+      q: 'What does schema confidence mean?',
+      a: 'Confidence is the match certainty for field mapping. Higher confidence means stronger semantic alignment from source to target SQL field.'
+    },
+    {
+      q: 'Can I deploy to Supabase/Render/Neon?',
+      a: 'Yes. You can configure provider details in profile database connection and deploy from the final pipeline stage.'
+    },
+    {
+      q: 'Will sessions remain visible in sidebar history?',
+      a: 'Yes. Each uploaded file creates a session entry that can be reselected for quick context restore.'
+    },
+    {
+      q: 'How does forgot password work?',
+      a: 'Use the forgot password link on login. A secure reset link is emailed and expires automatically.'
+    },
+    {
+      q: 'Can I use custom PostgreSQL/MySQL?',
+      a: 'Yes, with custom connection strings. We recommend dedicated restricted DB users for platform access.'
+    },
+    {
+      q: 'Does Intelli-Migrate support large files?',
+      a: 'It supports large files, but free-tier backend constraints can reduce performance. Use chunking and streaming-friendly infrastructure for best results.'
+    },
+    {
+      q: 'Do I receive migration notifications?',
+      a: 'If notifications are enabled in profile settings, you receive account and migration event emails.'
+    },
+    {
+      q: 'What if support bot cannot answer?',
+      a: 'Support chat provides a GitHub issues redirect so you can submit comments and suggestions directly to the team.'
+    }
   ]
+  const [open, setOpen] = useState(null)
   return (
     <section id="faqs" className="py-20">
       <div className="max-w-5xl mx-auto px-6">
         <h2 className="text-4xl md:text-5xl font-black text-white mb-10 text-center">Frequently Asked Questions</h2>
         <div className="space-y-3">
-          {faqs.map((faq) => (
-            <div key={faq} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-white/85 font-semibold">
-              {faq}
+          {faqs.map((item, idx) => (
+            <div key={item.q} className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+              <button
+                onClick={() => setOpen(open === idx ? null : idx)}
+                className="w-full text-left px-5 py-4 text-white font-semibold flex items-center justify-between"
+              >
+                {item.q}
+                <ChevronDown className={`w-4 h-4 text-white/50 transition-transform ${open === idx ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {open === idx && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="px-5 pb-4 text-white/65"
+                  >
+                    {item.a}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
@@ -320,12 +370,12 @@ function Footer() {
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
           <a href="#faqs" className="hover:text-white transition-colors">FAQs</a>
-          <a href="mailto:thisisdvnsh.thkr@gmail.com" className="hover:text-white transition-colors inline-flex items-center gap-1">
+          <button onClick={openSupportChat} className="hover:text-white transition-colors inline-flex items-center gap-1">
             <HelpCircle className="w-4 h-4" />
             Support
-          </a>
+          </button>
         </div>
-        <p className="text-white/30 text-sm">© 2024 Intelli-Migrate</p>
+        <p className="text-white/30 text-sm">© 2026 Intelli-Migrate</p>
       </div>
     </footer>
   )

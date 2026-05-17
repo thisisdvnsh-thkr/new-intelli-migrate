@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getUserSettings, saveUserSettings, changePassword, deleteAccount } from '../lib/api'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import {
-  User, Bell, Shield, Database, Palette, Save, Check, Moon, Sun, Key, Trash2, Link2
+  Bell, Shield, Palette, Save, Check, Moon, Sun, Key, Trash2
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -22,21 +22,13 @@ function applyTheme(darkModeEnabled) {
 }
 
 export default function Settings() {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
-    name: '',
-    email: '',
     notifications: true,
     darkMode: true,
-    autoSave: true,
-    date_of_birth: '',
-    defaultDatabase: 'postgresql',
-    databaseProvider: 'postgresql',
-    databaseUrl: '',
-    dbPassword: '',
-    supportEmail: 'thisisdvnsh.thkr@gmail.com'
+    autoSave: true
   })
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
@@ -45,13 +37,6 @@ export default function Settings() {
   })
 
   useEffect(() => {
-    if (user) {
-      setSettings((prev) => ({
-        ...prev,
-        name: user.full_name || user.name || prev.name,
-        email: user.email || prev.email
-      }))
-    }
     const load = async () => {
       try {
         const res = await getUserSettings()
@@ -66,19 +51,11 @@ export default function Settings() {
       }
     }
     load()
-  }, [user])
+  }, [])
 
   useEffect(() => {
     applyTheme(settings.darkMode)
   }, [settings.darkMode])
-
-  const providerHints = useMemo(() => {
-    const provider = settings.databaseProvider || settings.defaultDatabase
-    if (provider === 'access') {
-      return 'Microsoft Access uses SQL export (download SQL and import manually).'
-    }
-    return 'Use PostgreSQL connection string: postgresql://user:password@host:5432/dbname'
-  }, [settings.databaseProvider, settings.defaultDatabase])
 
   const handleSave = async () => {
     setSaving(true)
@@ -121,7 +98,7 @@ export default function Settings() {
       <motion.header variants={fadeInUp} className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Settings</h1>
-          <p className="text-lg text-white/50 font-medium">Manage profile, appearance, and database connection.</p>
+          <p className="text-lg text-white/50 font-medium">Appearance, notifications, auto-save, and security controls.</p>
         </div>
         <button
           onClick={handleSave}
@@ -135,15 +112,6 @@ export default function Settings() {
         </button>
       </motion.header>
 
-      <Section icon={User} title="Profile">
-        <div className="grid md:grid-cols-2 gap-4">
-          <Input label="Full Name" value={settings.name} onChange={(value) => setSettings({ ...settings, name: value })} />
-          <Input label="Email" value={settings.email} onChange={(value) => setSettings({ ...settings, email: value })} />
-          <Input label="Date of Birth" type="date" value={settings.date_of_birth || ''} onChange={(value) => setSettings({ ...settings, date_of_birth: value })} />
-          <Input label="Support Email" value={settings.supportEmail} onChange={(value) => setSettings({ ...settings, supportEmail: value })} />
-        </div>
-      </Section>
-
       <Section icon={Palette} title="Appearance">
         <ToggleSetting
           label="Dark Mode"
@@ -154,54 +122,16 @@ export default function Settings() {
         />
       </Section>
 
-      <Section icon={Database} title="Database Connection">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-white/50 mb-2">Target Database Provider</label>
-            <select
-              value={settings.databaseProvider || settings.defaultDatabase}
-              onChange={(e) => setSettings({ ...settings, databaseProvider: e.target.value, defaultDatabase: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-blue-500/50"
-            >
-              <option value="postgresql">PostgreSQL</option>
-              <option value="render">Render Postgres</option>
-              <option value="supabase">Supabase</option>
-              <option value="neon">Neon</option>
-              <option value="railway">Railway</option>
-              <option value="access">Microsoft Access (SQL export)</option>
-            </select>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Input
-              label="Database URL / API Key"
-              icon={Link2}
-              value={settings.databaseUrl}
-              onChange={(value) => setSettings({ ...settings, databaseUrl: value })}
-              placeholder="postgresql://user:password@host:5432/dbname"
-            />
-            <Input
-              label="DB Password (optional)"
-              type="password"
-              icon={Key}
-              value={settings.dbPassword || ''}
-              onChange={(value) => setSettings({ ...settings, dbPassword: value })}
-              placeholder="Only needed for protected DB setup"
-            />
-          </div>
-          <p className="text-sm text-white/45">{providerHints}</p>
-        </div>
-      </Section>
-
       <Section icon={Bell} title="Preferences">
         <ToggleSetting
           label="Email Notifications"
-          description="Receive updates about migration status"
+          description="Receive updates about registration, login, and migration status"
           checked={settings.notifications}
           onChange={(v) => setSettings({ ...settings, notifications: v })}
         />
         <ToggleSetting
           label="Auto-save SQL"
-          description="Automatically keep generated SQL in download-ready state"
+          description="Automatically save generated SQL to local browser storage"
           checked={settings.autoSave}
           onChange={(v) => setSettings({ ...settings, autoSave: v })}
         />

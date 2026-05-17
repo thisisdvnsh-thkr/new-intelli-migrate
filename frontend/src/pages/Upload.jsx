@@ -132,11 +132,16 @@ export default function Upload() {
     setUploading(true)
     setUploadProgress(0)
     setError('')
+    const start = Date.now()
 
     try {
       const data = await uploadFile(file, (percent) => {
         setUploadProgress(Math.min(99, percent))
       })
+      const elapsed = Date.now() - start
+      if (elapsed < 5000) {
+        await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed))
+      }
 
       setUploadProgress(100)
       setSimulatedProgress(100)

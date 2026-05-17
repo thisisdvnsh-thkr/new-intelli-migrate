@@ -17,6 +17,14 @@ import Landing from './pages/Landing'
 import Settings from './pages/Settings'
 import Help from './pages/Help'
 import UserProfile from './pages/UserProfile'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
+import ContactSupport from './pages/ContactSupport'
+import Documentation from './pages/Documentation'
+import ParseReview from './pages/ParseReview'
+import SupportChatWidget from './components/SupportChatWidget'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
 
@@ -183,16 +191,23 @@ function AppRoutes() {
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
         <Route path="/signup" element={<PublicLayout><Signup /></PublicLayout>} />
         <Route path="/oauth-callback" element={<PublicLayout><OAuthCallback /></PublicLayout>} />
+        <Route path="/forgot-password" element={<PublicLayout><ForgotPassword /></PublicLayout>} />
+        <Route path="/reset-password" element={<PublicLayout><ResetPassword /></PublicLayout>} />
+        <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
+        <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
         
         {/* Dashboard Routes */}
         <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
         <Route path="/upload" element={<DashboardLayout><Upload /></DashboardLayout>} />
+        <Route path="/parse-review" element={<DashboardLayout><ParseReview /></DashboardLayout>} />
         <Route path="/schema-map" element={<DashboardLayout><SchemaMap /></DashboardLayout>} />
         <Route path="/anomalies" element={<DashboardLayout><Anomalies /></DashboardLayout>} />
         <Route path="/generate-sql" element={<DashboardLayout><GenerateSQL /></DashboardLayout>} />
         <Route path="/deploy" element={<DashboardLayout><Deploy /></DashboardLayout>} />
         <Route path="/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
         <Route path="/help" element={<DashboardLayout><Help /></DashboardLayout>} />
+        <Route path="/contact-support" element={<DashboardLayout><ContactSupport /></DashboardLayout>} />
+        <Route path="/documentation" element={<DashboardLayout><Documentation /></DashboardLayout>} />
         <Route path="/profile" element={<DashboardLayout><UserProfile /></DashboardLayout>} />
       </Routes>
     </AnimatePresence>
@@ -201,7 +216,7 @@ function AppRoutes() {
 
 export default function App() {
   const [backendReady, setBackendReady] = useState(false)
-  const publicPaths = ['/', '/login', '/signup', '/oauth-callback']
+  const publicPaths = ['/', '/login', '/signup', '/oauth-callback', '/forgot-password', '/reset-password', '/terms', '/privacy']
   const [skipLoader] = useState(() => publicPaths.includes(window.location.pathname))
 
   // Show loader only for dashboard routes
@@ -214,6 +229,7 @@ export default function App() {
       <AuthProvider>
         <MigrationProvider>
           <AppRoutes />
+          <SupportChatWidget />
         </MigrationProvider>
       </AuthProvider>
     </BrowserRouter>

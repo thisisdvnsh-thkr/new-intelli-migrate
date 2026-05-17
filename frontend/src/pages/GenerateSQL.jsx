@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMigration } from '../context/MigrationContext'
-import { normalizeData, generateSQL as generateSQLApi } from '../lib/api'
+import { normalizeData, generateSQL as generateSQLApi, getUserSettings } from '../lib/api'
 import { ArrowRight, Database, Download, Copy, Check, Loader2, Code2, BarChart3 } from 'lucide-react'
 
 const fadeInUp = {
@@ -19,6 +19,13 @@ export default function GenerateSQL() {
   const [copied, setCopied] = useState(false)
   const [done, setDone] = useState(false)
   const [summary, setSummary] = useState({ tableCount: 0, recordCount: 0, ddlLines: 0, dmlLines: 0 })
+  const [autoSaveSql, setAutoSaveSql] = useState(true)
+
+  useEffect(() => {
+    getUserSettings()
+      .then((res) => setAutoSaveSql(res?.settings?.autoSave !== false))
+      .catch(() => setAutoSaveSql(true))
+  }, [])
 
   const sqlStats = useMemo(() => {
     const lines = sql.split('\n').length
@@ -45,11 +52,14 @@ export default function GenerateSQL() {
       const preview = data.preview || ''
 
       const elapsed = Date.now() - start
-      if (elapsed < 1300) {
-        await new Promise((resolve) => setTimeout(resolve, 1300 - elapsed))
+      if (elapsed < 5000) {
+        await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed))
       }
 
       setSql(preview)
+      if (autoSaveSql) {
+        localStorage.setItem(`intelli-autosql-${stats.sessionId}`, preview)
+      }
       setSummary({
         tableCount: data.table_count || 0,
         recordCount: data.record_count || 0,

@@ -32,8 +32,8 @@ export default function SchemaMap() {
       const result = await mapSchema(stats.sessionId)
       setPhase('Scoring confidence and building mappings...')
       const elapsed = Date.now() - start
-      if (elapsed < 1400) {
-        await new Promise((resolve) => setTimeout(resolve, 1400 - elapsed))
+      if (elapsed < 5000) {
+        await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed))
       }
 
       const data = result.data || {}

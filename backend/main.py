@@ -14,6 +14,8 @@ import uuid
 from datetime import datetime, timedelta
 import shutil
 import logging
+import smtplib
+from email.message import EmailMessage
 from urllib.parse import urlencode, quote_plus
 
 # Database and auth
@@ -46,6 +48,14 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
+SMTP_HOST = os.getenv('SMTP_HOST')
+SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+SMTP_USER = os.getenv('SMTP_USER')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
+SMTP_FROM = os.getenv('SMTP_FROM') or SMTP_USER
+SUPPORT_GITHUB_URL = os.getenv('SUPPORT_GITHUB_URL', 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues')
+SUPPORT_AI_MODEL = os.getenv('SUPPORT_AI_MODEL', 'gpt-4o-mini')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 
 def ml_worker_available(timeout: int = 3) -> bool:
@@ -317,9 +327,19 @@ class DeployConfig(BaseModel):
 class UserCreate(BaseModel):
     email: str
     password: str
-    full_name: Optional[str] = None
-    date_of_birth: Optional[str] = None
-    target_database: Optional[str] = None
+    name: str
+    target_database: str
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+class ForgotPasswordIn(BaseModel):
+    email: str
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: str
 
 class UserOut(BaseModel):
     id: int
@@ -332,6 +352,10 @@ class Token(BaseModel):
 
 class SettingsIn(BaseModel):
     settings: Dict[str, Any]
+
+class SupportChatIn(BaseModel):
+    message: str
+    history: Optional[List[Dict[str, str]]] = None
 
 # --- Database setup ---
 DATABASE_URL = os.getenv('DATABASE_URL') or f"sqlite:///" + os.path.join(os.path.dirname(__file__), '..', 'temp', 'intelli.db')
@@ -363,6 +387,62 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def create_password_reset_token(user_id: int) -> str:
+    payload = {
+        "sub": str(user_id),
+        "purpose": "password_reset",
+        "exp": datetime.utcnow() + timedelta(minutes=30)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_password_reset_token(token: str) -> int:
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    if payload.get("purpose") != "password_reset":
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Invalid reset token payload")
+    return int(user_id)
+
+def send_email_message(to_email: str, subject: str, body: str) -> None:
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASSWORD and SMTP_FROM):
+        raise HTTPException(status_code=503, detail="SMTP email service is not configured")
+    msg = EmailMessage()
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.set_content(body)
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.send_message(msg)
+
+def notifications_enabled_for_email(email: str) -> bool:
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            return False
+        settings = db.query(Settings).filter(Settings.user_id == user.id).first()
+        if not settings or not settings.settings_json:
+            return True
+        parsed = json.loads(settings.settings_json or "{}")
+        return bool(parsed.get("notifications", True))
+    except Exception:
+        return True
+    finally:
+        db.close()
+
+def send_user_notification(email: Optional[str], subject: str, body: str) -> None:
+    if not email:
+        return
+    if not notifications_enabled_for_email(email):
+        return
+    try:
+        send_email_message(email, subject, body)
+    except Exception as e:
+        logger.error(f"EMAIL_NOTIFICATION_ERROR email={email} subject={subject} error={e}")
+
 # --- DB helpers ---
 
 def get_db():
@@ -380,7 +460,7 @@ def get_user_by_email(db: Session, email: str):
 
 def create_user(db: Session, user_in: UserCreate):
     hashed = get_password_hash(user_in.password)
-    user = User(email=user_in.email, hashed_password=hashed, full_name=user_in.full_name)
+    user = User(email=user_in.email, hashed_password=hashed, full_name=user_in.name)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -405,43 +485,107 @@ async def get_current_user(authorization: Optional[str] = Header(None), db: Sess
         raise HTTPException(status_code=401, detail='User not found')
     return user
 
+async def get_optional_user(authorization: Optional[str] = Header(None), db: Session = Depends(lambda: next(get_db()))):
+    if not authorization:
+        return None
+    try:
+        scheme, _, token = authorization.partition(' ')
+        if scheme.lower() != 'bearer' or not token:
+            return None
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get('sub')
+        if not user_id:
+            return None
+        return db.query(User).filter(User.id == int(user_id)).first()
+    except Exception:
+        return None
+
 # --- Auth routes ---
 @app.post('/auth/signup', response_model=Token)
 def signup(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
     existing = get_user_by_email(db, user_in.email)
     if existing:
         raise HTTPException(status_code=400, detail='Email already registered')
+    if len(user_in.password) < 8:
+        raise HTTPException(status_code=400, detail='Password must be at least 8 characters')
     user = create_user(db, user_in)
     # Save onboarding defaults in settings if provided
-    defaults = {}
-    if user_in.date_of_birth:
-        defaults['date_of_birth'] = user_in.date_of_birth
-    if user_in.target_database:
-        defaults['defaultDatabase'] = user_in.target_database
-        defaults['databaseProvider'] = user_in.target_database
-    if defaults:
-        settings = db.query(Settings).filter(Settings.user_id == user.id).first()
-        if not settings:
-            settings = Settings(user_id=user.id, settings_json=json.dumps(defaults))
-            db.add(settings)
-        else:
-            try:
-                existing_settings = json.loads(settings.settings_json or '{}')
-            except Exception:
-                existing_settings = {}
-            existing_settings.update(defaults)
-            settings.settings_json = json.dumps(existing_settings)
-        db.commit()
+    defaults = {
+        'defaultDatabase': user_in.target_database,
+        'databaseProvider': user_in.target_database,
+        'notifications': True,
+        'autoSave': True
+    }
+    settings = db.query(Settings).filter(Settings.user_id == user.id).first()
+    if not settings:
+        settings = Settings(user_id=user.id, settings_json=json.dumps(defaults))
+        db.add(settings)
+    else:
+        try:
+            existing_settings = json.loads(settings.settings_json or '{}')
+        except Exception:
+            existing_settings = {}
+        existing_settings.update(defaults)
+        settings.settings_json = json.dumps(existing_settings)
+    db.commit()
     token = create_access_token({'sub': str(user.id)})
+    send_user_notification(
+        user.email,
+        "Welcome to Intelli-Migrate",
+        f"Hi {user.full_name or 'there'},\n\nYour account is ready. You can now run migrations with the 5-agent pipeline."
+    )
     return {'access_token': token, 'token_type': 'bearer'}
 
 @app.post('/auth/login', response_model=Token)
-def login(user_in: UserCreate, db: Session = Depends(lambda: next(get_db()))):
+def login(user_in: LoginIn, db: Session = Depends(lambda: next(get_db()))):
     user = get_user_by_email(db, user_in.email)
     if not user or not verify_password(user_in.password, user.hashed_password):
         raise HTTPException(status_code=401, detail='Invalid credentials')
     token = create_access_token({'sub': str(user.id)})
+    send_user_notification(
+        user.email,
+        "New Intelli-Migrate login",
+        f"Hi {user.full_name or 'there'},\n\nA new login was detected on your Intelli-Migrate account at {datetime.utcnow().isoformat()} UTC."
+    )
     return {'access_token': token, 'token_type': 'bearer'}
+
+@app.post('/auth/forgot-password')
+def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(lambda: next(get_db()))):
+    user = get_user_by_email(db, payload.email)
+    # Generic response to avoid user enumeration
+    if not user:
+        return {'status': 'ok', 'message': 'If the email is registered, a reset link has been sent.'}
+    token = create_password_reset_token(user.id)
+    reset_link = f"{FRONTEND_URL.rstrip('/')}/reset-password?token={quote_plus(token)}"
+    send_email_message(
+        user.email,
+        "Reset your Intelli-Migrate password",
+        (
+            f"Hi {user.full_name or 'there'},\n\n"
+            "We received a password reset request for your Intelli-Migrate account.\n"
+            f"Reset link: {reset_link}\n\n"
+            "This link expires in 30 minutes. If this was not you, ignore this email."
+        )
+    )
+    return {'status': 'ok', 'message': 'If the email is registered, a reset link has been sent.'}
+
+@app.post('/auth/reset-password')
+def reset_password(payload: ResetPasswordIn, db: Session = Depends(lambda: next(get_db()))):
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail='New password must be at least 8 characters')
+    user_id = decode_password_reset_token(payload.token)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail='User not found')
+    user.hashed_password = get_password_hash(payload.new_password)
+    db.add(user)
+    db.commit()
+    send_user_notification(
+        user.email,
+        "Your Intelli-Migrate password was reset",
+        f"Hi {user.full_name or 'there'},\n\nYour password was successfully reset."
+    )
+    return {'status': 'ok', 'message': 'Password has been reset successfully'}
 
 
 def _oauth_error_redirect(message: str):
@@ -474,7 +618,12 @@ def _upsert_oauth_user(db: Session, email: str, full_name: Optional[str]) -> Use
         return user
 
     generated_password = uuid.uuid4().hex + uuid.uuid4().hex
-    user_in = UserCreate(email=email, password=generated_password, full_name=full_name)
+    user_in = UserCreate(
+        email=email,
+        password=generated_password,
+        name=full_name or email.split('@')[0],
+        target_database='postgresql'
+    )
     return create_user(db, user_in)
 
 
@@ -638,6 +787,11 @@ async def change_password(payload: ChangePasswordIn, current_user: User = Depend
     current_user.hashed_password = get_password_hash(payload.new_password)
     db.add(current_user)
     db.commit()
+    send_user_notification(
+        current_user.email,
+        "Intelli-Migrate password changed",
+        f"Hi {current_user.full_name or 'there'},\n\nYour account password was changed successfully."
+    )
     return {'status': 'ok', 'message': 'Password changed'}
 
 
@@ -668,14 +822,83 @@ def get_settings(current_user: User = Depends(get_current_user), db: Session = D
 @app.put('/api/user/settings')
 def put_settings(payload: SettingsIn, current_user: User = Depends(get_current_user), db: Session = Depends(lambda: next(get_db()))):
     settings = db.query(Settings).filter(Settings.user_id == current_user.id).first()
-    sjson = json.dumps(payload.settings)
+    existing_data = {}
+    if settings and settings.settings_json:
+        try:
+            existing_data = json.loads(settings.settings_json)
+        except Exception:
+            existing_data = {}
+    merged = {**existing_data, **(payload.settings or {})}
+    sjson = json.dumps(merged)
     if not settings:
         settings = Settings(user_id=current_user.id, settings_json=sjson)
         db.add(settings)
     else:
         settings.settings_json = sjson
     db.commit()
-    return {'settings': payload.settings}
+    return {'settings': merged}
+
+def support_kb_answer(message: str) -> Optional[str]:
+    text = (message or '').lower()
+    kb = [
+        (['upload', 'file', 'json', 'csv', 'xml'], "Upload JSON/CSV/XML from Upload page, then continue through mapping, anomalies, SQL generation, and deploy."),
+        (['schema', 'confidence', 'map'], "Confidence is the semantic certainty score for field mapping. Higher values mean stronger mapping quality."),
+        (['deploy', 'database', 'supabase', 'neon', 'postgres'], "Deploy page supports provider-aware configuration. For API-first providers use API key/project details; for custom DB use a restricted connection user."),
+        (['oauth', 'google', 'github', 'login'], "OAuth starts at /auth/oauth/{provider}/start and returns to /oauth-callback in frontend."),
+        (['session', 'history', 'dashboard'], "Session names appear in sidebar. Dashboard shows overall behavior and active-session metrics."),
+        (['forgot', 'reset', 'password'], "Use Forgot Password on login to receive a reset link. Reset tokens expire in 30 minutes."),
+        (['agents', 'five', 'pipeline'], "The platform runs 5 agents: parser, schema mapper, anomaly detector, normalizer, and SQL generator."),
+    ]
+    for keywords, answer in kb:
+        if any(k in text for k in keywords):
+            return answer
+    return None
+
+def openai_support_answer(message: str, history: Optional[List[Dict[str, str]]] = None) -> Optional[str]:
+    if not OPENAI_API_KEY:
+        return None
+    try:
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are Intelli-Migrate Support Agent. Answer only platform-related queries: upload, agents, mapping, anomalies, SQL, deploy, auth, settings, help center."
+                    " If question is outside scope, say you cannot answer and suggest GitHub support."
+                )
+            }
+        ]
+        for item in (history or [])[-8:]:
+            role = item.get("role")
+            content = item.get("content")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": message})
+        resp = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+            json={"model": SUPPORT_AI_MODEL, "messages": messages, "temperature": 0.2},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        logger.error(f"SUPPORT_AI_ERROR error={e}")
+        return None
+
+@app.post('/api/support-chat')
+def support_chat(payload: SupportChatIn):
+    ai_answer = openai_support_answer(payload.message, payload.history)
+    if ai_answer:
+        return {"answer": ai_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL}
+    kb_answer = support_kb_answer(payload.message)
+    if kb_answer:
+        return {"answer": kb_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL}
+    return {
+        "answer": "I couldn't confidently answer that. Please share your question on GitHub issues for the Team Intelli-Migrate support thread.",
+        "can_answer": False,
+        "github_support_url": SUPPORT_GITHUB_URL
+    }
 
 
 # ============================================
@@ -859,7 +1082,7 @@ async def agents_status():
 # ============================================
 
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), current_user: Optional[User] = Depends(get_optional_user)):
     """
     Step 1: Upload and parse data file
     Supported formats: JSON, XML, CSV
@@ -922,6 +1145,7 @@ async def upload_file(file: UploadFile = File(...)):
             "created_at": datetime.now().isoformat(),
             "file_path": file_path,
             "file_name": file.filename,
+            "user_email": current_user.email if current_user else None,
             "file_type": result.file_type,
             "current_step": 1,
             "steps_completed": ["upload"],
@@ -1005,6 +1229,11 @@ async def upload_file(file: UploadFile = File(...)):
         except Exception as e:
             session_data['mapping_error'] = str(e)
         save_session(session_id, session_data)
+        send_user_notification(
+            session_data.get("user_email"),
+            "Migration upload received",
+            f"Your file '{file.filename}' was uploaded successfully. The parser has started profiling."
+        )
         
         return {
             "session_id": session_id,
@@ -1170,6 +1399,11 @@ async def map_schema(session_id: str, domain: str = "ecommerce", payload: dict =
     session["mapped_records"] = mapped_records
     
     save_session(session_id, session)
+    send_user_notification(
+        session.get("user_email"),
+        "Schema mapping completed",
+        f"Schema mapping finished for '{session.get('file_name', 'your file')}'. Average confidence: {session['mapping_result'].get('average_confidence', 0)}%."
+    )
     
     return {
         "session_id": session_id,
@@ -1216,6 +1450,11 @@ async def detect_anomalies(session_id: str, payload: dict = Body(None)):
     session["current_step"] = 3
     session.setdefault("steps_completed", []).append("anomaly_detection")
     save_session(session_id, session)
+    send_user_notification(
+        session.get("user_email"),
+        "Anomaly analysis completed",
+        f"Anomaly detection finished for '{session.get('file_name', 'your file')}'. Quality score: {session.get('anomaly_report', {}).get('quality_score', 0)}."
+    )
     
     return {
         "session_id": session_id,
@@ -1482,6 +1721,11 @@ async def generate_sql(session_id: str, dialect: str = "postgresql", payload: di
         session["sql_summary"] = sqlg.get_sql_summary(script)
         
         save_session(session_id, session)
+        send_user_notification(
+            session.get("user_email"),
+            "SQL generated for migration",
+            f"SQL generation is ready for '{session.get('file_name', 'your file')}'. You can now review/copy/download SQL."
+        )
         
         return {
             "session_id": session_id,
@@ -1611,7 +1855,12 @@ async def deploy_env(session_id: str, config: DeployConfig = Body(None), x_admin
         "errors": getattr(result, 'errors', None)
     }
     save_session(session_id, session)
-
+    send_user_notification(
+        session.get("user_email"),
+        "Deployment status updated",
+        f"Deployment finished for '{session.get('file_name', 'your file')}'. Success: {session['deployment_result'].get('success')}."
+    )
+    
     return {
         "session_id": session_id,
         "status": "success" if session["deployment_result"]["success"] else "error",
@@ -1686,6 +1935,11 @@ async def deploy_database(session_id: str, config: DeployConfig):
     }
     
     save_session(session_id, session)
+    send_user_notification(
+        session.get("user_email"),
+        "Deployment status updated",
+        f"Deployment finished for '{session.get('file_name', 'your file')}'. Success: {session['deployment_result'].get('success')}."
+    )
     
     return {
         "session_id": session_id,

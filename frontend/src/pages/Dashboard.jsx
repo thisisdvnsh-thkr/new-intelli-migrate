@@ -8,13 +8,11 @@ import {
   FileUp,
   Table,
   AlertTriangle,
-  Sparkles,
-  Database,
-  Clock,
   TrendingUp,
   Zap,
   X,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -26,32 +24,20 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } }
 }
 
-function bytesToReadable(bytes) {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let value = bytes
-  let idx = 0
-  while (value >= 1024 && idx < units.length - 1) {
-    value /= 1024
-    idx += 1
-  }
-  return `${value.toFixed(idx === 0 ? 0 : 1)} ${units[idx]}`
-}
-
 function OnboardingTour({ onComplete }) {
   const [step, setStep] = useState(0)
   const steps = [
     {
-      title: 'Welcome to Intelli-Migrate!',
-      description: 'Your session history appears in the left panel, just like chat history.'
+      title: 'Welcome to Intelli-Migrate',
+      description: 'Sessions appear in sidebar like compact chat history.'
     },
     {
-      title: 'Start New Migration',
-      description: 'Click New Migration to upload a fresh file and run the 6-agent pipeline.'
+      title: 'Start a New Migration',
+      description: 'Use New Migration to upload your next file and run full pipeline.'
     },
     {
-      title: 'Track Live Session',
-      description: 'Dashboard always shows the active file status, rows/cols, and pipeline progress.'
+      title: 'Track End-to-End Progress',
+      description: 'Dashboard shows overall behavior and selected session performance.'
     }
   ]
 
@@ -98,30 +84,22 @@ function OnboardingTour({ onComplete }) {
   )
 }
 
-function SessionRow({ session, active }) {
-  return (
-    <div className={`p-4 rounded-2xl border ${active ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/[0.02] border-white/[0.08]'}`}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-white truncate">{session.fileName || 'Untitled file'}</p>
-        <span className="text-[11px] px-2 py-1 rounded-full bg-white/10 text-white/50">Step {session.currentStep || 0}/6</span>
-      </div>
-      <div className="grid grid-cols-3 gap-3 mt-3 text-xs text-white/45">
-        <span>Size: {bytesToReadable(session.fileSizeBytes)}</span>
-        <span>Rows: {session.rows || 0}</span>
-        <span>Cols: {session.cols || 0}</span>
-      </div>
-    </div>
-  )
+const pipelineRoutes = [
+  { num: 1, name: 'Parse', route: '/parse-review', icon: FileUp },
+  { num: 2, name: 'Map', route: '/schema-map', icon: Spark },
+  { num: 3, name: 'Detect', route: '/anomalies', icon: AlertTriangle },
+  { num: 4, name: 'Normalize', route: '/generate-sql', icon: Table },
+  { num: 5, name: 'Generate SQL', route: '/generate-sql', icon: Table },
+  { num: 6, name: 'Deploy', route: '/deploy', icon: Zap }
+]
+
+function Spark(props) {
+  return <TrendingUp {...props} />
 }
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const {
-    stats,
-    currentStep,
-    sessionHistory,
-    activeSession
-  } = useMigration()
+  const { stats, currentStep, sessionHistory, activeSession } = useMigration()
   const [searchParams] = useSearchParams()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const progress = Math.round((currentStep / 6) * 100)
@@ -131,25 +109,47 @@ export default function Dashboard() {
   }, [searchParams])
 
   const totals = useMemo(() => {
+    const completed = sessionHistory.filter((s) => (s.currentStep || 0) >= 6).length
+    const avgConfidence = sessionHistory.length
+      ? Math.round(sessionHistory.reduce((acc, s) => acc + (s.mappingConfidence || 0), 0) / sessionHistory.length)
+      : 0
+    const totalRows = sessionHistory.reduce((acc, s) => acc + (s.rows || 0), 0)
     return {
       filesProcessed: sessionHistory.length,
       tablesGenerated: stats.tablesGenerated || 0,
       anomaliesFound: stats.anomaliesFound || 0,
-      confidence: stats.confidence || 0
+      confidence: stats.confidence || avgConfidence,
+      completed,
+      totalRows
     }
-  }, [sessionHistory.length, stats.tablesGenerated, stats.anomaliesFound, stats.confidence])
+  }, [sessionHistory, stats.tablesGenerated, stats.anomaliesFound, stats.confidence])
+
+  const selectedSessionMetrics = useMemo(() => ({
+    tablesGenerated: activeSession?.tablesGenerated || 0,
+    anomaliesFound: activeSession?.anomaliesFound || 0,
+    confidence: activeSession?.mappingConfidence || 0
+  }), [activeSession])
 
   return (
     <>
       {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
-        <motion.header variants={fadeInUp}>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
-            Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
-          </h1>
-          <p className="text-lg text-white/50 font-medium">
-            Your migration sessions and live pipeline status
-          </p>
+        <motion.header variants={fadeInUp} className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
+              Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
+            </h1>
+            <p className="text-lg text-white/50 font-medium">
+              Overall platform behavior and selected session intelligence.
+            </p>
+          </div>
+          <button
+            onClick={() => window.dispatchEvent(new Event('open-support-chat'))}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.12] text-white/80 hover:text-white hover:bg-white/[0.06]"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Support
+          </button>
         </motion.header>
 
         <div className="grid grid-cols-12 gap-5">
@@ -157,13 +157,13 @@ export default function Dashboard() {
             <MetricCard icon={FileUp} label="Files Processed" value={totals.filesProcessed} color="blue" />
           </motion.div>
           <motion.div variants={fadeInUp} className="col-span-3">
-            <MetricCard icon={Table} label="Tables Generated" value={totals.tablesGenerated} color="purple" />
+            <MetricCard icon={Table} label="Rows Processed" value={totals.totalRows} color="purple" />
           </motion.div>
           <motion.div variants={fadeInUp} className="col-span-3">
-            <MetricCard icon={AlertTriangle} label="Anomalies Found" value={totals.anomaliesFound} color="orange" />
+            <MetricCard icon={Zap} label="Completed Sessions" value={totals.completed} color="green" />
           </motion.div>
           <motion.div variants={fadeInUp} className="col-span-3">
-            <MetricCard icon={TrendingUp} label="Mapping Confidence" value={`${totals.confidence}%`} color="green" />
+            <MetricCard icon={TrendingUp} label="Avg Confidence" value={`${totals.confidence}%`} color="orange" />
           </motion.div>
 
           <motion.div variants={fadeInUp} className="col-span-8">
@@ -187,24 +187,21 @@ export default function Dashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-6 gap-3">
-                {[
-                  { num: 1, name: 'Parse', icon: FileUp },
-                  { num: 2, name: 'Map', icon: Sparkles },
-                  { num: 3, name: 'Detect', icon: AlertTriangle },
-                  { num: 4, name: 'Normalize', icon: Table },
-                  { num: 5, name: 'Generate', icon: Database },
-                  { num: 6, name: 'Deploy', icon: Zap }
-                ].map((step) => {
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                {pipelineRoutes.map((step) => {
                   const done = currentStep >= step.num
                   const Icon = step.icon
                   return (
-                    <div key={step.num} className="text-center">
-                      <div className={`w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-2 ${done ? 'bg-gradient-to-br from-blue-500 to-purple-600' : 'bg-white/5 border border-white/10'}`}>
+                    <Link key={step.num} to={step.route} className="text-center group">
+                      <div className={`w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-2 border transition-colors ${
+                        done
+                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 border-transparent'
+                          : 'bg-white/5 border-white/10 group-hover:bg-white/10'
+                      }`}>
                         <Icon className={`w-5 h-5 ${done ? 'text-white' : 'text-white/30'}`} />
                       </div>
-                      <p className={`text-xs font-semibold ${done ? 'text-white' : 'text-white/40'}`}>{step.name}</p>
-                    </div>
+                      <p className={`text-xs font-semibold ${done ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{step.name}</p>
+                    </Link>
                   )
                 })}
               </div>
@@ -213,36 +210,18 @@ export default function Dashboard() {
 
           <motion.div variants={fadeInUp} className="col-span-4">
             <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.08] h-full">
-              <div className="flex items-center gap-2 mb-5">
-                <Clock className="w-4 h-4 text-white/40" />
-                <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Active File Details</h3>
-              </div>
-              <div className="space-y-3 text-sm">
-                <DetailRow label="File" value={activeSession?.fileName || stats.fileName || 'Not selected'} />
-                <DetailRow label="Type" value={(activeSession?.fileType || stats.fileType || 'unknown').toUpperCase()} />
-                <DetailRow label="Size" value={bytesToReadable(activeSession?.fileSizeBytes || stats.fileSizeBytes)} />
-                <DetailRow label="Rows" value={String(activeSession?.rows || stats.rows || 0)} />
-                <DetailRow label="Columns" value={String(activeSession?.cols || stats.cols || 0)} />
-                <DetailRow label="Current Step" value={`${currentStep}/6`} />
+              <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4">Selected Session</h3>
+              <p className="text-base text-white font-semibold truncate mb-5">
+                {activeSession?.fileName || stats.fileName || 'No session selected'}
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                <SmallCard label="Tables Generated" value={selectedSessionMetrics.tablesGenerated} />
+                <SmallCard label="Anomalies Found" value={selectedSessionMetrics.anomaliesFound} />
+                <SmallCard label="Confidence" value={`${selectedSessionMetrics.confidence}%`} />
               </div>
             </div>
           </motion.div>
         </div>
-
-        <motion.section variants={fadeInUp}>
-          <h2 className="text-xl font-bold text-white mb-4">Session History</h2>
-          <div className="space-y-3">
-            {sessionHistory.length === 0 ? (
-              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-white/40">
-                No sessions yet. Start your first migration below.
-              </div>
-            ) : (
-              sessionHistory.map((item) => (
-                <SessionRow key={item.sessionId} session={item} active={activeSession?.sessionId === item.sessionId} />
-              ))
-            )}
-          </div>
-        </motion.section>
 
         <motion.div variants={fadeInUp} className="flex justify-end pt-2">
           <Link
@@ -276,11 +255,11 @@ function MetricCard({ icon: Icon, label, value, color }) {
   )
 }
 
-function DetailRow({ label, value }) {
+function SmallCard({ label, value }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-white/[0.05] last:border-b-0">
-      <span className="text-white/45">{label}</span>
-      <span className="text-white font-semibold truncate max-w-[65%] text-right">{value}</span>
+    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-4">
+      <p className="text-xs text-white/45 mb-1">{label}</p>
+      <p className="text-xl font-bold text-white">{value}</p>
     </div>
   )
 }

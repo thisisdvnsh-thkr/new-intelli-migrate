@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Database, Mail, Lock, User, ArrowRight, Eye, EyeOff, CalendarDays, Server } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Server } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { signup as apiSignup, getMe, getOAuthStartUrl } from '../lib/api'
 import BrandLogo from '../components/BrandLogo'
@@ -15,8 +15,7 @@ export default function Signup() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const [name, setName] = useState('')
-  const [dateOfBirth, setDateOfBirth] = useState('')
-  const [targetDatabase, setTargetDatabase] = useState('postgresql')
+  const [targetDatabase, setTargetDatabase] = useState('supabase')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -29,7 +28,7 @@ export default function Signup() {
     setError('')
     
     try {
-      const data = await apiSignup(email, password, name, dateOfBirth, targetDatabase)
+      const data = await apiSignup(email, password, name, targetDatabase)
       const me = await getMe()
       login(me, data.access_token)
       navigate('/dashboard?onboarding=true')
@@ -115,18 +114,7 @@ export default function Signup() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Full name"
-                required
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
-              />
-            </div>
-
-            <div className="relative group">
-              <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
+                placeholder="Name"
                 required
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
               />
@@ -137,14 +125,13 @@ export default function Signup() {
               <select
                 value={targetDatabase}
                 onChange={(e) => setTargetDatabase(e.target.value)}
+                required
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
               >
-                <option value="postgresql">PostgreSQL</option>
-                <option value="render">Render Postgres</option>
                 <option value="supabase">Supabase</option>
                 <option value="neon">Neon</option>
-                <option value="railway">Railway</option>
-                <option value="access">Microsoft Access</option>
+                <option value="custom_postgresql">Custom PostgreSQL</option>
+                <option value="custom_mysql">Custom MySQL</option>
               </select>
             </div>
             
@@ -182,9 +169,9 @@ export default function Signup() {
             
             <p className="text-xs text-white/30 px-1">
               By signing up, you agree to our{' '}
-              <a href="#" className="text-purple-400 hover:underline">Terms of Service</a>
+              <Link to="/terms" className="text-purple-400 hover:underline">Terms & Conditions</Link>
               {' '}and{' '}
-              <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
+              <Link to="/privacy" className="text-purple-400 hover:underline">Privacy Policy</Link>
             </p>
             
             <button

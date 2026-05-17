@@ -11,6 +11,8 @@ const providerMeta = {
   render: { label: 'Render Postgres', icon: Cloud },
   supabase: { label: 'Supabase Postgres', icon: Cloud },
   neon: { label: 'Neon Postgres', icon: Cloud },
+  custom_postgresql: { label: 'Custom PostgreSQL', icon: Database },
+  custom_mysql: { label: 'Custom MySQL', icon: Database },
   railway: { label: 'Railway Postgres', icon: Cloud },
   access: { label: 'Microsoft Access (SQL export)', icon: HardDrive }
 }
@@ -22,6 +24,7 @@ export default function Deploy() {
   const [result, setResult] = useState(null)
   const [settings, setSettings] = useState({})
   const [error, setError] = useState('')
+  const [deployProgress, setDeployProgress] = useState(0)
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -39,7 +42,7 @@ export default function Deploy() {
   const providerInfo = providerMeta[provider] || providerMeta.postgresql
   const ProviderIcon = providerInfo.icon
 
-  const canDeployDirectly = provider !== 'access'
+  const canDeployDirectly = provider !== 'access' && provider !== 'custom_mysql'
   const savedConnection = settings.databaseUrl || ''
 
   const deploy = async () => {
@@ -48,7 +51,12 @@ export default function Deploy() {
       return
     }
     setDeploying(true)
+    setDeployProgress(0)
     setError('')
+    const start = Date.now()
+    const progressTimer = setInterval(() => {
+      setDeployProgress((prev) => Math.min(94, prev + 2))
+    }, 140)
     try {
       let response
       if (!canDeployDirectly) {
@@ -58,11 +66,22 @@ export default function Deploy() {
       if (savedConnection) {
         response = await deployToPostgres(stats.sessionId, {
           database_url: savedConnection,
-          db_password: settings.dbPassword || null
+          db_password: settings.dbPassword || null,
+          provider_api_key: settings.providerApiKey || null,
+          provider_project_id: settings.providerProjectId || null
         })
       } else {
-        response = await deployToEnv(stats.sessionId, { db_password: settings.dbPassword || null })
+        response = await deployToEnv(stats.sessionId, {
+          db_password: settings.dbPassword || null,
+          provider_api_key: settings.providerApiKey || null,
+          provider_project_id: settings.providerProjectId || null
+        })
       }
+      const elapsed = Date.now() - start
+      if (elapsed < 5000) {
+        await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed))
+      }
+      setDeployProgress(100)
       setResult(response?.data || response)
       setDeployed(Boolean((response?.data || response)?.success))
       setStepWithSession(6, { status: 'deployed', provider })
@@ -70,6 +89,7 @@ export default function Deploy() {
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || 'Deployment failed')
     } finally {
+      clearInterval(progressTimer)
       setDeploying(false)
     }
   }
@@ -122,10 +142,18 @@ export default function Deploy() {
               <h2 className="text-3xl font-black text-white mb-2">{providerInfo.label}</h2>
               <p className="text-white/50">
                 {canDeployDirectly
-                  ? (savedConnection ? 'Using your saved connection string from Settings.' : 'Using server DATABASE_URL or default deployment connection.')
-                  : 'Access connection uses SQL export instead of direct API deployment.'}
+                  ? (savedConnection ? 'Using your saved connection details from profile.' : 'Using server DATABASE_URL or default deployment connection.')
+                  : 'This provider currently uses SQL export instead of direct API deployment.'}
               </p>
             </div>
+            {deploying && (
+              <div className="max-w-sm mx-auto w-full space-y-2">
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all" style={{ width: `${deployProgress}%` }} />
+                </div>
+                <p className="text-sm text-white/55">{deployProgress}% deployment sync</p>
+              </div>
+            )}
 
             {canDeployDirectly ? (
               <button

@@ -15,8 +15,8 @@ export function setAuthToken(token) {
 }
 
 // Auth
-export const signup = async (email, password, full_name, date_of_birth, target_database) => {
-  const response = await api.post('/auth/signup', { email, password, full_name, date_of_birth, target_database })
+export const signup = async (email, password, name, target_database) => {
+  const response = await api.post('/auth/signup', { email, password, name, target_database })
   return response.data
 }
 
@@ -31,6 +31,16 @@ export const getOAuthStartUrl = (provider) => {
 
 export const getMe = async () => {
   const response = await api.get('/auth/me')
+  return response.data
+}
+
+export const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email })
+  return response.data
+}
+
+export const resetPassword = async (token, new_password) => {
+  const response = await api.post('/auth/reset-password', { token, new_password })
   return response.data
 }
 
@@ -53,6 +63,11 @@ export const getUserSettings = async () => {
 
 export const saveUserSettings = async (settings) => {
   const response = await api.put('/api/user/settings', { settings })
+  return response.data
+}
+
+export const supportChat = async (message, history = []) => {
+  const response = await api.post('/api/support-chat', { message, history })
   return response.data
 }
 
@@ -88,6 +103,11 @@ export const normalizeData = async (sessionId) => {
 
 export const generateSQL = async (sessionId, dialect = 'postgresql') => {
   const response = await api.post(`/api/generate-sql/${sessionId}?dialect=${dialect}`)
+  return response.data
+}
+
+export const getSession = async (sessionId) => {
+  const response = await api.get(`/api/session/${sessionId}`)
   return response.data
 }
 
