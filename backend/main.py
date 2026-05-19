@@ -16,6 +16,7 @@ import shutil
 import logging
 import smtplib
 from email.message import EmailMessage
+from email.utils import parseaddr
 from urllib.parse import urlencode, quote_plus
 
 # Database and auth
@@ -57,6 +58,9 @@ SMTP_FROM = os.getenv('SMTP_FROM') or os.getenv('MAIL_FROM') or SMTP_USER
 SMTP_USE_TLS = (os.getenv('SMTP_USE_TLS', 'true').lower() in ('1', 'true', 'yes'))
 SMTP_USE_SSL = (os.getenv('SMTP_USE_SSL', 'false').lower() in ('1', 'true', 'yes'))
 SMTP_TIMEOUT = int(os.getenv('SMTP_TIMEOUT', '20'))
+BREVO_API_KEY = os.getenv('BREVO_API_KEY') or os.getenv('SENDINBLUE_API_KEY') or os.getenv('BREVO_KEY')
+BREVO_FROM = os.getenv('BREVO_FROM') or SMTP_FROM
+BREVO_TIMEOUT = int(os.getenv('BREVO_TIMEOUT', '20'))
 SUPPORT_GITHUB_URL = os.getenv('SUPPORT_GITHUB_URL', 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues')
 SUPPORT_AI_MODEL = os.getenv('SUPPORT_AI_MODEL', 'gpt-4o-mini')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -416,32 +420,84 @@ def decode_password_reset_token(token: str) -> int:
 def smtp_service_configured() -> bool:
     return bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD and SMTP_FROM)
 
-def send_email_message(to_email: str, subject: str, body: str) -> bool:
-    if not smtp_service_configured():
-        logger.warning("SMTP_NOT_CONFIGURED host=%s user=%s from=%s", SMTP_HOST, SMTP_USER, SMTP_FROM)
+def brevo_service_configured() -> bool:
+    return bool(BREVO_API_KEY and BREVO_FROM)
+
+def build_sender(sender_value: str) -> Optional[Dict[str, str]]:
+    name, email_addr = parseaddr(sender_value or "")
+    if not email_addr:
+        return None
+    return {
+        "name": name or "Intelli-Migrate",
+        "email": email_addr
+    }
+
+def send_brevo_email(to_email: str, subject: str, body: str) -> bool:
+    if not brevo_service_configured():
+        logger.warning("BREVO_NOT_CONFIGURED from=%s", BREVO_FROM)
         return False
-    msg = EmailMessage()
-    msg["From"] = SMTP_FROM
-    msg["To"] = to_email
-    msg["Subject"] = subject
-    msg.set_content(body)
+    sender = build_sender(BREVO_FROM)
+    if not sender:
+        logger.warning("BREVO_SENDER_INVALID value=%s", BREVO_FROM)
+        return False
+    payload = {
+        "sender": sender,
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": body
+    }
+    headers = {
+        "api-key": BREVO_API_KEY,
+        "accept": "application/json",
+        "content-type": "application/json"
+    }
     try:
-        if SMTP_USE_SSL:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            json=payload,
+            headers=headers,
+            timeout=BREVO_TIMEOUT
+        )
+        if 200 <= response.status_code < 300:
+            return True
+        logger.error(
+            "BREVO_SEND_FAILED to=%s subject=%s status=%s body=%s",
+            to_email,
+            subject,
+            response.status_code,
+            response.text[:500]
+        )
+        return False
+    except Exception as e:
+        logger.error("BREVO_SEND_FAILED to=%s subject=%s error=%s", to_email, subject, e)
+        return False
+
+def send_email_message(to_email: str, subject: str, body: str) -> bool:
+    if smtp_service_configured():
+        msg = EmailMessage()
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.set_content(body)
+        try:
+            if SMTP_USE_SSL:
+                with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
+                    server.login(SMTP_USER, SMTP_PASSWORD)
+                    server.send_message(msg)
+                    return True
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
+                server.ehlo()
+                if SMTP_USE_TLS:
+                    server.starttls()
+                    server.ehlo()
                 server.login(SMTP_USER, SMTP_PASSWORD)
                 server.send_message(msg)
                 return True
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
-            server.ehlo()
-            if SMTP_USE_TLS:
-                server.starttls()
-                server.ehlo()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.send_message(msg)
-            return True
-    except Exception as e:
-        logger.error("SMTP_SEND_FAILED to=%s subject=%s error=%s", to_email, subject, e)
-        return False
+        except Exception as e:
+            logger.error("SMTP_SEND_FAILED to=%s subject=%s error=%s", to_email, subject, e)
+    else:
+        logger.warning("SMTP_NOT_CONFIGURED host=%s user=%s from=%s", SMTP_HOST, SMTP_USER, SMTP_FROM)
+    return send_brevo_email(to_email, subject, body)
 
 def notifications_enabled_for_email(email: str) -> bool:
     db = SessionLocal()
@@ -1131,6 +1187,8 @@ async def health_check():
         sql_ok = True if get_sql_generator() is not None else False
     except Exception:
         sql_ok = False
+    
+    email_configured = smtp_service_configured() or brevo_service_configured()
 
     return {
         "status": "healthy",
@@ -1143,7 +1201,7 @@ async def health_check():
             "sql_generator": "available" if sql_ok else "limited"
         },
         "ml_worker": "available" if ml_worker_available() else "unavailable",
-        "smtp": "configured" if smtp_service_configured() else "unavailable"
+        "smtp": "configured" if email_configured else "unavailable"
     }
 
 
