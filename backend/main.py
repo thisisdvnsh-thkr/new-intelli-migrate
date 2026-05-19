@@ -379,7 +379,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
 
 # Password & JWT config
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")  # use pbkdf2 to avoid bcrypt platform issues during local smoke tests
+# Accept both bcrypt (legacy) and pbkdf2; new hashes use pbkdf2.
+pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-change-this')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
