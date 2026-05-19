@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { Lock, ArrowRight } from 'lucide-react'
+import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { resetPassword } from '../lib/api'
 import BrandLogo from '../components/BrandLogo'
 
@@ -9,6 +9,8 @@ export default function ResetPassword() {
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const token = searchParams.get('token') || ''
@@ -33,7 +35,7 @@ export default function ResetPassword() {
       await resetPassword(token, password)
       navigate('/login')
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Password reset failed.')
+      setError(err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Password reset failed.')
     } finally {
       setLoading(false)
     }
@@ -50,24 +52,38 @@ export default function ResetPassword() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white"
+              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white"
               placeholder="New password"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
             <input
-              type="password"
+              type={showConfirm ? 'text' : 'password'}
               required
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white"
+              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white"
               placeholder="Confirm password"
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+            >
+              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
           <button disabled={loading} className="w-full py-3 rounded-xl bg-white text-black font-bold inline-flex items-center justify-center gap-2 disabled:opacity-50">
             {loading ? 'Updating...' : <>Reset password <ArrowRight className="w-4 h-4" /></>}

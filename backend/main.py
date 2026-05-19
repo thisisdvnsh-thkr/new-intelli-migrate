@@ -409,7 +409,15 @@ def create_password_reset_token(user_id: int) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_password_reset_token(token: str) -> int:
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    if not token:
+        raise HTTPException(status_code=400, detail="Reset token is missing")
+    cleaned = token.strip()
+    if " " in cleaned:
+        cleaned = cleaned.replace(" ", "+")
+    try:
+        payload = jwt.decode(cleaned, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Reset token expired or invalid")
     if payload.get("purpose") != "password_reset":
         raise HTTPException(status_code=400, detail="Invalid reset token")
     user_id = payload.get("sub")
