@@ -87,10 +87,19 @@ const languageOptions = [
   { value: 'hi', label: 'हिन्दी' }
 ]
 
+function normalizeLanguage(value) {
+  const trimmed = String(value || '').trim()
+  if (!trimmed) return 'en'
+  if (trimmed === 'English') return 'en'
+  if (trimmed === 'Hindi' || trimmed === 'हिन्दी') return 'hi'
+  if (translations[trimmed]) return trimmed
+  return 'en'
+}
+
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(() => {
     const stored = localStorage.getItem(LANGUAGE_KEY)
-    return stored && translations[stored] ? stored : 'en'
+    return normalizeLanguage(stored)
   })
 
   useEffect(() => {
