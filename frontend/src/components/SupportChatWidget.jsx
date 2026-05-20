@@ -21,9 +21,11 @@ export default function SupportChatWidget() {
       content: 'Hi, I am Intelli-Migrate Support Agent. Choose a support topic below or type your own question.'
     }
   ])
+  const [usedOptions, setUsedOptions] = useState([])
   const [githubUrl, setGithubUrl] = useState('https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues')
   const listRef = useRef(null)
   const inputRef = useRef(null)
+  const askedRef = useRef(new Set())
 
   useEffect(() => {
     const openHandler = () => setOpen(true)
@@ -40,6 +42,16 @@ export default function SupportChatWidget() {
   const send = async (rawInput = null) => {
     const text = (rawInput ?? input).trim()
     if (!text || loading) return
+    const normalized = text.toLowerCase().replace(/\s+/g, ' ').trim()
+    if (askedRef.current.has(normalized)) {
+      setMessages((prev) => ([
+        ...prev,
+        { role: 'assistant', content: 'You already asked that above. Add more detail or ask a new question.' }
+      ]))
+      setInput('')
+      return
+    }
+    askedRef.current.add(normalized)
     const nextHistory = [...messages, { role: 'user', content: text }]
     setMessages(nextHistory)
     setInput('')
@@ -51,7 +63,7 @@ export default function SupportChatWidget() {
         ...prev,
         { role: 'assistant', content: res.answer || 'No answer available.' }
       ])
-    } catch (e) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: `I could not reach support AI right now. Please use GitHub support: ${githubUrl}` }
@@ -67,8 +79,11 @@ export default function SupportChatWidget() {
       inputRef.current?.focus()
       return
     }
+    setUsedOptions((prev) => (prev.includes(option.id) ? prev : [...prev, option.id]))
     send(option.prompt)
   }
+
+  const visibleOptions = guidedOptions.filter((option) => option.id === 'something_else' || !usedOptions.includes(option.id))
 
   return (
     <div className="fixed bottom-5 right-5 z-[90]">
@@ -81,16 +96,17 @@ export default function SupportChatWidget() {
           <MessageCircle className="w-6 h-6" />
         </button>
       ) : (
-        <div className="w-[370px] h-[560px] rounded-3xl border border-white/15 bg-black/90 backdrop-blur-xl overflow-hidden shadow-2xl">
-          <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-white">
-              <Bot className="w-4 h-4 text-blue-300" />
-              <p className="font-semibold text-sm">Intelli Support Agent</p>
+          <div className="w-[370px] h-[560px] rounded-3xl border border-white/15 bg-black/90 backdrop-blur-xl overflow-hidden shadow-2xl">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <Bot className="w-4 h-4 text-blue-300" />
+                <p className="font-semibold text-sm">Intelli Support Agent</p>
+              </div>
+              <button onClick={() => setOpen(false)} className="inline-flex items-center gap-1 text-white/60 hover:text-white text-xs">
+                <span>Close</span>
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
 
           <div ref={listRef} className="h-[360px] overflow-y-auto p-3 space-y-3">
             {messages.map((m, idx) => (
@@ -109,14 +125,14 @@ export default function SupportChatWidget() {
             )}
           </div>
 
-          <div className="p-3 border-t border-white/10">
-            <p className="text-xs text-white/50 mb-2">How can we help today?</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {guidedOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => handleGuidedOption(option)}
-                  className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${
+            <div className="p-3 border-t border-white/10">
+              <p className="text-xs text-white/50 mb-2">How can we help today?</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {visibleOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => handleGuidedOption(option)}
+                    className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${
                     option.id === 'something_else'
                       ? 'bg-purple-500/12 border-purple-400/35 text-purple-200'
                       : 'bg-white/[0.05] border-white/10 text-white/75 hover:text-white hover:bg-white/[0.08]'

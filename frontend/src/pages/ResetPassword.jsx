@@ -46,7 +46,12 @@ export default function ResetPassword() {
       <div className="w-full max-w-md p-8 rounded-3xl bg-white/[0.03] border border-white/10">
         <div className="flex justify-center mb-8"><BrandLogo /></div>
         <h1 className="text-2xl font-black text-white mb-2">Reset password</h1>
-        <p className="text-white/55 mb-6">Set a new secure password for your account.</p>
+        <p className="text-white/55">Set a new secure password for your account.</p>
+        <ul className="mt-3 mb-6 space-y-1 text-sm text-white/45">
+          <li>Use at least 8 characters.</li>
+          <li>Mix letters, numbers, and symbols.</li>
+          <li>Avoid reusing an old password.</li>
+        </ul>
         <form onSubmit={submit} className="space-y-4">
           {error && <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm">{error}</div>}
           <div className="relative">

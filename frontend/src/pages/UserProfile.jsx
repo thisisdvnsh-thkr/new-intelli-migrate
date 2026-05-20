@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  UserCircle2, Mail, Database, ShieldCheck, Link2, Save, Check, LogOut, Server, Key, AlertTriangle
+  UserCircle2, Mail, Database, ShieldCheck, Link2, Save, Check, LogOut, Server, Key, AlertTriangle, ImageUp, Trash2
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getMe, getUserSettings, saveUserSettings } from '../lib/api'
@@ -31,10 +31,12 @@ export default function UserProfile() {
     defaultDatabase: 'supabase',
     databaseUrl: '',
     providerApiKey: '',
-    providerProjectId: ''
+    providerProjectId: '',
+    profilePictureUrl: ''
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -49,12 +51,14 @@ export default function UserProfile() {
         setSettings((prev) => ({
           ...prev,
           ...incoming,
-          name: incoming.name || me?.full_name || me?.name || user?.full_name || user?.name || prev.name
+          name: incoming.name || me?.full_name || me?.name || user?.full_name || user?.name || prev.name,
+          profilePictureUrl: incoming.profilePictureUrl || me?.profile_picture_url || prev.profilePictureUrl
         }))
       } catch {
         setSettings((prev) => ({
           ...prev,
-          name: user?.full_name || user?.name || prev.name
+          name: user?.full_name || user?.name || prev.name,
+          profilePictureUrl: user?.profile_picture_url || prev.profilePictureUrl
         }))
       }
     }
@@ -93,7 +97,8 @@ export default function UserProfile() {
         ...(user || {}),
         full_name: payload.name,
         name: payload.name,
-        email: profileEmail || user?.email || ''
+        email: profileEmail || user?.email || '',
+        profile_picture_url: payload.profilePictureUrl || ''
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 1800)
@@ -103,6 +108,27 @@ export default function UserProfile() {
       setSaving(false)
     }
   }
+
+  const handleAvatarChange = (file) => {
+    if (!file) return
+    setAvatarError('')
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please upload an image file.')
+      return
+    }
+    if (file.size > 900000) {
+      setAvatarError('Image is too large. Please keep it under 900KB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setSettings((prev) => ({ ...prev, profilePictureUrl: String(reader.result || '') }))
+    }
+    reader.onerror = () => setAvatarError('Failed to read image file.')
+    reader.readAsDataURL(file)
+  }
+
+  const profilePicture = settings.profilePictureUrl || user?.profile_picture_url || ''
 
   return (
     <motion.div initial="hidden" animate="visible" className="space-y-6">
@@ -137,13 +163,40 @@ export default function UserProfile() {
 
       <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <UserCircle2 className="w-8 h-8 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
+            {profilePicture ? (
+              <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <UserCircle2 className="w-8 h-8 text-white" />
+            )}
           </div>
           <div>
             <p className="text-2xl font-black text-white">{settings.name || user?.full_name || user?.name || 'User'}</p>
             <p className="text-white/45">Intelli-Migrate user account</p>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-sm text-white/70 hover:text-white cursor-pointer">
+            <ImageUp className="w-4 h-4" />
+            Upload photo
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleAvatarChange(e.target.files?.[0])}
+            />
+          </label>
+          {profilePicture && (
+            <button
+              onClick={() => setSettings((prev) => ({ ...prev, profilePictureUrl: '' }))}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm hover:bg-red-500/20"
+            >
+              <Trash2 className="w-4 h-4" />
+              Remove photo
+            </button>
+          )}
+          {avatarError && <p className="text-sm text-red-300">{avatarError}</p>}
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">

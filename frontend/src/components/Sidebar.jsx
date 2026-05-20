@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose } from 'lucide-react'
+import { Plus, Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useMigration } from '../context/MigrationContext'
 import BrandLogo from './BrandLogo'
-import { getSession } from '../lib/api'
+import { getSession, getUserSettings } from '../lib/api'
 
 export default function Sidebar({ isOpen, onToggle }) {
   const navigate = useNavigate()
@@ -13,6 +13,25 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { sessionHistory, activeSessionId, setActiveSession, resetSession, removeSession } = useMigration()
   const [query, setQuery] = useState('')
   const [sessionNotice, setSessionNotice] = useState('')
+  const [profilePictureUrl, setProfilePictureUrl] = useState('')
+
+  useEffect(() => {
+    let active = true
+    if (!user) return undefined
+    const load = async () => {
+      try {
+        const res = await getUserSettings()
+        if (!active) return
+        setProfilePictureUrl(res?.settings?.profilePictureUrl || '')
+      } catch {
+        if (active) setProfilePictureUrl('')
+      }
+    }
+    load()
+    return () => {
+      active = false
+    }
+  }, [user?.id])
 
   const filteredSessions = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -20,134 +39,161 @@ export default function Sidebar({ isOpen, onToggle }) {
     return sessionHistory.filter((item) => (item.fileName || 'Untitled file').toLowerCase().includes(q))
   }, [query, sessionHistory])
 
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
+  ]
+
   const optionClass = ({ isActive }) =>
-    `w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+    `w-full flex items-center ${isOpen ? 'gap-2 px-3' : 'justify-center px-0'} py-2.5 rounded-xl text-sm font-semibold transition-all ${
       isActive
         ? 'bg-blue-500/12 border border-blue-500/35 text-white shadow-[0_0_18px_rgba(59,130,246,0.22)]'
         : 'text-white/65 border border-transparent hover:text-white hover:bg-white/5'
     }`
 
+  const avatar = profilePictureUrl ? (
+    <img src={profilePictureUrl} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
+  ) : (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
+      {(user?.full_name || user?.name || 'U').charAt(0).toUpperCase()}
+    </div>
+  )
+  const MotionButton = motion.button
+
   return (
-    <aside className={`fixed left-0 top-0 bottom-0 w-80 bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-      <div className="px-6 py-5 border-b border-white/[0.06]">
-        <div className="mb-4 flex items-start justify-between">
-          <div className="flex flex-col items-start gap-2">
-            <BrandLogo />
-            <p className="text-xs text-white/40 pl-1">Session Workspace</p>
-          </div>
+    <aside className={`fixed left-0 top-0 bottom-0 ${isOpen ? 'w-80' : 'w-20'} bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50 transition-all duration-300`}>
+      <div className={`border-b border-white/[0.06] ${isOpen ? 'px-6 py-5' : 'px-3 py-4'} space-y-4`}>
+        <div className={`flex items-center ${isOpen ? 'justify-between' : 'justify-center'}`}>
+          {isOpen ? <BrandLogo /> : <BrandLogo size={34} showText={false} />}
           <button
             onClick={onToggle}
-            className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center"
-            title="Close sidebar drawer"
+            className={`rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center ${isOpen ? 'w-9 h-9' : 'w-8 h-8 ml-2'}`}
+            title={isOpen ? 'Close sidebar' : 'Open sidebar'}
           >
-            <PanelLeftClose className="w-4 h-4" />
+            {isOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
           </button>
         </div>
+
+        {isOpen && <p className="text-xs text-white/40 pl-1">Session Workspace</p>}
 
         <button
           onClick={() => {
             resetSession()
             navigate('/upload')
           }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-black font-bold hover:bg-white/90 transition-colors"
+          className={`flex items-center justify-center gap-2 rounded-2xl bg-white text-black font-bold hover:bg-white/90 transition-colors ${isOpen ? 'w-full px-4 py-2.5' : 'w-11 h-11 mx-auto'}`}
+          title="New Migration"
         >
           <Plus className="w-4 h-4" />
-          New Migration
+          {isOpen && 'New Migration'}
         </button>
       </div>
 
-      <div className="px-4 py-4 border-b border-white/[0.06]">
-        <NavLink to="/dashboard" className={optionClass}>
-          <LayoutDashboard className="w-4 h-4" />
-          Dashboard
-        </NavLink>
+      <div className={`${isOpen ? 'px-4 py-4' : 'px-2 py-4'} border-b border-white/[0.06] space-y-2`}>
+        {navItems.map((item) => (
+          <NavLink key={item.to} to={item.to} className={optionClass} title={!isOpen ? item.label : undefined}>
+            <item.icon className="w-4 h-4" />
+            {isOpen && item.label}
+          </NavLink>
+        ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="px-3 text-xs font-semibold text-white/35 uppercase tracking-wider mb-2">Sessions</p>
-        <div className="relative px-2 mb-3">
-          <Search className="w-3.5 h-3.5 text-white/35 absolute left-5 top-1/2 -translate-y-1/2" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search sessions"
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
-          />
+      {isOpen && (
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <p className="px-3 text-xs font-semibold text-white/35 uppercase tracking-wider mb-2">Sessions</p>
+          <div className="relative px-2 mb-3">
+            <Search className="w-3.5 h-3.5 text-white/35 absolute left-5 top-1/2 -translate-y-1/2" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search sessions"
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
+            />
+          </div>
+
+          {filteredSessions.length === 0 ? (
+            <div className="mx-2 mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] text-sm text-white/40">
+              No sessions found.
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {sessionNotice && (
+                <div className="mx-2 mb-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/25 text-xs text-yellow-200">
+                  {sessionNotice}
+                </div>
+              )}
+              {filteredSessions.map((item) => {
+                const isActive = activeSessionId === item.sessionId
+                return (
+                  <MotionButton
+                    key={item.sessionId}
+                    onClick={async () => {
+                      const targetSessionId = item.sessionId
+                      if (!targetSessionId) {
+                        removeSession(item.sessionId)
+                        setSessionNotice('Removed an invalid local session entry.')
+                        return
+                      }
+                      try {
+                        await getSession(targetSessionId)
+                        setSessionNotice('')
+                        setActiveSession(targetSessionId)
+                        navigate(`/session/${targetSessionId}`)
+                      } catch {
+                        removeSession(targetSessionId)
+                        setSessionNotice('This session is no longer available on server, so it was removed.')
+                        navigate('/dashboard')
+                      }
+                    }}
+                    whileHover={{ scale: 1.01 }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${
+                      isActive
+                        ? 'bg-blue-500/10 border-blue-500/30 text-white'
+                        : 'bg-white/[0.02] border-white/[0.08] text-white hover:bg-white/[0.05]'
+                    }`}
+                  >
+                    <p className="font-semibold truncate">{item.fileName || 'Untitled file'}</p>
+                  </MotionButton>
+                )
+              })}
+            </div>
+          )}
         </div>
+      )}
 
-        {filteredSessions.length === 0 ? (
-          <div className="mx-2 mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] text-sm text-white/40">
-            No sessions found.
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {sessionNotice && (
-              <div className="mx-2 mb-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/25 text-xs text-yellow-200">
-                {sessionNotice}
-              </div>
-            )}
-            {filteredSessions.map((item) => {
-              const isActive = activeSessionId === item.sessionId
-              return (
-                <motion.button
-                  key={item.sessionId}
-                  onClick={async () => {
-                    const targetSessionId = item.sessionId
-                    if (!targetSessionId) {
-                      removeSession(item.sessionId)
-                      setSessionNotice('Removed an invalid local session entry.')
-                      return
-                    }
-                    try {
-                      await getSession(targetSessionId)
-                      setSessionNotice('')
-                      setActiveSession(targetSessionId)
-                      navigate(`/session/${targetSessionId}`)
-                    } catch {
-                      removeSession(targetSessionId)
-                      setSessionNotice('This session is no longer available on server, so it was removed.')
-                      navigate('/dashboard')
-                    }
-                  }}
-                  whileHover={{ scale: 1.01 }}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${
-                    isActive
-                      ? 'bg-blue-500/10 border-blue-500/30 text-white'
-                      : 'bg-white/[0.02] border-white/[0.08] text-white hover:bg-white/[0.05]'
-                  }`}
-                >
-                  <p className="font-semibold truncate">{item.fileName || 'Untitled file'}</p>
-                </motion.button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-5 border-t border-white/[0.08] space-y-2">
-        <NavLink to="/settings" className={optionClass}>
+      <div className={`border-t border-white/[0.08] ${isOpen ? 'px-4 py-5' : 'px-2 py-4'} space-y-2`}>
+        <NavLink to="/settings" className={optionClass} title={!isOpen ? 'Settings' : undefined}>
           <SettingsIcon className="w-4 h-4" />
-          Settings
+          {isOpen && 'Settings'}
         </NavLink>
-        <NavLink to="/help" className={optionClass}>
+        <NavLink to="/help" className={optionClass} title={!isOpen ? 'Help Center' : undefined}>
           <HelpCircle className="w-4 h-4" />
-          Help Center
+          {isOpen && 'Help Center'}
         </NavLink>
 
         {user ? (
           <button
             onClick={() => navigate('/profile')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-white/[0.05] transition-colors"
+            className={`w-full flex items-center ${isOpen ? 'gap-3 px-3' : 'justify-center px-0'} py-2.5 rounded-xl border border-transparent hover:bg-white/[0.05] transition-colors`}
+            title={!isOpen ? 'Profile' : undefined}
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
-              {(user.full_name || user.name || 'U').charAt(0).toUpperCase()}
-            </div>
-            <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
-            <UserCircle2 className="w-4 h-4 text-white/35 ml-auto" />
+            {isOpen ? avatar : (
+              profilePictureUrl
+                ? <img src={profilePictureUrl} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
+                : <UserCircle2 className="w-5 h-5 text-white/70" />
+            )}
+            {isOpen && (
+              <>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
+                  <p className="text-xs text-white/40">Intelli-Migrate</p>
+                </div>
+                <SettingsIcon className="w-4 h-4 text-white/35 ml-auto" />
+              </>
+            )}
           </button>
         ) : (
-          <Link to="/login" className="flex items-center justify-center w-full py-2.5 text-sm font-bold bg-white text-black rounded-xl hover:bg-white/90 transition-colors">
-            Sign In
+          <Link to="/login" className={`flex items-center justify-center w-full py-2.5 text-sm font-bold bg-white text-black rounded-xl hover:bg-white/90 transition-colors ${isOpen ? '' : 'px-0'}`}>
+            {isOpen ? 'Sign In' : <UserCircle2 className="w-5 h-5" />}
           </Link>
         )}
       </div>

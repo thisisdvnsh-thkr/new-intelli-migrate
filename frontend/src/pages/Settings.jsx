@@ -3,7 +3,7 @@ import { getUserSettings, saveUserSettings, changePassword, deleteAccount } from
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import {
-  Bell, Shield, Palette, Save, Check, Moon, Sun, Key, Trash2
+  Bell, Shield, Palette, Save, Check, Moon, Sun, Key, Trash2, Eye, EyeOff
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -29,6 +29,11 @@ export default function Settings() {
     oldPassword: '',
     newPassword: '',
     confirmPassword: ''
+  })
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    current: false,
+    next: false,
+    confirm: false
   })
 
   useEffect(() => {
@@ -130,6 +135,9 @@ export default function Settings() {
       </Section>
 
       <Section icon={Shield} title="Security">
+        <p className="text-sm text-white/45">
+          Use 8+ characters with a mix of letters, numbers, and symbols. Avoid reusing old passwords.
+        </p>
         <div className="grid md:grid-cols-3 gap-4">
           <Input
             label="Current Password"
@@ -137,6 +145,9 @@ export default function Settings() {
             icon={Key}
             value={passwordForm.oldPassword}
             onChange={(value) => setPasswordForm({ ...passwordForm, oldPassword: value })}
+            canToggle
+            isVisible={passwordVisibility.current}
+            onToggle={() => setPasswordVisibility((prev) => ({ ...prev, current: !prev.current }))}
           />
           <Input
             label="New Password"
@@ -144,6 +155,9 @@ export default function Settings() {
             icon={Key}
             value={passwordForm.newPassword}
             onChange={(value) => setPasswordForm({ ...passwordForm, newPassword: value })}
+            canToggle
+            isVisible={passwordVisibility.next}
+            onToggle={() => setPasswordVisibility((prev) => ({ ...prev, next: !prev.next }))}
           />
           <Input
             label="Confirm Password"
@@ -151,6 +165,9 @@ export default function Settings() {
             icon={Key}
             value={passwordForm.confirmPassword}
             onChange={(value) => setPasswordForm({ ...passwordForm, confirmPassword: value })}
+            canToggle
+            isVisible={passwordVisibility.confirm}
+            onToggle={() => setPasswordVisibility((prev) => ({ ...prev, confirm: !prev.confirm }))}
           />
         </div>
         <div className="flex flex-wrap gap-3 mt-4">
@@ -197,19 +214,29 @@ function Section({ icon: Icon, title, children }) {
   )
 }
 
-function Input({ label, value, onChange, type = 'text', placeholder = '', icon: Icon }) {
+function Input({ label, value, onChange, type = 'text', placeholder = '', icon: Icon, canToggle = false, isVisible = false, onToggle }) {
+  const effectiveType = canToggle ? (isVisible ? 'text' : 'password') : type
   return (
     <div>
       <label className="block text-sm font-medium text-white/50 mb-2">{label}</label>
       <div className="relative">
         {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />}
         <input
-          type={type}
+          type={effectiveType}
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50`}
+          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} ${canToggle ? 'pr-12' : 'pr-4'} py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50`}
         />
+        {canToggle && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+          >
+            {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
       </div>
     </div>
   )

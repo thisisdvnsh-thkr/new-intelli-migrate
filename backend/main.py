@@ -357,6 +357,7 @@ class UserOut(BaseModel):
     email: str
     full_name: Optional[str]
     name: Optional[str] = None
+    profile_picture_url: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
@@ -867,12 +868,21 @@ def oauth_callback(
 
 
 @app.get('/auth/me', response_model=UserOut)
-async def me(current_user: User = Depends(get_current_user)):
+async def me(current_user: User = Depends(get_current_user), db: Session = Depends(lambda: next(get_db()))):
+    profile_picture_url = None
+    settings = db.query(Settings).filter(Settings.user_id == current_user.id).first()
+    if settings and settings.settings_json:
+        try:
+            data = json.loads(settings.settings_json) if settings.settings_json else {}
+            profile_picture_url = data.get("profilePictureUrl") or data.get("profile_picture_url")
+        except Exception:
+            profile_picture_url = None
     return {
         'id': current_user.id,
         'email': current_user.email,
         'full_name': current_user.full_name,
-        'name': current_user.full_name
+        'name': current_user.full_name,
+        'profile_picture_url': profile_picture_url
     }
 
 
@@ -935,6 +945,10 @@ def put_settings(payload: SettingsIn, current_user: User = Depends(get_current_u
             existing_data = json.loads(settings.settings_json)
         except Exception:
             existing_data = {}
+    if payload.settings and "profilePictureUrl" in payload.settings:
+        picture_value = payload.settings.get("profilePictureUrl") or ""
+        if picture_value and len(picture_value) > 900000:
+            raise HTTPException(status_code=400, detail="Profile picture is too large. Please upload a smaller image.")
     merged = {**existing_data, **(payload.settings or {})}
     sjson = json.dumps(merged)
     if not settings:
@@ -1002,6 +1016,11 @@ def support_kb_answer(message: str, user_snapshot: Optional[Dict[str, Any]] = No
             "Sure — tell me exactly what you are trying to do right now (for example: upload, map schema, fix deploy, "
             "recover account, or connect database), and I will give precise steps."
         )
+    if any(k in text for k in ["test", "testing", "process", "steps", "end to end", "end-to-end", "complete process", "guide me"]):
+        return (
+            "End-to-end flow: 1) Upload your file, 2) Map schema, 3) Review anomalies, 4) Generate SQL, "
+            "5) Deploy to your target database. Tell me which step you are on and I will give exact actions."
+        )
     if user_snapshot and any(k in text for k in ["my", "mine", "progress", "session", "dashboard", "stats"]):
         return (
             f"Your workspace currently has {user_snapshot.get('session_count', 0)} session(s), "
@@ -1023,6 +1042,17 @@ def support_kb_answer(message: str, user_snapshot: Optional[Dict[str, Any]] = No
         if any(k in text for k in keywords):
             return answer
     return None
+
+def support_fallback_answer(message: str, current_path: Optional[str] = None) -> str:
+    snippet = " ".join((message or "").strip().split())
+    if len(snippet) > 140:
+        snippet = snippet[:140].rstrip() + "..."
+    path_hint = f" (Current page: {current_path})" if current_path else ""
+    return (
+        f"I don't have enough detail about \"{snippet}\"{path_hint}. "
+        "Tell me which step you are on (upload, schema map, anomalies, SQL, deploy, account), "
+        "and I will give precise next steps."
+    )
 
 def openai_support_answer(message: str, history: Optional[List[Dict[str, str]]] = None, user_context: Optional[str] = None) -> Optional[str]:
     if not OPENAI_API_KEY:
@@ -1077,10 +1107,7 @@ def support_chat(payload: SupportChatIn, current_user: Optional[User] = Depends(
     if kb_answer:
         return {"answer": kb_answer, "can_answer": True, "github_support_url": SUPPORT_GITHUB_URL, "user_context_used": bool(current_user)}
     return {
-        "answer": (
-            "I can still help if you ask with more detail (for example: 'how to fix SMTP', "
-            "'how to map schema', or 'how to deploy to Supabase')."
-        ),
+        "answer": support_fallback_answer(payload.message, payload.current_path),
         "can_answer": True,
         "github_support_url": SUPPORT_GITHUB_URL
     }

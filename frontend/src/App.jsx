@@ -26,9 +26,9 @@ import Documentation from './pages/Documentation'
 import ParseReview from './pages/ParseReview'
 import SessionDashboard from './pages/SessionDashboard'
 import SupportChatWidget from './components/SupportChatWidget'
+import LoggedInFooter from './components/LoggedInFooter'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
-import { PanelLeftOpen } from 'lucide-react'
 
 // Backend Wake-up Loading Screen
 function BackendLoader({ onReady }) {
@@ -165,16 +165,10 @@ function DashboardLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-[#0a0a0b]">
       <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
-      <button
-        onClick={() => setSidebarOpen((v) => !v)}
-        className="fixed top-4 left-4 z-40 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.12] text-white/75 hover:text-white hover:bg-white/[0.06]"
-      >
-        <PanelLeftOpen className="w-4 h-4" />
-        {sidebarOpen ? 'Drawer' : 'Open'}
-      </button>
-      <main className={`flex-1 min-h-screen transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
+      <main className={`flex-1 min-h-screen transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-20'}`}>
         <div className="max-w-7xl mx-auto px-8 py-8">
           <PageTransition>{children}</PageTransition>
+          <LoggedInFooter />
         </div>
       </main>
     </div>
