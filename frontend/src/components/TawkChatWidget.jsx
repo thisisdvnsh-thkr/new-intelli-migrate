@@ -8,17 +8,6 @@ export default function TawkChatWidget() {
     if (document.getElementById('tawk-script')) return
     window.Tawk_API = window.Tawk_API || {}
     window.Tawk_LoadStart = new Date()
-    window.Tawk_API.onLoad = function onTawkLoad() {
-      if (window.Tawk_API?.hideWidget) {
-        window.Tawk_API.hideWidget()
-      }
-    }
-    window.Tawk_API.onChatMaximized = function onChatMaximized() {
-      if (window.Tawk_API?.hideWidget) {
-        window.Tawk_API.hideWidget()
-      }
-    }
-
     const s1 = document.createElement('script')
     s1.id = 'tawk-script'
     s1.async = true
