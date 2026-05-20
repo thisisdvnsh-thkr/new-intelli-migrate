@@ -63,14 +63,27 @@ export default function Sidebar({ isOpen, onToggle }) {
     <aside className={`fixed left-0 top-0 bottom-0 ${isOpen ? 'w-80' : 'w-20'} bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50 transition-all duration-300`}>
       <div className={`border-b border-white/[0.06] ${isOpen ? 'px-6 py-5' : 'px-3 py-4'} space-y-4`}>
         <div className={`flex items-center ${isOpen ? 'justify-between' : 'justify-center'}`}>
-          {isOpen ? <BrandLogo /> : <BrandLogo size={34} showText={false} />}
-          <button
-            onClick={onToggle}
-            className={`rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center ${isOpen ? 'w-9 h-9' : 'w-8 h-8 ml-2'}`}
-            title={isOpen ? 'Close sidebar' : 'Open sidebar'}
-          >
-            {isOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-          </button>
+          {isOpen ? (
+            <>
+              <BrandLogo />
+              <button
+                onClick={onToggle}
+                className="rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center w-9 h-9"
+                title="Close sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onToggle}
+              className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/75 hover:text-white hover:bg-white/[0.06]"
+              title="Open sidebar"
+            >
+              <BrandLogo size={32} showText={false} />
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {isOpen && <p className="text-xs text-white/40 pl-1">Session Workspace</p>}
@@ -187,7 +200,6 @@ export default function Sidebar({ isOpen, onToggle }) {
                   <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
                   <p className="text-xs text-white/40">Intelli-Migrate</p>
                 </div>
-                <SettingsIcon className="w-4 h-4 text-white/35 ml-auto" />
               </>
             )}
           </button>

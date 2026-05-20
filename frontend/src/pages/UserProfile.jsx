@@ -37,6 +37,8 @@ export default function UserProfile() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [avatarError, setAvatarError] = useState('')
+  const [avatarSaving, setAvatarSaving] = useState(false)
+  const [avatarSaved, setAvatarSaved] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -109,6 +111,25 @@ export default function UserProfile() {
     }
   }
 
+  const persistProfilePicture = async (nextUrl) => {
+    setAvatarError('')
+    setAvatarSaving(true)
+    setSettings((prev) => ({ ...prev, profilePictureUrl: nextUrl }))
+    try {
+      await saveUserSettings({ profilePictureUrl: nextUrl })
+      updateUser({
+        ...(user || {}),
+        profile_picture_url: nextUrl || ''
+      })
+      setAvatarSaved(true)
+      setTimeout(() => setAvatarSaved(false), 1600)
+    } catch {
+      setAvatarError('Failed to save profile photo.')
+    } finally {
+      setAvatarSaving(false)
+    }
+  }
+
   const handleAvatarChange = (file) => {
     if (!file) return
     setAvatarError('')
@@ -122,7 +143,7 @@ export default function UserProfile() {
     }
     const reader = new FileReader()
     reader.onload = () => {
-      setSettings((prev) => ({ ...prev, profilePictureUrl: String(reader.result || '') }))
+      persistProfilePicture(String(reader.result || ''))
     }
     reader.onerror = () => setAvatarError('Failed to read image file.')
     reader.readAsDataURL(file)
@@ -189,13 +210,15 @@ export default function UserProfile() {
           </label>
           {profilePicture && (
             <button
-              onClick={() => setSettings((prev) => ({ ...prev, profilePictureUrl: '' }))}
+              onClick={() => persistProfilePicture('')}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm hover:bg-red-500/20"
             >
               <Trash2 className="w-4 h-4" />
-              Remove photo
+              {avatarSaving ? 'Removing...' : 'Remove photo'}
             </button>
           )}
+          {avatarSaving && <span className="text-sm text-white/50">Saving photo...</span>}
+          {avatarSaved && <span className="text-sm text-green-300">Photo updated.</span>}
           {avatarError && <p className="text-sm text-red-300">{avatarError}</p>}
         </div>
 
