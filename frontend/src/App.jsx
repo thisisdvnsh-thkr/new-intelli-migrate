@@ -27,7 +27,6 @@ import Documentation from './pages/Documentation'
 import ParseReview from './pages/ParseReview'
 import SessionDashboard from './pages/SessionDashboard'
 import TawkChatWidget from './components/TawkChatWidget'
-import SupportCenterWidget from './components/SupportCenterWidget'
 import LoggedInFooter from './components/LoggedInFooter'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
@@ -237,7 +236,6 @@ export default function App() {
          <LanguageProvider>
            <MigrationProvider>
              <AppRoutes />
-             <SupportCenterWidget />
              <TawkChatWidget />
            </MigrationProvider>
          </LanguageProvider>
