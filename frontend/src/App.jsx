@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { MigrationProvider } from './context/MigrationContext'
+import { LanguageProvider } from './context/LanguageContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
@@ -26,6 +27,7 @@ import Documentation from './pages/Documentation'
 import ParseReview from './pages/ParseReview'
 import SessionDashboard from './pages/SessionDashboard'
 import TawkChatWidget from './components/TawkChatWidget'
+import SupportCenterWidget from './components/SupportCenterWidget'
 import LoggedInFooter from './components/LoggedInFooter'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
@@ -231,12 +233,15 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <MigrationProvider>
-          <AppRoutes />
-           <TawkChatWidget />
-        </MigrationProvider>
-      </AuthProvider>
+       <AuthProvider>
+         <LanguageProvider>
+           <MigrationProvider>
+             <AppRoutes />
+             <SupportCenterWidget />
+             <TawkChatWidget />
+           </MigrationProvider>
+         </LanguageProvider>
+       </AuthProvider>
     </BrowserRouter>
   )
 }

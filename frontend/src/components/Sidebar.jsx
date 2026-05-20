@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { useMigration } from '../context/MigrationContext'
 import BrandLogo from './BrandLogo'
 import { getSession, getUserSettings } from '../lib/api'
@@ -10,7 +11,8 @@ import { getSession, getUserSettings } from '../lib/api'
 export default function Sidebar({ isOpen, onToggle }) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { sessionHistory, activeSessionId, setActiveSession, resetSession, removeSession } = useMigration()
+  const { t } = useLanguage()
+  const { sessionHistory, activeSessionId, setActiveSession, removeSession } = useMigration()
   const [query, setQuery] = useState('')
   const [sessionNotice, setSessionNotice] = useState('')
   const [profilePictureUrl, setProfilePictureUrl] = useState('')
@@ -40,7 +42,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   }, [query, sessionHistory])
 
   const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
+    { to: '/dashboard', label: t('dashboard'), icon: LayoutDashboard }
   ]
 
   const optionClass = ({ isActive }) =>
@@ -69,7 +71,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               <button
                 onClick={onToggle}
                 className="rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center w-9 h-9"
-                title="Close sidebar"
+                title={t('close_sidebar')}
               >
                 <PanelLeftClose className="w-4 h-4" />
               </button>
@@ -77,28 +79,18 @@ export default function Sidebar({ isOpen, onToggle }) {
           ) : (
             <button
               onClick={onToggle}
-              className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/75 hover:text-white hover:bg-white/[0.06]"
-              title="Open sidebar"
+              className="relative group w-full flex items-center justify-center px-2 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/75 hover:text-white hover:bg-white/[0.06]"
+              title={t('open_sidebar')}
             >
               <BrandLogo size={32} showText={false} />
-              <PanelLeftOpen className="w-4 h-4" />
+              <span className="pointer-events-none absolute left-16 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-black text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                {t('open_sidebar')}
+              </span>
             </button>
           )}
         </div>
 
-        {isOpen && <p className="text-xs text-white/40 pl-1">Session Workspace</p>}
-
-        <button
-          onClick={() => {
-            resetSession()
-            navigate('/upload')
-          }}
-          className={`flex items-center justify-center gap-2 rounded-2xl bg-white text-black font-bold hover:bg-white/90 transition-colors ${isOpen ? 'w-full px-4 py-2.5' : 'w-11 h-11 mx-auto'}`}
-          title="New Migration"
-        >
-          <Plus className="w-4 h-4" />
-          {isOpen && 'New Migration'}
-        </button>
+        {isOpen && <p className="text-xs text-white/40 pl-1">{t('session_workspace')}</p>}
       </div>
 
       <div className={`${isOpen ? 'px-4 py-4' : 'px-2 py-4'} border-b border-white/[0.06] space-y-2`}>
@@ -112,20 +104,20 @@ export default function Sidebar({ isOpen, onToggle }) {
 
       {isOpen && (
         <div className="flex-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 text-xs font-semibold text-white/35 uppercase tracking-wider mb-2">Sessions</p>
+          <p className="px-3 text-xs font-semibold text-white/35 uppercase tracking-wider mb-2">{t('sessions')}</p>
           <div className="relative px-2 mb-3">
             <Search className="w-3.5 h-3.5 text-white/35 absolute left-5 top-1/2 -translate-y-1/2" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search sessions"
+              placeholder={t('search_sessions')}
               className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
             />
           </div>
 
           {filteredSessions.length === 0 ? (
             <div className="mx-2 mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] text-sm text-white/40">
-              No sessions found.
+              {t('no_sessions')}
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -174,20 +166,20 @@ export default function Sidebar({ isOpen, onToggle }) {
       )}
 
       <div className={`border-t border-white/[0.08] ${isOpen ? 'px-4 py-5' : 'px-2 py-4'} space-y-2`}>
-        <NavLink to="/settings" className={optionClass} title={!isOpen ? 'Settings' : undefined}>
+        <NavLink to="/settings" className={optionClass} title={!isOpen ? t('settings') : undefined}>
           <SettingsIcon className="w-4 h-4" />
-          {isOpen && 'Settings'}
+          {isOpen && t('settings')}
         </NavLink>
-        <NavLink to="/help" className={optionClass} title={!isOpen ? 'Help Center' : undefined}>
+        <NavLink to="/help" className={optionClass} title={!isOpen ? t('help_center') : undefined}>
           <HelpCircle className="w-4 h-4" />
-          {isOpen && 'Help Center'}
+          {isOpen && t('help_center')}
         </NavLink>
 
         {user ? (
           <button
             onClick={() => navigate('/profile')}
             className={`w-full flex items-center ${isOpen ? 'gap-3 px-3' : 'justify-center px-0'} py-2.5 rounded-xl border border-transparent hover:bg-white/[0.05] transition-colors`}
-            title={!isOpen ? 'Profile' : undefined}
+            title={!isOpen ? t('profile') : undefined}
           >
             {isOpen ? avatar : (
               profilePictureUrl
@@ -197,7 +189,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             {isOpen && (
               <>
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || 'User'}</p>
+                  <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || t('profile')}</p>
                   <p className="text-xs text-white/40">Intelli-Migrate</p>
                 </div>
               </>

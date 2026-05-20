@@ -24,7 +24,7 @@ export default function UserProfile() {
   const { user, logout, updateUser } = useAuth()
   const [profileEmail, setProfileEmail] = useState(user?.email || '')
   const [settings, setSettings] = useState({
-    name: '',
+    name: user?.full_name || user?.name || '',
     notifications: true,
     autoSave: true,
     databaseProvider: 'supabase',
