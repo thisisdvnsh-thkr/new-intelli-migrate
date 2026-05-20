@@ -13,6 +13,11 @@ export default function TawkChatWidget() {
         window.Tawk_API.hideWidget()
       }
     }
+    window.Tawk_API.onChatMaximized = function onChatMaximized() {
+      if (window.Tawk_API?.hideWidget) {
+        window.Tawk_API.hideWidget()
+      }
+    }
 
     const s1 = document.createElement('script')
     s1.id = 'tawk-script'

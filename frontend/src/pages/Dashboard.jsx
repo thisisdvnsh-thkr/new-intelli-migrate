@@ -19,7 +19,7 @@ function OnboardingTour({ onComplete }) {
   const steps = [
     { title: 'Welcome to Intelli-Migrate', description: 'Dashboard shows your overall work, while each session opens separately.' },
     { title: 'Open Session-Specific View', description: 'Click any session in sidebar to open its own dedicated session dashboard.' },
-    { title: 'Run New Migration', description: 'Use New Migration to upload and process another file.' }
+    { title: 'Upload a new file', description: 'Go to Upload to start another migration workflow.' }
   ]
   const currentStep = steps[step]
 
@@ -142,7 +142,7 @@ export default function Dashboard() {
 
         <motion.div variants={fadeInUp} className="flex justify-end pt-2">
           <Link to="/upload" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all">
-            New Migration
+            Upload
             <ArrowRight className="w-5 h-5" />
           </Link>
         </motion.div>

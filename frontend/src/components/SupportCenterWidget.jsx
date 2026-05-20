@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { HelpCircle, MessageSquare, Search, X } from 'lucide-react'
+import { HelpCircle, Home, MessageSquare, Search, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -80,6 +80,11 @@ export default function SupportCenterWidget() {
   const [search, setSearch] = useState('')
   const [answered, setAnswered] = useState([])
   const [activeAnswer, setActiveAnswer] = useState(null)
+  const tawkChatUrl = useMemo(() => {
+    const propertyId = '6a0d99faf2730b1c34e2400f'
+    const widgetId = '1jp2i2vk1'
+    return `https://tawk.to/chat/${propertyId}/${widgetId}`
+  }, [])
 
   const questions = useMemo(() => {
     const items = faqContent[language] || faqContent.en
@@ -97,9 +102,7 @@ export default function SupportCenterWidget() {
   }
 
   const openChat = () => {
-    if (window.Tawk_API?.maximize) {
-      window.Tawk_API.maximize()
-    }
+    window.open(tawkChatUrl, '_blank', 'noopener,noreferrer')
     setTab('messages')
   }
 
@@ -115,20 +118,27 @@ export default function SupportCenterWidget() {
         </button>
       ) : (
         <div className="w-[360px] h-[640px] rounded-[28px] overflow-hidden shadow-2xl border border-white/10 bg-[#0b1220]">
-          <div className="relative h-40 bg-gradient-to-br from-[#1557b0] via-[#12418c] to-[#0d2f64] p-5 text-white">
+          <div className="relative h-44 bg-gradient-to-br from-[#1e63c6] via-[#1550a8] to-[#0e397a] p-5 text-white">
             <button
               onClick={() => setOpen(false)}
               className="absolute right-4 top-4 text-white/70 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
-            <p className="text-white/70 text-sm mb-2">Intelli-Migrate</p>
-            <p className="text-2xl font-semibold leading-tight">
-              {t('support_title')}
+            <div className="flex items-center gap-3 mb-3">
+              <p className="text-white/70 text-sm">Intelli-Migrate</p>
+              <div className="flex -space-x-2">
+                {['/avatar-1.png', '/avatar-2.png', '/avatar-3.png'].map((src, idx) => (
+                  <div key={`${src}-${idx}`} className="w-7 h-7 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-xs">
+                    {idx + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-white/70 text-sm mb-1">
+              {user?.full_name ? `Hey ${user.full_name.split(' ')[0]} 👋` : 'Hey there 👋'}
             </p>
-            <p className="text-white/70 text-sm mt-2">
-              {user?.full_name ? `Hey ${user.full_name.split(' ')[0]} 👋` : 'We are here to help.'}
-            </p>
+            <p className="text-2xl font-semibold leading-tight">{t('support_title')}</p>
           </div>
 
           <div className="px-4 -mt-6">
@@ -187,6 +197,7 @@ export default function SupportCenterWidget() {
                   <MessageSquare className="w-4 h-4" />
                   {t('support_open_chat')}
                 </button>
+                <p className="text-xs text-gray-400 mt-3">Chat opens in a new tab.</p>
               </div>
             )}
 
@@ -208,17 +219,18 @@ export default function SupportCenterWidget() {
           </div>
 
           <div className="border-t border-white/10 bg-[#0b1220] px-4 py-3">
-            <div className="grid grid-cols-3 text-xs text-white/70">
+            <div className="grid grid-cols-3 text-[11px] text-white/70">
               {[
-                { id: 'home', label: t('support_home') },
-                { id: 'messages', label: t('support_messages') },
-                { id: 'help', label: t('support_help') }
+                { id: 'home', label: t('support_home'), icon: Home },
+                { id: 'messages', label: t('support_messages'), icon: MessageSquare },
+                { id: 'help', label: t('support_help'), icon: HelpCircle }
               ].map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setTab(item.id)}
-                  className={`py-2 rounded-xl ${tab === item.id ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
+                  className={`py-2 rounded-xl flex flex-col items-center gap-1 ${tab === item.id ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
                 >
+                  <item.icon className="w-4 h-4" />
                   {item.label}
                 </button>
               ))}

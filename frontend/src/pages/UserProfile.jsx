@@ -22,9 +22,17 @@ const providerOptions = [
 export default function UserProfile() {
   const navigate = useNavigate()
   const { user, logout, updateUser } = useAuth()
-  const [profileEmail, setProfileEmail] = useState(user?.email || '')
+  const cachedAuth = useMemo(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('intelli-auth') || '{}')
+      return stored?.user || {}
+    } catch {
+      return {}
+    }
+  }, [])
+  const [profileEmail, setProfileEmail] = useState(user?.email || cachedAuth?.email || '')
   const [settings, setSettings] = useState({
-    name: user?.full_name || user?.name || '',
+    name: user?.full_name || user?.name || cachedAuth?.full_name || cachedAuth?.name || '',
     notifications: true,
     autoSave: true,
     databaseProvider: 'supabase',
