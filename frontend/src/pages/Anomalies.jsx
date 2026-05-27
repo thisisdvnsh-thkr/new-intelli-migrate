@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, AlertTriangle, Loader2, Shield, PieChart, CheckCircle2 } from 'lucide-react'
 import { useMigration } from '../context/MigrationContext'
 import { detectAnomalies } from '../lib/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -20,12 +21,12 @@ function normalizeSeverity(issue) {
   return 'low'
 }
 
-function qualityMeta(score) {
+function qualityMeta(score, t) {
   const safe = Number(score || 0)
-  if (safe >= 85) return { label: 'Excellent', tone: 'text-emerald-300' }
-  if (safe >= 65) return { label: 'Good', tone: 'text-lime-300' }
-  if (safe >= 45) return { label: 'Moderate', tone: 'text-amber-300' }
-  return { label: 'Needs attention', tone: 'text-rose-300' }
+  if (safe >= 85) return { label: t('Excellent'), tone: 'text-emerald-300' }
+  if (safe >= 65) return { label: t('Good'), tone: 'text-lime-300' }
+  if (safe >= 45) return { label: t('Moderate'), tone: 'text-amber-300' }
+  return { label: t('Needs attention'), tone: 'text-rose-300' }
 }
 
 function SeverityBar({ label, value, color, count }) {
@@ -45,6 +46,7 @@ function SeverityBar({ label, value, color, count }) {
 export default function Anomalies() {
   const navigate = useNavigate()
   const { stats, updateStats, setStepWithSession, updateSessionMeta } = useMigration()
+  const { t } = useLanguage()
   const [anomalies, setAnomalies] = useState([])
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -99,7 +101,7 @@ export default function Anomalies() {
       setDone(true)
       setPhase('Analysis complete')
     } catch (error) {
-      alert(`Anomaly detection failed: ${error?.response?.data?.detail || error.message}`)
+      alert(`${t('Anomaly detection failed')}: ${error?.response?.data?.detail || error.message}`)
     } finally {
       setLoading(false)
     }
@@ -121,15 +123,15 @@ export default function Anomalies() {
   }, [anomalies])
 
   const qualityScore = done ? Number(stats.qualityScore ?? 0) : 0
-  const quality = qualityMeta(qualityScore)
+  const quality = qualityMeta(qualityScore, t)
   const visibleIssues = showAllIssues ? anomalies : anomalies.slice(0, 10)
 
   return (
     <motion.div initial="hidden" animate="visible" className="space-y-8">
       <motion.header variants={fadeInUp} className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Anomaly Detection</h1>
-          <p className="text-lg text-white/50 font-medium">Agent 3 checks quality issues, outliers, and missing values.</p>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('Anomaly Detection')}</h1>
+          <p className="text-lg text-white/50 font-medium">{t('Agent 3 checks quality issues, outliers, and missing values.')}</p>
         </div>
         {!done && (
           <button
@@ -138,33 +140,33 @@ export default function Anomalies() {
             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
-            {loading ? phase : 'Run Detection'}
+            {loading ? t(phase) : t('Run Detection')}
           </button>
         )}
       </motion.header>
 
       <motion.section variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <InfoCard title="Quality Score" value={`${Math.round(qualityScore)}%`} subtitle={quality.label} tone={quality.tone} />
-        <InfoCard title="Clean Records" value={String(done ? (stats.cleanRecords || 0) : 0)} />
-        <InfoCard title="Issues Found" value={String(done ? anomalies.length : 0)} />
+        <InfoCard title={t('Quality Score')} value={`${Math.round(qualityScore)}%`} subtitle={quality.label} tone={quality.tone} />
+        <InfoCard title={t('Clean Records')} value={String(done ? (stats.cleanRecords || 0) : 0)} />
+        <InfoCard title={t('Issues Found')} value={String(done ? anomalies.length : 0)} />
       </motion.section>
 
       <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
         <div className="flex items-center gap-2 mb-2">
           <PieChart className="w-5 h-5 text-orange-300" />
-          <h2 className="text-xl font-bold text-white">Severity Distribution</h2>
+          <h2 className="text-xl font-bold text-white">{t('Severity Distribution')}</h2>
         </div>
         <p className="text-sm text-white/45 mb-4">
-          Quality score reflects the percentage of records passing anomaly checks after validation and cleanup.
+          {t('Quality score reflects the percentage of records passing anomaly checks after validation and cleanup.')}
         </p>
         {anomalies.length > 0 ? (
           <div className="space-y-3">
-            <SeverityBar label="High" value={severityStats.high} count={severityStats.highCount} color="bg-red-500" />
-            <SeverityBar label="Medium" value={severityStats.medium} count={severityStats.mediumCount} color="bg-yellow-500" />
-            <SeverityBar label="Low" value={severityStats.low} count={severityStats.lowCount} color="bg-blue-500" />
+            <SeverityBar label={t('High')} value={severityStats.high} count={severityStats.highCount} color="bg-red-500" />
+            <SeverityBar label={t('Medium')} value={severityStats.medium} count={severityStats.mediumCount} color="bg-yellow-500" />
+            <SeverityBar label={t('Low')} value={severityStats.low} count={severityStats.lowCount} color="bg-blue-500" />
           </div>
         ) : (
-          <p className="text-white/40">Run detection to see anomaly distribution.</p>
+          <p className="text-white/40">{t('Run detection to see anomaly distribution.')}</p>
         )}
       </motion.section>
 
@@ -177,11 +179,11 @@ export default function Anomalies() {
                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                   a.severity === 'high' ? 'bg-red-500/20 text-red-300' : a.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-blue-500/20 text-blue-300'
                 }`}>
-                  {a.severity}
+                  {t(a.severity)}
                 </span>
               </div>
               <p className="text-sm text-white/55 mt-1">{a.description}</p>
-              {a.field && <p className="text-xs text-white/35 mt-2">Field: {a.field}</p>}
+              {a.field && <p className="text-xs text-white/35 mt-2">{t('Field')}: {a.field}</p>}
             </div>
           ))}
 
@@ -191,7 +193,7 @@ export default function Anomalies() {
                 onClick={() => setShowAllIssues((v) => !v)}
                 className="px-3 py-1.5 rounded-xl border border-orange-400/40 bg-orange-500/10 text-orange-200 text-sm font-semibold animate-pulse hover:animate-none"
               >
-                {showAllIssues ? 'Show top 10' : 'More issues ✨'}
+                {showAllIssues ? t('Show top 10') : t('More issues ✨')}
               </button>
             </div>
           )}
@@ -199,12 +201,12 @@ export default function Anomalies() {
       ) : done ? (
         <motion.section variants={fadeInUp} className="rounded-3xl bg-green-500/5 border border-green-500/20 p-12 text-center">
           <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-4" />
-          <p className="text-white">No anomalies detected. Data quality looks good.</p>
+          <p className="text-white">{t('No anomalies detected. Data quality looks good.')}</p>
         </motion.section>
       ) : (
         <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-12 text-center">
           <AlertTriangle className="w-10 h-10 text-orange-300/70 mx-auto mb-4" />
-          <p className="text-white/40">Run anomaly detection to generate interactive quality insights.</p>
+          <p className="text-white/40">{t('Run anomaly detection to generate interactive quality insights.')}</p>
         </motion.section>
       )}
 
@@ -214,7 +216,7 @@ export default function Anomalies() {
             onClick={() => navigate('/generate-sql')}
             className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
           >
-            Continue to SQL Generation
+            {t('Continue to SQL Generation')}
             <ArrowRight className="w-5 h-5" />
           </button>
         </motion.div>

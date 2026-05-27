@@ -1,4 +1,7 @@
+import { useLanguage } from '../context/LanguageContext'
+
 export default function Terms() {
+  const { t } = useLanguage()
   const sections = [
     {
       title: '1. Service Scope',
@@ -45,12 +48,12 @@ export default function Terms() {
   return (
     <div className="min-h-screen bg-black text-white px-6 py-12">
       <div className="max-w-5xl mx-auto space-y-5">
-        <h1 className="text-4xl font-black">Terms & Conditions</h1>
-        <p className="text-white/60 text-sm">Effective date: 2026-01-01</p>
+        <h1 className="text-4xl font-black">{t('Terms & Conditions')}</h1>
+        <p className="text-white/60 text-sm">{t('Effective date: 2026-01-01')}</p>
         {sections.map((s) => (
           <section key={s.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <h2 className="text-base font-bold mb-2">{s.title}</h2>
-            <p className="text-white/70 text-xs leading-6">{s.text}</p>
+            <h2 className="text-base font-bold mb-2">{t(s.title)}</h2>
+            <p className="text-white/70 text-xs leading-6">{t(s.text)}</p>
           </section>
         ))}
       </div>

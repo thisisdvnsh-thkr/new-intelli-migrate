@@ -1,4 +1,5 @@
 import { Mail, ExternalLink, Users } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 
 const supportEmail = 'thisisdvnsh.thkr@gmail.com'
 const githubUrl = 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues'
@@ -37,11 +38,13 @@ const members = [
 ]
 
 export default function ContactSupport() {
+  const { t } = useLanguage()
+
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-4xl md:text-5xl font-black text-white mb-2">Contact Support</h1>
-        <p className="text-white/55 text-lg">Reach Team Intelli-Migrate for issues, suggestions, and collaboration.</p>
+        <h1 className="text-4xl md:text-5xl font-black text-white mb-2">{t('Contact Support')}</h1>
+        <p className="text-white/55 text-lg">{t('Reach Team Intelli-Migrate for issues, suggestions, and collaboration.')}</p>
       </header>
 
       <section className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
@@ -52,12 +55,12 @@ export default function ContactSupport() {
           </a>
           <a href={githubUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">
             <ExternalLink className="w-4 h-4" />
-            GitHub comments & suggestions
+            {t('GitHub comments & suggestions')}
           </a>
         </div>
         <img
           src="/team-photo.png"
-          alt="Team Intelli-Migrate"
+          alt={t('Team Intelli-Migrate')}
           className="w-full max-w-2xl h-[220px] object-contain rounded-2xl border border-white/10 bg-white/[0.03]"
         />
       </section>
@@ -65,15 +68,15 @@ export default function ContactSupport() {
       <section className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="w-5 h-5 text-purple-300" />
-          <h2 className="text-2xl font-bold text-white">Team Intelli-Migrate</h2>
+          <h2 className="text-2xl font-bold text-white">{t('Team Intelli-Migrate')}</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           {members.map((m) => (
             <article key={m.name} className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-4">
               <h3 className="text-white font-bold">{m.name}</h3>
-              <p className="text-sm text-blue-300 mt-1">{m.role}</p>
-              <p className="text-sm text-white/65 mt-2">{m.contribution}</p>
-              <p className="text-sm text-white/80 mt-3 italic">“{m.thought}”</p>
+              <p className="text-sm text-blue-300 mt-1">{t(m.role)}</p>
+              <p className="text-sm text-white/65 mt-2">{t(m.contribution)}</p>
+              <p className="text-sm text-white/80 mt-3 italic">“{t(m.thought)}”</p>
             </article>
           ))}
         </div>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useMigration } from '../context/MigrationContext'
 import { normalizeData, generateSQL as generateSQLApi, getUserSettings } from '../lib/api'
 import { ArrowRight, Database, Download, Copy, Check, Loader2, Code2, BarChart3 } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -13,6 +14,7 @@ const fadeInUp = {
 export default function GenerateSQL() {
   const navigate = useNavigate()
   const { stats, updateStats, setStepWithSession, updateSessionMeta } = useMigration()
+  const { t } = useLanguage()
   const [sql, setSql] = useState('')
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState('Ready')
@@ -72,7 +74,7 @@ export default function GenerateSQL() {
       setDone(true)
       setPhase('SQL generation complete')
     } catch (error) {
-      alert(`SQL generation failed: ${error?.response?.data?.detail || error.message}`)
+      alert(`${t('SQL generation failed')}: ${error?.response?.data?.detail || error.message}`)
     } finally {
       setLoading(false)
     }
@@ -98,8 +100,8 @@ export default function GenerateSQL() {
     <motion.div initial="hidden" animate="visible" className="space-y-8">
       <motion.header variants={fadeInUp} className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">SQL Generation</h1>
-          <p className="text-lg text-white/50 font-medium">Agent 4 + 5 normalize data and generate production-ready SQL.</p>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('SQL Generation')}</h1>
+          <p className="text-lg text-white/50 font-medium">{t('Agent 4 + 5 normalize data and generate production-ready SQL.')}</p>
         </div>
         {!done && (
           <button
@@ -108,7 +110,7 @@ export default function GenerateSQL() {
             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
-            {loading ? phase : 'Generate SQL'}
+            {loading ? t(phase) : t('Generate SQL')}
           </button>
         )}
       </motion.header>
@@ -116,13 +118,13 @@ export default function GenerateSQL() {
       <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 className="w-5 h-5 text-emerald-300" />
-          <h2 className="text-xl font-bold text-white">Agent Visualization</h2>
+          <h2 className="text-xl font-bold text-white">{t('Agent Visualization')}</h2>
         </div>
         <div className="grid md:grid-cols-4 gap-3 text-sm">
-          <Stat label="Tables" value={String(summary.tableCount || sqlStats.createCount)} />
-          <Stat label="Records" value={String(summary.recordCount)} />
-          <Stat label="DDL Lines" value={String(summary.ddlLines)} />
-          <Stat label="DML Lines" value={String(summary.dmlLines || sqlStats.insertCount)} />
+          <Stat label={t('Tables')} value={String(summary.tableCount || sqlStats.createCount)} />
+          <Stat label={t('Records')} value={String(summary.recordCount)} />
+          <Stat label={t('DDL Lines')} value={String(summary.ddlLines)} />
+          <Stat label={t('DML Lines')} value={String(summary.dmlLines || sqlStats.insertCount)} />
         </div>
       </motion.section>
 
@@ -134,16 +136,16 @@ export default function GenerateSQL() {
                 <Code2 className="w-4 h-4 text-emerald-400" />
               </div>
               <span className="text-sm font-semibold text-white">migration.sql</span>
-              <span className="text-xs text-white/40">{sqlStats.lines} lines</span>
+              <span className="text-xs text-white/40">{sqlStats.lines} {t('lines')}</span>
             </div>
             <div className="flex gap-2">
               <button onClick={copyToClipboard} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 text-sm font-medium flex items-center gap-2 hover:bg-white/10 transition-all">
                 {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('Copied') : t('Copy')}
               </button>
               <button onClick={downloadSQL} className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-2 hover:bg-emerald-500/20 transition-all">
                 <Download className="w-4 h-4" />
-                Download
+                {t('Download')}
               </button>
             </div>
           </div>
@@ -154,7 +156,7 @@ export default function GenerateSQL() {
       ) : (
         <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-16 text-center">
           <Database className="w-10 h-10 text-emerald-400/50 mx-auto mb-4" />
-          <p className="text-white/40">Generate SQL to view scripts and interactive summary.</p>
+          <p className="text-white/40">{t('Generate SQL to view scripts and interactive summary.')}</p>
         </motion.section>
       )}
 
@@ -164,7 +166,7 @@ export default function GenerateSQL() {
             onClick={() => navigate('/deploy')}
             className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
           >
-            Proceed to Deploy
+            {t('Proceed to Deploy')}
             <ArrowRight className="w-5 h-5" />
           </button>
         </motion.div>

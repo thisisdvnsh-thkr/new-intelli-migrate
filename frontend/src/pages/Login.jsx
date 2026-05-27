@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { login as apiLogin, getMe, getOAuthStartUrl, setAuthToken } from '../lib/api'
 import BrandLogo from '../components/BrandLogo'
 
@@ -15,6 +16,7 @@ export default function Login() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { login } = useAuth()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -40,7 +42,7 @@ export default function Login() {
       login(me, data.access_token)
       navigate('/dashboard')
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Invalid credentials')
+      setError(err?.response?.data?.detail || t('Invalid credentials'))
     } finally {
       setLoading(false)
     }
@@ -71,8 +73,8 @@ export default function Login() {
         {/* Card */}
         <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-2xl shadow-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black text-white mb-2">Welcome back</h1>
-            <p className="text-white/50">Sign in to continue to your dashboard</p>
+            <h1 className="text-3xl font-black text-white mb-2">{t('Welcome back')}</h1>
+            <p className="text-white/50">{t('Sign in to continue to your dashboard')}</p>
           </div>
           
           {/* Social Login */}
@@ -103,7 +105,7 @@ export default function Login() {
           {/* Divider */}
           <div className="flex items-center gap-4 mb-8">
             <div className="flex-1 h-px bg-white/10" />
-            <span className="text-white/30 text-sm">or continue with email</span>
+            <span className="text-white/30 text-sm">{t('or continue with email')}</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
           
@@ -121,7 +123,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
+                placeholder={t('Email address')}
                 required
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all duration-300"
               />
@@ -133,7 +135,7 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder={t('Password')}
                 required
                 className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all duration-300"
               />
@@ -148,7 +150,7 @@ export default function Login() {
             
             <div className="text-right">
               <Link to="/forgot-password" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
-                Forgot password?
+                {t('Forgot password?')}
               </Link>
             </div>
             
@@ -160,15 +162,15 @@ export default function Login() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
               ) : (
-                <>Sign In <ArrowRight className="w-5 h-5" /></>
+                <>{t('Sign In')} <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
           </form>
           
           <p className="text-center text-white/50 mt-8">
-            Don't have an account?{' '}
+            {t("Don't have an account?")}{' '}
             <Link to="/signup" className="text-blue-400 font-semibold hover:text-blue-300 transition-colors">
-              Create one
+              {t('Create one')}
             </Link>
           </p>
         </div>
