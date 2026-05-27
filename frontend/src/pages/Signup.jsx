@@ -5,6 +5,7 @@ import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Server } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { signup as apiSignup, getMe, getOAuthStartUrl } from '../lib/api'
 import BrandLogo from '../components/BrandLogo'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -14,6 +15,7 @@ const fadeInUp = {
 export default function Signup() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [targetDatabase, setTargetDatabase] = useState('supabase')
   const [providerApiKey, setProviderApiKey] = useState('')
@@ -41,7 +43,7 @@ export default function Signup() {
       login(me, data.access_token)
       navigate('/dashboard?onboarding=true')
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Signup failed')
+      setError(err?.response?.data?.detail || t('Signup failed'))
     } finally {
       setLoading(false)
     }
@@ -75,8 +77,8 @@ export default function Signup() {
         {/* Card */}
         <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-2xl shadow-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black text-white mb-2">Get Started</h1>
-            <p className="text-white/50">Create your Intelli-Migrate account</p>
+            <h1 className="text-3xl font-black text-white mb-2">{t('Get Started')}</h1>
+            <p className="text-white/50">{t('Create your Intelli-Migrate account')}</p>
           </div>
           
           {/* Social Login */}
@@ -107,7 +109,7 @@ export default function Signup() {
           {/* Divider */}
           <div className="flex items-center gap-4 mb-8">
             <div className="flex-1 h-px bg-white/10" />
-            <span className="text-white/30 text-sm">or continue with email</span>
+            <span className="text-white/30 text-sm">{t('or continue with email')}</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
           
@@ -125,7 +127,7 @@ export default function Signup() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Name"
+                placeholder={t('Name')}
                 required
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
               />
@@ -141,8 +143,8 @@ export default function Signup() {
               >
                 <option className="bg-[#0f1115] text-white" value="supabase">Supabase</option>
                 <option className="bg-[#0f1115] text-white" value="neon">Neon</option>
-                <option className="bg-[#0f1115] text-white" value="custom_postgresql">Custom PostgreSQL</option>
-                <option className="bg-[#0f1115] text-white" value="custom_mysql">Custom MySQL</option>
+                <option className="bg-[#0f1115] text-white" value="custom_postgresql">{t('Custom PostgreSQL')}</option>
+                <option className="bg-[#0f1115] text-white" value="custom_mysql">{t('Custom MySQL')}</option>
               </select>
             </div>
 
@@ -154,7 +156,7 @@ export default function Signup() {
                     type="text"
                     value={providerProjectId}
                     onChange={(e) => setProviderProjectId(e.target.value)}
-                    placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} Project ID`}
+                    placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} ${t('Project ID')}`}
                     required
                     className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
                   />
@@ -165,7 +167,7 @@ export default function Signup() {
                     type="text"
                     value={providerApiKey}
                     onChange={(e) => setProviderApiKey(e.target.value)}
-                    placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} API Key`}
+                    placeholder={`${targetDatabase === 'supabase' ? 'Supabase' : 'Neon'} ${t('API Key')}`}
                     required
                     className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
                   />
@@ -189,7 +191,7 @@ export default function Signup() {
             {isCustomProvider && (
               <>
                 <div className="rounded-xl border border-yellow-400/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-100">
-                  Use a restricted database user (read/write only for migration), not an admin/root credential.
+                  {t('Use a restricted database user (read/write only for migration), not an admin/root credential.')}
                 </div>
                 <div className="relative group">
                   <Server className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
@@ -213,7 +215,7 @@ export default function Signup() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
+                placeholder={t('Email address')}
                 required
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
               />
@@ -225,7 +227,7 @@ export default function Signup() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password (min 8 characters)"
+                placeholder={t('Password (min 8 characters)')}
                 required
                 minLength={8}
                 className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all duration-300"
@@ -240,10 +242,10 @@ export default function Signup() {
             </div>
             
             <p className="text-xs text-white/30 px-1">
-              By signing up, you agree to our{' '}
-              <Link to="/terms" className="text-purple-400 hover:underline">Terms & Conditions</Link>
-              {' '}and{' '}
-              <Link to="/privacy" className="text-purple-400 hover:underline">Privacy Policy</Link>
+              {t('By signing up, you agree to our')}{' '}
+              <Link to="/terms" className="text-purple-400 hover:underline">{t('Terms & Conditions')}</Link>
+              {' '}{t('and')}{' '}
+              <Link to="/privacy" className="text-purple-400 hover:underline">{t('Privacy Policy')}</Link>
             </p>
             
             <button
@@ -254,15 +256,15 @@ export default function Signup() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>Get Started <ArrowRight className="w-5 h-5" /></>
+                <>{t('Get Started')} <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
           </form>
           
           <p className="text-center text-white/50 mt-8">
-            Already have an account?{' '}
+            {t('Already have an account?')}{' '}
             <Link to="/login" className="text-purple-400 font-semibold hover:text-purple-300 transition-colors">
-              Sign in
+              {t('Sign in')}
             </Link>
           </p>
         </div>

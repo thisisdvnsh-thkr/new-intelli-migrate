@@ -1,6 +1,8 @@
 import { FileText, Microscope, Network, FlaskConical } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function Documentation() {
+  const { t } = useLanguage()
   const sections = [
     {
       icon: FileText,
@@ -27,15 +29,15 @@ export default function Documentation() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-4xl md:text-5xl font-black text-white mb-2">Documentation & Research</h1>
-        <p className="text-white/55 text-lg">Interactive documentation shell ready for your report upload.</p>
+        <h1 className="text-4xl md:text-5xl font-black text-white mb-2">{t('Documentation & Research')}</h1>
+        <p className="text-white/55 text-lg">{t('Interactive documentation shell ready for your report upload.')}</p>
       </header>
       <section className="grid md:grid-cols-2 gap-4">
         {sections.map((s) => (
           <div key={s.title} className="rounded-3xl bg-white/[0.03] border border-white/[0.08] p-6">
             <s.icon className="w-7 h-7 text-blue-300 mb-3" />
-            <h2 className="text-xl font-bold text-white mb-2">{s.title}</h2>
-            <p className="text-white/65">{s.text}</p>
+            <h2 className="text-xl font-bold text-white mb-2">{t(s.title)}</h2>
+            <p className="text-white/65">{t(s.text)}</p>
           </div>
         ))}
       </section>

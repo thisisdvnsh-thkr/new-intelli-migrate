@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Cloud, Check, Loader2, ExternalLink, Database, HardDrive, Download } from 'lucide-react'
 import { useMigration } from '../context/MigrationContext'
 import { deployToEnv, deployToPostgres, getUserSettings } from '../lib/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const RENDER_DASHBOARD_URL = import.meta.env.VITE_RENDER_DASHBOARD_URL || 'https://dashboard.render.com/databases'
 
@@ -21,6 +22,7 @@ const providerMeta = {
 export default function Deploy() {
   const navigate = useNavigate()
   const { stats, setStepWithSession, updateSessionMeta } = useMigration()
+  const { t } = useLanguage()
   const [deploying, setDeploying] = useState(false)
   const [deployed, setDeployed] = useState(false)
   const [result, setResult] = useState(null)
@@ -44,6 +46,7 @@ export default function Deploy() {
   const provider = settings.databaseProvider || settings.defaultDatabase || 'postgresql'
   const providerInfo = providerMeta[provider] || providerMeta.postgresql
   const ProviderIcon = providerInfo.icon
+  const providerLabel = t(providerInfo.label)
 
   const canDeployDirectly = provider !== 'access' && provider !== 'custom_mysql'
   const savedConnection = String(settings.databaseUrl || '').trim()
@@ -53,8 +56,8 @@ export default function Deploy() {
   const missingApiCreds = requiresApiCredentials && !hasApiCredentials
   const missingConnection = requiresConnectionUrl && !savedConnection
   const missingCredentialReason = missingApiCreds
-    ? `Add ${providerInfo.label} API key and project ID in your profile before deploying.`
-    : (missingConnection ? 'Add your database connection string in profile before deploying.' : '')
+    ? t('Add {provider} API key and project ID in your profile before deploying.').replace('{provider}', providerLabel)
+    : (missingConnection ? t('Add your database connection string in profile before deploying.') : '')
 
   const deploy = async () => {
     let effectiveSettings = settings
@@ -68,17 +71,19 @@ export default function Deploy() {
 
     const effectiveProvider = effectiveSettings.databaseProvider || effectiveSettings.defaultDatabase || 'postgresql'
     const effectiveSavedConnection = String(effectiveSettings.databaseUrl || '').trim()
+    const effectiveProviderInfo = providerMeta[effectiveProvider] || providerInfo
+    const effectiveProviderLabel = t(effectiveProviderInfo.label)
     const effectiveMissingApiCreds = (effectiveProvider === 'supabase' || effectiveProvider === 'neon') &&
       !(effectiveSettings.providerApiKey && effectiveSettings.providerProjectId)
     const effectiveMissingConnection = (effectiveProvider === 'supabase' || effectiveProvider === 'neon' || effectiveProvider === 'custom_postgresql') &&
       !effectiveSavedConnection
     const effectiveCanDeployDirectly = effectiveProvider !== 'access' && effectiveProvider !== 'custom_mysql'
     const effectiveMissingReason = effectiveMissingApiCreds
-      ? `Add ${(providerMeta[effectiveProvider] || providerInfo).label} API key and project ID in your profile before deploying.`
-      : (effectiveMissingConnection ? 'Add your database connection string in profile before deploying.' : '')
+      ? t('Add {provider} API key and project ID in your profile before deploying.').replace('{provider}', effectiveProviderLabel)
+      : (effectiveMissingConnection ? t('Add your database connection string in profile before deploying.') : '')
 
     if (!stats.sessionId) {
-      setError('Please complete previous steps first.')
+      setError(t('Please complete previous steps first.'))
       return
     }
     if (effectiveMissingReason) {
@@ -96,7 +101,7 @@ export default function Deploy() {
     try {
       let response
       if (!effectiveCanDeployDirectly) {
-        setError('Microsoft Access uses SQL export. Download SQL and import it into Access.')
+        setError(t('Microsoft Access uses SQL export. Download SQL and import it into Access.'))
         return
       }
       if (effectiveSavedConnection) {
@@ -126,11 +131,11 @@ export default function Deploy() {
         setStepWithSession(6, { status: 'deployed', provider: effectiveProvider })
         updateSessionMeta(stats.sessionId, { deployed: true, provider: effectiveProvider })
       } else {
-        const deployMessage = deployData?.message || (Array.isArray(deployData?.errors) ? deployData.errors.join(', ') : '') || 'Deployment could not be completed.'
+        const deployMessage = deployData?.message || (Array.isArray(deployData?.errors) ? deployData.errors.join(', ') : '') || t('Deployment could not be completed.')
         setError(deployMessage)
       }
     } catch (e) {
-      setError(e?.response?.data?.detail || e.message || 'Deployment failed')
+      setError(e?.response?.data?.detail || e.message || t('Deployment failed'))
     } finally {
       clearInterval(progressTimer)
       setDeploying(false)
@@ -145,12 +150,17 @@ export default function Deploy() {
     return 0
   }, [result])
 
+  const tablesCreatedText = t('{count} tables created').replace('{count}', tableCount)
+  const recordsInsertedText = result?.records_inserted
+    ? `• ${t('{count} records inserted').replace('{count}', result.records_inserted)}`
+    : ''
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
       <header>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Deploy to Database</h1>
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('Deploy to Database')}</h1>
         <p className="text-lg text-white/50 font-medium">
-          Target: {providerInfo.label}
+          {t('Target')}: {providerLabel}
         </p>
       </header>
 
@@ -161,9 +171,9 @@ export default function Deploy() {
               <Check className="w-10 h-10 text-green-400" />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-white mb-2">Deployment Successful</h2>
+              <h2 className="text-3xl font-black text-white mb-2">{t('Deployment Successful')}</h2>
               <p className="text-white/60">
-                {tableCount} tables created {result?.records_inserted ? `• ${result.records_inserted} records inserted` : ''}
+                {tablesCreatedText} {recordsInsertedText}
               </p>
             </div>
             <a
@@ -172,7 +182,7 @@ export default function Deploy() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-6 py-3 bg-green-500 text-white font-bold rounded-2xl hover:bg-green-400 transition-colors"
             >
-              Open Database Dashboard
+              {t('Open Database Dashboard')}
               <ExternalLink className="w-5 h-5" />
             </a>
           </div>
@@ -182,11 +192,11 @@ export default function Deploy() {
               <ProviderIcon className="w-10 h-10 text-white/60" />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-white mb-2">{providerInfo.label}</h2>
+              <h2 className="text-3xl font-black text-white mb-2">{providerLabel}</h2>
               <p className="text-white/50">
                 {canDeployDirectly
-                  ? (savedConnection ? 'Using your saved connection details from profile.' : 'Using server DATABASE_URL or default deployment connection.')
-                  : 'This provider currently uses SQL export instead of direct API deployment.'}
+                  ? (savedConnection ? t('Using your saved connection details from profile.') : t('Using server DATABASE_URL or default deployment connection.'))
+                  : t('This provider currently uses SQL export instead of direct API deployment.')}
               </p>
             </div>
             {deploying && (
@@ -194,7 +204,7 @@ export default function Deploy() {
                 <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all" style={{ width: `${deployProgress}%` }} />
                 </div>
-                <p className="text-sm text-white/55">{deployProgress}% deployment sync</p>
+                <p className="text-sm text-white/55">{t('{progress}% deployment sync').replace('{progress}', deployProgress)}</p>
               </div>
             )}
 
@@ -205,7 +215,7 @@ export default function Deploy() {
                 className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-lg rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all disabled:opacity-50"
               >
                 {deploying ? <Loader2 className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />}
-                {deploying ? 'Deploying...' : 'Deploy Now'}
+                {deploying ? t('Deploying...') : t('Deploy Now')}
               </button>
             ) : (
               <a
@@ -213,7 +223,7 @@ export default function Deploy() {
                 className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold text-lg rounded-2xl hover:bg-white/90 transition-colors"
               >
                 <Download className="w-6 h-6" />
-                Download SQL for Access
+                {t('Download SQL for Access')}
               </a>
             )}
           </div>
@@ -227,24 +237,24 @@ export default function Deploy() {
       )}
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <InfoCard label="Provider" value={providerInfo.label} />
-        <InfoCard label="Connection" value={savedConnection ? 'Custom URL configured' : 'Server env fallback'} />
-        <InfoCard label="Session" value={stats.sessionId || 'None'} />
+        <InfoCard label={t('Provider')} value={providerLabel} />
+        <InfoCard label={t('Connection')} value={savedConnection ? t('Custom URL configured') : t('Server env fallback')} />
+        <InfoCard label={t('Session')} value={stats.sessionId || t('None')} />
       </section>
 
       {showCredentialModal && (
         <div className="fixed inset-0 z-[120] bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-lg rounded-3xl bg-[#0d0d10] border border-white/10 p-6">
-            <h3 className="text-xl font-black text-white mb-2">Database credentials required</h3>
+            <h3 className="text-xl font-black text-white mb-2">{t('Database credentials required')}</h3>
             <p className="text-white/65 mb-5">
-              {error || missingCredentialReason || 'Please add your database connection details in profile before deploying this session.'}
+              {error || missingCredentialReason || t('Please add your database connection details in profile before deploying this session.')}
             </p>
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowCredentialModal(false)}
                 className="px-4 py-2 rounded-xl border border-white/15 text-white/80 hover:text-white hover:bg-white/5"
               >
-                Not now
+                {t('Not now')}
               </button>
               <button
                 onClick={() => {
@@ -253,7 +263,7 @@ export default function Deploy() {
                 }}
                 className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold"
               >
-                Add it right now
+                {t('Add it right now')}
               </button>
             </div>
           </div>

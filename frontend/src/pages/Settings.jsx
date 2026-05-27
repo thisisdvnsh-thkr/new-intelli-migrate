@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getUserSettings, saveUserSettings, changePassword, deleteAccount } from '../lib/api'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import {
   Bell, Shield, Palette, Save, Check, Moon, Sun, Key, Trash2, Eye, EyeOff
 } from 'lucide-react'
@@ -17,6 +18,7 @@ const stagger = {
 
 export default function Settings() {
   const { logout, setTheme } = useAuth()
+  const { t } = useLanguage()
   const defaultDarkMode = useMemo(() => !document.documentElement.classList.contains('theme-light'), [])
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -61,7 +63,7 @@ export default function Settings() {
       setSaved(true)
       setTimeout(() => setSaved(false), 1800)
     } catch {
-      alert('Failed to save settings')
+      alert(t('Failed to save settings'))
     } finally {
       setSaving(false)
     }
@@ -69,24 +71,24 @@ export default function Settings() {
 
   const submitPasswordChange = async () => {
     if (!passwordForm.oldPassword || !passwordForm.newPassword) {
-      alert('Please fill current and new password.')
+      alert(t('Please fill current and new password.'))
       return
     }
     if (passwordForm.newPassword.length < 8) {
-      alert('New password must be at least 8 characters.')
+      alert(t('New password must be at least 8 characters.'))
       return
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('New password and confirm password do not match.')
+      alert(t('New password and confirm password do not match.'))
       return
     }
 
     try {
       await changePassword(passwordForm.oldPassword, passwordForm.newPassword)
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
-      alert('Password changed successfully.')
+      alert(t('Password changed successfully.'))
     } catch (e) {
-      alert(e?.response?.data?.detail || 'Failed to change password')
+      alert(e?.response?.data?.detail || t('Failed to change password'))
     }
   }
 
@@ -94,8 +96,8 @@ export default function Settings() {
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
       <motion.header variants={fadeInUp} className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Settings</h1>
-          <p className="text-lg text-white/50 font-medium">Appearance, notifications, auto-save, and security controls.</p>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('Settings')}</h1>
+          <p className="text-lg text-white/50 font-medium">{t('Appearance, notifications, auto-save, and security controls.')}</p>
         </div>
         <button
           onClick={handleSave}
@@ -105,42 +107,42 @@ export default function Settings() {
           } ${saving ? 'opacity-60' : ''}`}
         >
           {saved ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-          {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
+          {saving ? t('Saving...') : saved ? t('Saved') : t('Save Changes')}
         </button>
       </motion.header>
 
-      <Section icon={Palette} title="Appearance">
+      <Section icon={Palette} title={t('Appearance')}>
         <ToggleSetting
-          label="Dark Mode"
-          description="Toggle between dark and light appearance"
+          label={t('Dark Mode')}
+          description={t('Toggle between dark and light appearance')}
           checked={settings.darkMode}
           onChange={(v) => setSettings({ ...settings, darkMode: v })}
           icon={settings.darkMode ? Moon : Sun}
         />
       </Section>
 
-      <Section icon={Bell} title="Preferences">
+      <Section icon={Bell} title={t('Preferences')}>
         <ToggleSetting
-          label="Email Notifications"
-          description="Receive updates about registration, login, and migration status"
+          label={t('Email Notifications')}
+          description={t('Receive updates about registration, login, and migration status')}
           checked={settings.notifications}
           onChange={(v) => setSettings({ ...settings, notifications: v })}
         />
         <ToggleSetting
-          label="Auto-save SQL"
-          description="Automatically save generated SQL to local browser storage"
+          label={t('Auto-save SQL')}
+          description={t('Automatically save generated SQL to local browser storage')}
           checked={settings.autoSave}
           onChange={(v) => setSettings({ ...settings, autoSave: v })}
         />
       </Section>
 
-      <Section icon={Shield} title="Security">
+      <Section icon={Shield} title={t('Security')}>
         <p className="text-sm text-white/45">
-          Use 8+ characters with a mix of letters, numbers, and symbols. Avoid reusing old passwords.
+          {t('Use 8+ characters with a mix of letters, numbers, and symbols. Avoid reusing old passwords.')}
         </p>
         <div className="grid md:grid-cols-3 gap-4">
           <Input
-            label="Current Password"
+            label={t('Current Password')}
             type="password"
             icon={Key}
             value={passwordForm.oldPassword}
@@ -150,7 +152,7 @@ export default function Settings() {
             onToggle={() => setPasswordVisibility((prev) => ({ ...prev, current: !prev.current }))}
           />
           <Input
-            label="New Password"
+            label={t('New Password')}
             type="password"
             icon={Key}
             value={passwordForm.newPassword}
@@ -160,7 +162,7 @@ export default function Settings() {
             onToggle={() => setPasswordVisibility((prev) => ({ ...prev, next: !prev.next }))}
           />
           <Input
-            label="Confirm Password"
+            label={t('Confirm Password')}
             type="password"
             icon={Key}
             value={passwordForm.confirmPassword}
@@ -175,23 +177,23 @@ export default function Settings() {
             onClick={submitPasswordChange}
             className="px-5 py-2.5 bg-white text-black font-semibold rounded-xl hover:bg-white/90 transition-colors"
           >
-            Change Password
+            {t('Change Password')}
           </button>
           <button
             onClick={async () => {
-              if (!window.confirm('Delete account permanently?')) return
+              if (!window.confirm(t('Delete account permanently?'))) return
               try {
                 await deleteAccount()
                 logout()
-                alert('Account deleted.')
+                alert(t('Account deleted.'))
               } catch {
-                alert('Failed to delete account.')
+                alert(t('Failed to delete account.'))
               }
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500/10 border border-red-500/25 text-red-300 rounded-xl hover:bg-red-500/20 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            Delete Account
+            {t('Delete Account')}
           </button>
         </div>
       </Section>

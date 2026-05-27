@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getMe, getUserSettings, saveUserSettings } from '../lib/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -22,6 +23,7 @@ const providerOptions = [
 export default function UserProfile() {
   const navigate = useNavigate()
   const { user, logout, updateUser } = useAuth()
+  const { t } = useLanguage()
   const cachedAuth = useMemo(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('intelli-auth') || '{}')
@@ -76,21 +78,24 @@ export default function UserProfile() {
   }, [user, updateUser])
 
   const provider = settings.databaseProvider || settings.defaultDatabase || 'supabase'
-  const providerLabel = useMemo(() => providerOptions.find((p) => p.value === provider)?.label || provider, [provider])
+  const providerLabel = useMemo(() => {
+    const label = providerOptions.find((p) => p.value === provider)?.label || provider
+    return t(label)
+  }, [provider, t])
   const isApiProvider = provider === 'supabase' || provider === 'neon'
   const isCustomProvider = provider === 'custom_postgresql' || provider === 'custom_mysql'
 
   const saveProfile = async () => {
     if (!settings.name?.trim()) {
-      alert('Name is required.')
+      alert(t('Name is required.'))
       return
     }
     if (isApiProvider && (!settings.providerApiKey || !settings.providerProjectId || !settings.databaseUrl)) {
-      alert('API key, project ID, and database URL are required for this provider.')
+      alert(t('API key, project ID, and database URL are required for this provider.'))
       return
     }
     if (isCustomProvider && !settings.databaseUrl) {
-      alert('Connection string is required for custom database providers.')
+      alert(t('Connection string is required for custom database providers.'))
       return
     }
 
@@ -113,7 +118,7 @@ export default function UserProfile() {
       setSaved(true)
       setTimeout(() => setSaved(false), 1800)
     } catch {
-      alert('Failed to save profile details.')
+      alert(t('Failed to save profile details.'))
     } finally {
       setSaving(false)
     }
@@ -132,7 +137,7 @@ export default function UserProfile() {
       setAvatarSaved(true)
       setTimeout(() => setAvatarSaved(false), 1600)
     } catch {
-      setAvatarError('Failed to save profile photo.')
+      setAvatarError(t('Failed to save profile photo.'))
     } finally {
       setAvatarSaving(false)
     }
@@ -142,18 +147,18 @@ export default function UserProfile() {
     if (!file) return
     setAvatarError('')
     if (!file.type.startsWith('image/')) {
-      setAvatarError('Please upload an image file.')
+      setAvatarError(t('Please upload an image file.'))
       return
     }
     if (file.size > 900000) {
-      setAvatarError('Image is too large. Please keep it under 900KB.')
+      setAvatarError(t('Image is too large. Please keep it under 900KB.'))
       return
     }
     const reader = new FileReader()
     reader.onload = () => {
       persistProfilePicture(String(reader.result || ''))
     }
-    reader.onerror = () => setAvatarError('Failed to read image file.')
+    reader.onerror = () => setAvatarError(t('Failed to read image file.'))
     reader.readAsDataURL(file)
   }
 
@@ -163,8 +168,8 @@ export default function UserProfile() {
     <motion.div initial="hidden" animate="visible" className="space-y-6">
       <motion.header variants={fadeInUp} className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">User Profile</h1>
-          <p className="text-white/55 text-lg">Account details, database connection, and migration preferences.</p>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">{t('User Profile')}</h1>
+          <p className="text-white/55 text-lg">{t('Account details, database connection, and migration preferences.')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -175,7 +180,7 @@ export default function UserProfile() {
             } ${saving ? 'opacity-60' : ''}`}
           >
             {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
+            {saving ? t('Saving...') : saved ? t('Saved') : t('Save')}
           </button>
           <button
             onClick={() => {
@@ -185,7 +190,7 @@ export default function UserProfile() {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t('Sign Out')}
           </button>
         </div>
       </motion.header>
@@ -200,15 +205,15 @@ export default function UserProfile() {
             )}
           </div>
           <div>
-            <p className="text-2xl font-black text-white">{settings.name || user?.full_name || user?.name || 'User'}</p>
-            <p className="text-white/45">Intelli-Migrate user account</p>
+            <p className="text-2xl font-black text-white">{settings.name || user?.full_name || user?.name || t('User')}</p>
+            <p className="text-white/45">{t('Intelli-Migrate user account')}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-sm text-white/70 hover:text-white cursor-pointer">
             <ImageUp className="w-4 h-4" />
-            Upload photo
+            {t('Upload photo')}
             <input
               type="file"
               accept="image/*"
@@ -222,47 +227,47 @@ export default function UserProfile() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm hover:bg-red-500/20"
             >
               <Trash2 className="w-4 h-4" />
-              {avatarSaving ? 'Removing...' : 'Remove photo'}
+              {avatarSaving ? t('Removing...') : t('Remove photo')}
             </button>
           )}
-          {avatarSaving && <span className="text-sm text-white/50">Saving photo...</span>}
-          {avatarSaved && <span className="text-sm text-green-300">Photo updated.</span>}
+          {avatarSaving && <span className="text-sm text-white/50">{t('Saving photo...')}</span>}
+          {avatarSaved && <span className="text-sm text-green-300">{t('Photo updated.')}</span>}
           {avatarError && <p className="text-sm text-red-300">{avatarError}</p>}
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <Input
             icon={UserCircle2}
-            label="Name"
+            label={t('Name')}
             value={settings.name}
             onChange={(value) => setSettings((prev) => ({ ...prev, name: value }))}
             required
           />
-          <ReadOnlyCard icon={Mail} label="Email" value={profileEmail || user?.email || '-'} />
-          <ReadOnlyCard icon={ShieldCheck} label="Notifications" value={settings.notifications ? 'Enabled' : 'Disabled'} />
-          <ReadOnlyCard icon={ShieldCheck} label="Auto-save SQL" value={settings.autoSave ? 'Enabled' : 'Disabled'} />
+          <ReadOnlyCard icon={Mail} label={t('Email')} value={profileEmail || user?.email || '-'} />
+          <ReadOnlyCard icon={ShieldCheck} label={t('Notifications')} value={settings.notifications ? t('Enabled') : t('Disabled')} />
+          <ReadOnlyCard icon={ShieldCheck} label={t('Auto-save SQL')} value={settings.autoSave ? t('Enabled') : t('Disabled')} />
         </div>
       </motion.section>
 
       <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
         <div className="flex items-center gap-2 mb-4">
           <Database className="w-5 h-5 text-blue-300" />
-          <h2 className="text-2xl font-bold text-white">Database Connection</h2>
+          <h2 className="text-2xl font-bold text-white">{t('Database Connection')}</h2>
         </div>
         <p className="text-sm text-white/50 mb-5">
-          Step 1: Select your destination provider. Step 2: Provide provider-specific credentials safely.
+          {t('Step 1: Select your destination provider. Step 2: Provide provider-specific credentials safely.')}
         </p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-white/55 mb-2">Database Provider</label>
+            <label className="block text-sm text-white/55 mb-2">{t('Database Provider')}</label>
             <select
               value={provider}
               onChange={(e) => setSettings((prev) => ({ ...prev, databaseProvider: e.target.value, defaultDatabase: e.target.value }))}
               className="theme-aware-select w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500/50"
             >
               {providerOptions.map((item) => (
-                <option key={item.value} value={item.value}>{item.label}</option>
+                <option key={item.value} value={item.value}>{t(item.label)}</option>
               ))}
             </select>
           </div>
@@ -271,23 +276,23 @@ export default function UserProfile() {
             <div className="grid md:grid-cols-2 gap-4">
               <Input
                 icon={Key}
-                label={`${providerLabel} API Key`}
+                label={`${providerLabel} ${t('API Key')}`}
                 value={settings.providerApiKey || ''}
                 onChange={(value) => setSettings((prev) => ({ ...prev, providerApiKey: value }))}
-                placeholder="Enter API key"
+                placeholder={t('Enter API key')}
                 required
               />
               <Input
                 icon={Server}
-                label={`${providerLabel} Project ID`}
+                label={`${providerLabel} ${t('Project ID')}`}
                 value={settings.providerProjectId || ''}
                 onChange={(value) => setSettings((prev) => ({ ...prev, providerProjectId: value }))}
-                placeholder="Enter project ID"
+                placeholder={t('Enter project ID')}
                 required
               />
               <Input
                 icon={Link2}
-                label="Direct Database URL"
+                label={t('Direct Database URL')}
                 value={settings.databaseUrl || ''}
                 onChange={(value) => setSettings((prev) => ({ ...prev, databaseUrl: value }))}
                 placeholder={provider === 'neon'
@@ -304,14 +309,14 @@ export default function UserProfile() {
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 mt-0.5" />
                   <p>
-                    For custom connections, create a dedicated read/write-only database user for Intelli-Migrate.
-                    Do not use an admin root credential.
+                    {t('For custom connections, create a dedicated read/write-only database user for Intelli-Migrate.')}
+                    {' '}{t('Do not use an admin root credential.')}
                   </p>
                 </div>
               </div>
               <Input
                 icon={Link2}
-                label="Connection String"
+                label={t('Connection String')}
                 value={settings.databaseUrl || ''}
                 onChange={(value) => setSettings((prev) => ({ ...prev, databaseUrl: value }))}
                 placeholder={provider === 'custom_mysql'
@@ -324,8 +329,8 @@ export default function UserProfile() {
 
           <p className="text-sm text-white/45">
             {isApiProvider
-              ? 'API-first providers are safer and cloud-native: scoped keys, HTTPS calls, and faster serverless connectivity.'
-              : 'Custom connection strings are supported with restricted service users for safer platform access.'}
+              ? t('API-first providers are safer and cloud-native: scoped keys, HTTPS calls, and faster serverless connectivity.')
+              : t('Custom connection strings are supported with restricted service users for safer platform access.')}
           </p>
         </div>
       </motion.section>

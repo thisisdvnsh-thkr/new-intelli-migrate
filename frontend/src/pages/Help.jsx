@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HelpCircle, Book, MessageCircle, ChevronDown, ChevronRight, Upload, Database, AlertTriangle, Sparkles, Cloud, Zap } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -12,76 +13,77 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.1 } }
 }
 
-const faqs = [
-  {
-    question: 'What does confidence mean in schema mapping?',
-    answer: 'Confidence is the semantic match score between source and target field names. High confidence means the mapping is highly reliable.'
-  },
-  {
-    question: 'Which data formats can I upload?',
-    answer: 'JSON, CSV, and XML are supported. Upload page parses file structure and displays a schema preview.'
-  },
-  {
-    question: 'How do I recover my account password?',
-    answer: 'Use Forgot Password on login. The platform sends a time-limited reset link to your registered email.'
-  },
-  {
-    question: 'How can I contact the development team?',
-    answer: 'Open Contact Support to view team info and direct GitHub comments/suggestions channel.'
-  },
-  {
-    question: 'Can I use custom PostgreSQL/MySQL?',
-    answer: 'Yes. Configure custom connection string in user profile database section and use restricted DB credentials.'
-  },
-  {
-    question: 'Where can I see project report and research?',
-    answer: 'Open Documentation from this page. It is prepared for interactive report and research display.'
-  }
-]
-
-const guides = [
-  {
-    title: 'Getting Started',
-    icon: Zap,
-    description: 'Upload, map, detect anomalies, generate SQL, deploy',
-    steps: ['Upload file', 'Review preview', 'Run 5-agent pipeline', 'Deploy or download SQL']
-  },
-  {
-    title: 'Schema Mapping',
-    icon: Sparkles,
-    description: 'Understanding confidence and field mapping',
-    steps: ['Run mapping', 'Review confidence bars', 'Confirm mapped fields', 'Continue to anomalies']
-  },
-  {
-    title: 'Anomaly Detection',
-    icon: AlertTriangle,
-    description: 'Data quality and severity visualization',
-    steps: ['Run detector', 'Inspect flagged records', 'Review quality score', 'Continue to SQL']
-  },
-  {
-    title: 'Deployment',
-    icon: Cloud,
-    description: 'Deploy to your selected provider',
-    steps: ['Configure provider in profile', 'Add key/connection', 'Run Deploy', 'Verify tables']
-  },
-  {
-    title: 'Upload & Parse',
-    icon: Upload,
-    description: 'Visual preview and metadata extraction',
-    steps: ['Upload file', 'Watch extraction visual', 'Check rows/cols', 'Continue to mapping']
-  },
-  {
-    title: 'SQL Output',
-    icon: Database,
-    description: 'Generated DDL + DML scripts',
-    steps: ['Generate SQL', 'Copy/download scripts', 'Auto-save support', 'Deploy or import']
-  }
-]
-
 export default function Help() {
   const location = useLocation()
   const [openFaq, setOpenFaq] = useState(null)
   const [selectedGuide, setSelectedGuide] = useState(null)
+  const { t } = useLanguage()
+
+  const faqs = [
+    {
+      question: 'What does confidence mean in schema mapping?',
+      answer: 'Confidence is the semantic match score between source and target field names. High confidence means the mapping is highly reliable.'
+    },
+    {
+      question: 'Which data formats can I upload?',
+      answer: 'JSON, CSV, and XML are supported. Upload page parses file structure and displays a schema preview.'
+    },
+    {
+      question: 'How do I recover my account password?',
+      answer: 'Use Forgot Password on login. The platform sends a time-limited reset link to your registered email.'
+    },
+    {
+      question: 'How can I contact the development team?',
+      answer: 'Open Contact Support to view team info and direct GitHub comments/suggestions channel.'
+    },
+    {
+      question: 'Can I use custom PostgreSQL/MySQL?',
+      answer: 'Yes. Configure custom connection string in user profile database section and use restricted DB credentials.'
+    },
+    {
+      question: 'Where can I see project report and research?',
+      answer: 'Open Documentation from this page. It is prepared for interactive report and research display.'
+    }
+  ]
+
+  const guides = [
+    {
+      title: 'Getting Started',
+      icon: Zap,
+      description: 'Upload, map, detect anomalies, generate SQL, deploy',
+      steps: ['Upload file', 'Review preview', 'Run 5-agent pipeline', 'Deploy or download SQL']
+    },
+    {
+      title: 'Schema Mapping',
+      icon: Sparkles,
+      description: 'Understanding confidence and field mapping',
+      steps: ['Run mapping', 'Review confidence bars', 'Confirm mapped fields', 'Continue to anomalies']
+    },
+    {
+      title: 'Anomaly Detection',
+      icon: AlertTriangle,
+      description: 'Data quality and severity visualization',
+      steps: ['Run detector', 'Inspect flagged records', 'Review quality score', 'Continue to SQL']
+    },
+    {
+      title: 'Deployment',
+      icon: Cloud,
+      description: 'Deploy to your selected provider',
+      steps: ['Configure provider in profile', 'Add key/connection', 'Run Deploy', 'Verify tables']
+    },
+    {
+      title: 'Upload & Parse',
+      icon: Upload,
+      description: 'Visual preview and metadata extraction',
+      steps: ['Upload file', 'Watch extraction visual', 'Check rows/cols', 'Continue to mapping']
+    },
+    {
+      title: 'SQL Output',
+      icon: Database,
+      description: 'Generated DDL + DML scripts',
+      steps: ['Generate SQL', 'Copy/download scripts', 'Auto-save support', 'Deploy or import']
+    }
+  ]
   
   useEffect(() => {
     if (!location.hash) return
@@ -94,23 +96,23 @@ export default function Help() {
   return (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
       <motion.header variants={fadeInUp}>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Help Center</h1>
-        <p className="text-lg text-white/50 font-medium">Guides, FAQs, and direct support paths.</p>
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('Help Center')}</h1>
+        <p className="text-lg text-white/50 font-medium">{t('Guides, FAQs, and direct support paths.')}</p>
       </motion.header>
 
       <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <ActionCard icon={Book} label="Documentation" to="/documentation" />
-        <ActionCard icon={MessageCircle} label="FAQs" to="/help#faqs" onClick={() => {
+        <ActionCard icon={Book} label={t('Documentation')} to="/documentation" />
+        <ActionCard icon={MessageCircle} label={t('FAQs')} to="/help#faqs" onClick={() => {
           const target = document.getElementById('faqs')
           if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }} />
-        <ActionCard icon={HelpCircle} label="Contact Support" to="/contact-support" />
+        <ActionCard icon={HelpCircle} label={t('Contact Support')} to="/contact-support" />
       </motion.div>
 
       <motion.section variants={fadeInUp} id="guides">
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Book className="w-6 h-6 text-blue-400" />
-          Quick Guides
+          {t('Quick Guides')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {guides.map((guide, i) => (
@@ -130,8 +132,8 @@ export default function Help() {
                 </div>
                 <ChevronRight className={`w-5 h-5 text-white/30 transition-transform ${selectedGuide === i ? 'rotate-90' : ''}`} />
               </div>
-              <h3 className="text-lg font-bold text-white mb-1">{guide.title}</h3>
-              <p className="text-sm text-white/40">{guide.description}</p>
+              <h3 className="text-lg font-bold text-white mb-1">{t(guide.title)}</h3>
+              <p className="text-sm text-white/40">{t(guide.description)}</p>
               <AnimatePresence>
                 {selectedGuide === i && (
                   <motion.div
@@ -144,7 +146,7 @@ export default function Help() {
                       {guide.steps.map((step, idx) => (
                         <li key={step} className="text-sm text-white/60 flex items-center gap-2">
                           <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center">{idx + 1}</span>
-                          {step}
+                          {t(step)}
                         </li>
                       ))}
                     </ul>
@@ -159,7 +161,7 @@ export default function Help() {
       <motion.section variants={fadeInUp} id="faqs">
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <HelpCircle className="w-6 h-6 text-purple-400" />
-          Frequently Asked Questions
+          {t('Frequently Asked Questions')}
         </h2>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
@@ -168,7 +170,7 @@ export default function Help() {
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
               >
-                <span className="font-semibold text-white">{faq.question}</span>
+                <span className="font-semibold text-white">{t(faq.question)}</span>
                 <ChevronDown className={`w-5 h-5 text-white/30 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
@@ -179,7 +181,7 @@ export default function Help() {
                     exit={{ opacity: 0, height: 0 }}
                     className="px-6 pb-4"
                   >
-                    <p className="text-white/50 leading-relaxed">{faq.answer}</p>
+                    <p className="text-white/50 leading-relaxed">{t(faq.answer)}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

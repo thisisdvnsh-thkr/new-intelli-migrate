@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Upload as UploadIcon, File, X, ArrowRight, CheckCircle2, Eye, Search } from 'lucide-react'
 import { useMigration } from '../context/MigrationContext'
 import { uploadFile } from '../lib/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -76,6 +77,7 @@ function ExtractionVisualizer({ progress }) {
 export default function Upload() {
   const navigate = useNavigate()
   const { addOrActivateSession, setStepWithSession, updateStats, updateSessionMeta, stats } = useMigration()
+  const { t } = useLanguage()
   const [file, setFile] = useState(null)
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -175,7 +177,7 @@ export default function Upload() {
       setStepWithSession(1, { rows: records, cols: columns.length, status: 'uploaded' })
       updateSessionMeta(sessionId, { schemaPreview: columns.slice(0, 12) })
     } catch (e) {
-      setError(e?.response?.data?.detail || e.message || 'Upload failed')
+      setError(e?.response?.data?.detail || e.message || t('Upload failed'))
     } finally {
       setUploading(false)
     }
@@ -184,9 +186,9 @@ export default function Upload() {
   return (
     <motion.div initial="hidden" animate="visible" className="space-y-8">
       <motion.header variants={fadeInUp}>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Upload Data</h1>
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('Upload Data')}</h1>
         <p className="text-lg text-white/50 font-medium">
-          Upload JSON, CSV, or XML and preview extracted structure instantly.
+          {t('Upload JSON, CSV, or XML and preview extracted structure instantly.')}
         </p>
       </motion.header>
 
@@ -212,8 +214,8 @@ export default function Upload() {
               <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6">
                 <UploadIcon className="w-12 h-12 text-white/30" strokeWidth={1.5} />
               </div>
-              <p className="text-3xl font-black text-white mb-2">Drag & drop your file here</p>
-              <p className="text-white/40 mb-8">or click to browse your computer</p>
+              <p className="text-3xl font-black text-white mb-2">{t('Drag & drop your file here')}</p>
+              <p className="text-white/40 mb-8">{t('or click to browse your computer')}</p>
             </label>
             {file && (
               <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/5 border border-white/10">
@@ -230,17 +232,17 @@ export default function Upload() {
         {uploading && (
           <div className="space-y-6 flex flex-col items-center">
             <CircularProgress progress={visualProgress} />
-            <p className="text-white font-semibold">Parsing and profiling your file...</p>
+            <p className="text-white font-semibold">{t('Parsing and profiling your file...')}</p>
             <ExtractionVisualizer progress={visualProgress} />
-            <p className="text-sm text-white/45">Live extraction visual adapts with file size and parsing progress.</p>
+            <p className="text-sm text-white/45">{t('Live extraction visual adapts with file size and parsing progress.')}</p>
           </div>
         )}
 
         {uploadResponse && (
           <div className="space-y-4 text-center">
             <CheckCircle2 className="w-14 h-14 text-green-400 mx-auto" />
-            <p className="text-2xl font-black text-white">Upload successful</p>
-            <p className="text-white/50">Preview loaded below. Continue to schema mapping.</p>
+            <p className="text-2xl font-black text-white">{t('Upload successful')}</p>
+            <p className="text-white/50">{t('Preview loaded below. Continue to schema mapping.')}</p>
           </div>
         )}
 
@@ -251,7 +253,7 @@ export default function Upload() {
               disabled={uploading}
               className="px-10 py-4 bg-white text-black text-lg font-black rounded-2xl hover:bg-white/90 transition-colors disabled:opacity-60"
             >
-              Upload & Parse
+              {t('Upload & Parse')}
             </button>
           )}
         </div>
@@ -267,16 +269,16 @@ export default function Upload() {
         <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
           <div className="flex items-center gap-2 mb-4">
             <Eye className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">File Preview</h2>
+            <h2 className="text-xl font-bold text-white">{t('File Preview')}</h2>
           </div>
           <div className="grid md:grid-cols-4 gap-4 mb-6">
-            <PreviewStat label="File Name" value={file?.name || stats.fileName || '-'} />
-            <PreviewStat label="File Size" value={file ? `${(file.size / 1024).toFixed(1)} KB` : '-'} />
-            <PreviewStat label="Rows" value={String(rowCount)} />
-            <PreviewStat label="Columns" value={String(previewColumns.length)} />
+            <PreviewStat label={t('File Name')} value={file?.name || stats.fileName || '-'} />
+            <PreviewStat label={t('File Size')} value={file ? `${(file.size / 1024).toFixed(1)} KB` : '-'} />
+            <PreviewStat label={t('Rows')} value={String(rowCount)} />
+            <PreviewStat label={t('Columns')} value={String(previewColumns.length)} />
           </div>
           <div>
-            <p className="text-sm text-white/50 mb-2">Detected Columns</p>
+            <p className="text-sm text-white/50 mb-2">{t('Detected Columns')}</p>
             <div className="flex flex-wrap gap-2">
               {previewColumns.slice(0, 20).map((col) => (
                 <span key={col} className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium">
@@ -294,7 +296,7 @@ export default function Upload() {
             onClick={() => navigate('/schema-map')}
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-colors"
           >
-            Continue to Schema Mapping
+            {t('Continue to Schema Mapping')}
             <ArrowRight className="w-5 h-5" />
           </button>
         )}

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Sparkles, Info, Loader2 } from 'lucide-react'
 import { useMigration } from '../context/MigrationContext'
 import { mapSchema } from '../lib/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -17,15 +18,16 @@ function toConfidence(raw) {
   return Math.max(0, Math.min(1, n))
 }
 
-function confidenceMeta(confidence) {
-  if (confidence >= 0.9) return { label: 'High', tone: 'text-emerald-300', bar: 'from-emerald-400 to-green-500' }
-  if (confidence >= 0.75) return { label: 'Medium', tone: 'text-amber-300', bar: 'from-amber-400 to-yellow-500' }
-  return { label: 'Low', tone: 'text-rose-300', bar: 'from-rose-400 to-red-500' }
+function confidenceMeta(confidence, t) {
+  if (confidence >= 0.9) return { label: t('High'), tone: 'text-emerald-300', bar: 'from-emerald-400 to-green-500' }
+  if (confidence >= 0.75) return { label: t('Medium'), tone: 'text-amber-300', bar: 'from-amber-400 to-yellow-500' }
+  return { label: t('Low'), tone: 'text-rose-300', bar: 'from-rose-400 to-red-500' }
 }
 
 export default function SchemaMap() {
   const navigate = useNavigate()
   const { stats, updateStats, setStepWithSession, updateSessionMeta } = useMigration()
+  const { t } = useLanguage()
   const [mappings, setMappings] = useState([])
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -70,7 +72,7 @@ export default function SchemaMap() {
       setDone(true)
       setPhase('Mapping completed')
     } catch (error) {
-      alert(`Schema mapping failed: ${error?.response?.data?.detail || error.message}`)
+      alert(`${t('Schema mapping failed')}: ${error?.response?.data?.detail || error.message}`)
     } finally {
       setLoading(false)
     }
@@ -89,8 +91,8 @@ export default function SchemaMap() {
     <motion.div initial="hidden" animate="visible" className="space-y-8">
       <motion.header variants={fadeInUp} className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">Schema Mapping</h1>
-          <p className="text-lg text-white/50 font-medium">Agent 2 maps source fields to SQL-friendly column names.</p>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t('Schema Mapping')}</h1>
+          <p className="text-lg text-white/50 font-medium">{t('Agent 2 maps source fields to SQL-friendly column names.')}</p>
         </div>
         {!done && (
           <button
@@ -99,7 +101,7 @@ export default function SchemaMap() {
             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-300 disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-            {loading ? phase : 'Run Mapping'}
+            {loading ? t(phase) : t('Run Mapping')}
           </button>
         )}
       </motion.header>
@@ -107,12 +109,12 @@ export default function SchemaMap() {
       <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white">Confidence Visualizer</h2>
-            <p className="text-sm text-white/45">Top 10 mappings are shown first for quick review.</p>
+            <h2 className="text-xl font-bold text-white">{t('Confidence Visualizer')}</h2>
+            <p className="text-sm text-white/45">{t('Top 10 mappings are shown first for quick review.')}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-white/40 uppercase tracking-wider">Average confidence</p>
-            <p className={`text-2xl font-black ${confidenceMeta(toConfidence(averageConfidence)).tone}`}>{averageConfidence.toFixed(1)}%</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider">{t('Average confidence')}</p>
+            <p className={`text-2xl font-black ${confidenceMeta(toConfidence(averageConfidence), t).tone}`}>{averageConfidence.toFixed(1)}%</p>
           </div>
         </div>
 
@@ -122,22 +124,22 @@ export default function SchemaMap() {
             className="inline-flex items-center gap-2 text-sm text-blue-300 hover:text-blue-200"
           >
             <Info className="w-4 h-4" />
-            What is confidence?
+            {t('What is confidence?')}
           </button>
           {mappings.length > 10 && (
             <button
               onClick={() => setShowAllFields((v) => !v)}
               className="px-3 py-1.5 rounded-xl border border-blue-400/40 bg-blue-500/10 text-blue-200 text-sm font-semibold animate-pulse hover:animate-none"
             >
-              {showAllFields ? 'Show top 10' : 'More fields ✨'}
+              {showAllFields ? t('Show top 10') : t('More fields ✨')}
             </button>
           )}
         </div>
 
         {showConfidenceInfo && (
           <div className="mt-4 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-100">
-            Confidence is the model score (0–100%) for how strongly a source field matches a standardized SQL column.
-            Higher values usually mean stronger semantic match.
+            {t('Confidence is the model score (0–100%) for how strongly a source field matches a standardized SQL column.')}
+            {' '}{t('Higher values usually mean stronger semantic match.')}
           </div>
         )}
 
@@ -147,7 +149,7 @@ export default function SchemaMap() {
               {visibleMappings.map((m, idx) => (
                 <div key={`${m.original}-${idx}`} className="h-16 rounded-md bg-white/5 flex items-end p-1">
                   <div
-                    className={`w-full rounded-sm bg-gradient-to-t ${confidenceMeta(m.confidence).bar}`}
+                    className={`w-full rounded-sm bg-gradient-to-t ${confidenceMeta(m.confidence, t).bar}`}
                     style={{ height: `${Math.max(8, Math.round(m.confidence * 100))}%` }}
                   />
                 </div>
@@ -156,7 +158,7 @@ export default function SchemaMap() {
 
             <div className="space-y-2">
               {visibleMappings.map((m, idx) => {
-                const meta = confidenceMeta(m.confidence)
+                const meta = confidenceMeta(m.confidence, t)
                 return (
                   <div key={`${m.original}-${m.mapped}-${idx}`} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between gap-4 mb-2">
@@ -186,7 +188,7 @@ export default function SchemaMap() {
       {visibleMappings.length === 0 && (
         <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-16 text-center">
           <Sparkles className="w-10 h-10 text-purple-400/60 mx-auto mb-4" />
-          <p className="text-white/40">Run schema mapping to see interactive confidence insights.</p>
+          <p className="text-white/40">{t('Run schema mapping to see interactive confidence insights.')}</p>
         </motion.section>
       )}
 
@@ -196,7 +198,7 @@ export default function SchemaMap() {
             onClick={() => navigate('/anomalies')}
             className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
           >
-            Continue to Anomaly Detection
+            {t('Continue to Anomaly Detection')}
             <ArrowRight className="w-5 h-5" />
           </button>
         </motion.div>

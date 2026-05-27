@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMigration } from '../context/MigrationContext'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { ArrowRight, FileUp, Table, AlertTriangle, TrendingUp, Zap, X, ChevronRight } from 'lucide-react'
 
 const fadeInUp = {
@@ -14,12 +15,12 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } }
 }
 
-function OnboardingTour({ onComplete }) {
+function OnboardingTour({ onComplete, t }) {
   const [step, setStep] = useState(0)
   const steps = [
-    { title: 'Welcome to Intelli-Migrate', description: 'Dashboard shows your overall work, while each session opens separately.' },
-    { title: 'Open Session-Specific View', description: 'Click any session in sidebar to open its own dedicated session dashboard.' },
-    { title: 'Upload a new file', description: 'Go to Upload to start another migration workflow.' }
+    { title: t('Welcome to Intelli-Migrate'), description: t('Dashboard shows your overall work, while each session opens separately.') },
+    { title: t('Open Session-Specific View'), description: t('Click any session in sidebar to open its own dedicated session dashboard.') },
+    { title: t('Upload a new file'), description: t('Go to Upload to start another migration workflow.') }
   ]
   const currentStep = steps[step]
 
@@ -40,12 +41,12 @@ function OnboardingTour({ onComplete }) {
           <h3 className="text-2xl font-black text-white mb-3">{currentStep.title}</h3>
           <p className="text-white/60 mb-6">{currentStep.description}</p>
           <div className="flex items-center justify-between">
-            <span className="text-white/30 text-sm">Step {step + 1} of {steps.length}</span>
+            <span className="text-white/30 text-sm">{t('Step')} {step + 1} {t('of')} {steps.length}</span>
             <button
               onClick={() => (step < steps.length - 1 ? setStep((s) => s + 1) : onComplete())}
               className="px-6 py-3 bg-white text-black font-bold rounded-2xl flex items-center gap-2 hover:bg-white/90 transition-all"
             >
-              {step < steps.length - 1 ? 'Next' : 'Done'}
+              {step < steps.length - 1 ? t('Next') : t('Done')}
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -58,6 +59,7 @@ function OnboardingTour({ onComplete }) {
 export default function Dashboard() {
   const { user } = useAuth()
   const { sessionHistory } = useMigration()
+  const { t } = useLanguage()
   const [searchParams] = useSearchParams()
   const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -87,43 +89,43 @@ export default function Dashboard() {
 
   return (
     <>
-      {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
+      {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} t={t} />}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
         <motion.header variants={fadeInUp}>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
-            Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
+            {t('Welcome back')}{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
           </h1>
-          <p className="text-lg text-white/50 font-medium">Primary dashboard: overall behavior and total migration activity.</p>
+          <p className="text-lg text-white/50 font-medium">{t('Primary dashboard: overall behavior and total migration activity.')}</p>
         </motion.header>
 
         <div className="grid grid-cols-12 gap-5">
-          <motion.div variants={fadeInUp} className="col-span-2">
-            <MetricCard icon={FileUp} label="Files" value={totals.filesProcessed} color="blue" />
-          </motion.div>
-          <motion.div variants={fadeInUp} className="col-span-2">
-            <MetricCard icon={Table} label="Rows" value={totals.totalRows} color="purple" />
-          </motion.div>
-          <motion.div variants={fadeInUp} className="col-span-2">
-            <MetricCard icon={Zap} label="Completed" value={totals.completed} color="green" />
-          </motion.div>
-          <motion.div variants={fadeInUp} className="col-span-2">
-            <MetricCard icon={AlertTriangle} label="In Progress" value={totals.inProgress} color="orange" />
-          </motion.div>
-          <motion.div variants={fadeInUp} className="col-span-2">
-            <MetricCard icon={TrendingUp} label="Confidence" value={`${totals.avgConfidence}%`} color="blue" />
-          </motion.div>
-          <motion.div variants={fadeInUp} className="col-span-2">
-            <MetricCard icon={TrendingUp} label="Quality" value={`${totals.avgQuality}%`} color="purple" />
-          </motion.div>
-        </div>
+            <motion.div variants={fadeInUp} className="col-span-2">
+              <MetricCard icon={FileUp} label={t('Files')} value={totals.filesProcessed} color="blue" />
+            </motion.div>
+            <motion.div variants={fadeInUp} className="col-span-2">
+              <MetricCard icon={Table} label={t('Rows')} value={totals.totalRows} color="purple" />
+            </motion.div>
+            <motion.div variants={fadeInUp} className="col-span-2">
+              <MetricCard icon={Zap} label={t('Completed')} value={totals.completed} color="green" />
+            </motion.div>
+            <motion.div variants={fadeInUp} className="col-span-2">
+              <MetricCard icon={AlertTriangle} label={t('In Progress')} value={totals.inProgress} color="orange" />
+            </motion.div>
+            <motion.div variants={fadeInUp} className="col-span-2">
+              <MetricCard icon={TrendingUp} label={t('Confidence')} value={`${totals.avgConfidence}%`} color="blue" />
+            </motion.div>
+            <motion.div variants={fadeInUp} className="col-span-2">
+              <MetricCard icon={TrendingUp} label={t('Quality')} value={`${totals.avgQuality}%`} color="purple" />
+            </motion.div>
+          </div>
 
         <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-white">Recent Sessions</h2>
-            <p className="text-sm text-white/45">Open any session from sidebar for detailed session dashboard.</p>
+            <h2 className="text-xl font-bold text-white">{t('Recent Sessions')}</h2>
+            <p className="text-sm text-white/45">{t('Open any session from sidebar for detailed session dashboard.')}</p>
           </div>
           {sessionHistory.length === 0 ? (
-            <p className="text-white/50">No sessions yet. Start your first migration.</p>
+            <p className="text-white/50">{t('No sessions yet. Start your first migration.')}</p>
           ) : (
             <div className="space-y-2">
               {sessionHistory.slice(0, 6).map((s) => (
@@ -132,8 +134,8 @@ export default function Dashboard() {
                   to={`/session/${s.sessionId}`}
                   className="flex items-center justify-between px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05]"
                 >
-                  <span className="text-white font-semibold truncate">{s.fileName || 'Untitled file'}</span>
-                  <span className="text-sm text-white/45">Step {s.currentStep || 0}/6</span>
+                  <span className="text-white font-semibold truncate">{s.fileName || t('Untitled file')}</span>
+                  <span className="text-sm text-white/45">{t('Step')} {s.currentStep || 0}/6</span>
                 </Link>
               ))}
             </div>
@@ -142,7 +144,7 @@ export default function Dashboard() {
 
         <motion.div variants={fadeInUp} className="flex justify-end pt-2">
           <Link to="/upload" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all">
-            Upload
+            {t('Upload')}
             <ArrowRight className="w-5 h-5" />
           </Link>
         </motion.div>
