@@ -26,7 +26,7 @@ import ContactSupport from './pages/ContactSupport'
 import Documentation from './pages/Documentation'
 import ParseReview from './pages/ParseReview'
 import SessionDashboard from './pages/SessionDashboard'
-import IntelliChatWidget from './components/IntelliChatWidget'
+import ChatwootWidget from './components/ChatwootWidget'
 import LoggedInFooter from './components/LoggedInFooter'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
@@ -236,7 +236,7 @@ export default function App() {
          <LanguageProvider>
            <MigrationProvider>
              <AppRoutes />
-              <IntelliChatWidget />
+              <ChatwootWidget />
            </MigrationProvider>
          </LanguageProvider>
        </AuthProvider>
