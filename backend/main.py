@@ -483,18 +483,20 @@ def send_brevo_email(to_email: str, subject: str, body: str) -> bool:
         return False
 
 def send_email_message(to_email: str, subject: str, body: str) -> bool:
+    """
+    Attempt to send email via SMTP. If the primary SMTP connection (usually port 587) fails,
+    fall back to an SSL connection on port 465. If both attempts fail or SMTP is not configured,
+    use the Brevo HTTP API as a final fallback.
+    """
     if smtp_service_configured():
         msg = EmailMessage()
         msg["From"] = SMTP_FROM
         msg["To"] = to_email
         msg["Subject"] = subject
         msg.set_content(body)
+
+        # First attempt: standard SMTP (TLS) on configured port (commonly 587)
         try:
-            if SMTP_USE_SSL:
-                with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
-                    server.login(SMTP_USER, SMTP_PASSWORD)
-                    server.send_message(msg)
-                    return True
             with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
                 server.ehlo()
                 if SMTP_USE_TLS:
@@ -504,9 +506,39 @@ def send_email_message(to_email: str, subject: str, body: str) -> bool:
                 server.send_message(msg)
                 return True
         except Exception as e:
-            logger.error("SMTP_SEND_FAILED to=%s subject=%s error=%s", to_email, subject, e)
+            logger.warning(
+                "SMTP_SEND_FAILED (TLS) to=%s subject=%s error=%s",
+                to_email,
+                subject,
+                e,
+            )
+
+        # Second attempt: SMTP over SSL on port 465
+        try:
+            ssl_port = 465
+            with smtplib.SMTP_SSL(SMTP_HOST, ssl_port, timeout=SMTP_TIMEOUT) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.send_message(msg)
+                return True
+        except Exception as e:
+            logger.warning(
+                "SMTP_SEND_FAILED (SSL) to=%s subject=%s error=%s",
+                to_email,
+                subject,
+                e,
+            )
+
+        # If both SMTP attempts failed, fall back to Brevo
+        logger.info("Both SMTP attempts failed; falling back to Brevo for %s", to_email)
     else:
-        logger.warning("SMTP_NOT_CONFIGURED host=%s user=%s from=%s", SMTP_HOST, SMTP_USER, SMTP_FROM)
+        logger.warning(
+            "SMTP_NOT_CONFIGURED host=%s user=%s from=%s",
+            SMTP_HOST,
+            SMTP_USER,
+            SMTP_FROM,
+        )
+
+    # Final fallback: Brevo API
     return send_brevo_email(to_email, subject, body)
 
 def notifications_enabled_for_email(email: str) -> bool:
