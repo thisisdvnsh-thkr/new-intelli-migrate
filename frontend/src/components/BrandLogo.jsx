@@ -4,13 +4,7 @@ export default function BrandLogo({ width, height, className, showText = true, a
   // Render a native image element. Width, height, and className are forwarded
   // so existing layout containers retain their sizing and styling behaviour.
   const img = (
-    <img
-      src="/logo.png"
-      alt={alt}
-      width={width}
-      height={height}
-      className={`${className ?? ''} object-contain`}
-    />
+    <img src="/logo.png" alt="IntelliMigrate" className="h-8 w-auto object-contain" />
   )
 
   if (!showText) return img

@@ -84,46 +84,41 @@ export default function HeroFluidView() {
 
     function frame(now) {
       if (!running) return; // [cite: 483]
-      // Pause animation when the tab is not visible to save resources
-      if (document.hidden) {
-        rafId = requestAnimationFrame(frame);
-        return;
+      if (!document.hidden) {
+        const t = (now - startTime) * 0.00018; // Smooth pulse loop duration [cite: 484, 516]
+
+        // Wash slate-950 backdrop layers dynamically to make motion trails [cite: 484, 485]
+        ctx.fillStyle = "rgba(2, 6, 23, 0.18)"; 
+        ctx.fillRect(0, 0, width, height); // [cite: 485]
+
+        const pulse = 0.5 + 0.5 * Math.sin(now * 0.0008); // [cite: 486]
+
+        for (let i = 0; i < particles.length; i++) { // [cite: 487]
+          const p = particles[i]; // [cite: 487]
+          const angle = fieldAngle(p.x, p.y, t); // [cite: 488]
+
+          // Linear bias drift shifting left-to-right to simulate a migration data pipeline [cite: 469, 488, 523]
+          p.x += Math.cos(angle) * p.speed + 0.12; 
+          p.y += Math.sin(angle) * p.speed; // [cite: 489]
+
+          // Loop constraints keeping coordinate mutations clean with zero memory overhead [cite: 489, 490, 516]
+          if (p.x > width + 8) p.x = -8; // [cite: 489]
+          if (p.x < -8) p.x = width + 8; // [cite: 490]
+          if (p.y > height + 8) p.y = -8; // [cite: 490]
+          if (p.y < -8) p.y = height + 8; // [cite: 491]
+
+          const a = p.alpha * (0.5 + 0.5 * pulse); // [cite: 491]
+          const r = p.size * (1 + 0.35 * Math.sin(p.phase + now * 0.002)); // [cite: 492]
+
+          ctx.beginPath(); // [cite: 492]
+          ctx.fillStyle = `hsla(${p.hue}, 90%, 68%, ${a})`; // [cite: 493]
+          ctx.shadowColor = `hsla(${p.hue}, 95%, 65%, ${a})`; // [cite: 493]
+          ctx.shadowBlur = 14; // [cite: 493]
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2); // [cite: 494]
+          ctx.fill(); // [cite: 494]
+        }
+        ctx.shadowBlur = 0; // [cite: 494]
       }
-      const t = (now - startTime) * 0.00018; // Smooth pulse loop duration [cite: 484, 516]
-
-      // Wash slate-950 backdrop layers dynamically to make motion trails [cite: 484, 485]
-      ctx.fillStyle = "rgba(2, 6, 23, 0.18)"; 
-      ctx.fillRect(0, 0, width, height); // [cite: 485]
-
-      const pulse = 0.5 + 0.5 * Math.sin(now * 0.0008); // [cite: 486]
-
-      for (let i = 0; i < particles.length; i++) { // [cite: 487]
-        const p = particles[i]; // [cite: 487]
-        const angle = fieldAngle(p.x, p.y, t); // [cite: 488]
-
-        // Linear bias drift shifting left-to-right to simulate a migration data pipeline [cite: 469, 488, 523]
-        p.x += Math.cos(angle) * p.speed + 0.12; 
-        p.y += Math.sin(angle) * p.speed; // [cite: 489]
-
-        // Loop constraints keeping coordinate mutations clean with zero memory overhead [cite: 489, 490, 516]
-        if (p.x > width + 8) p.x = -8; // [cite: 489]
-        if (p.x < -8) p.x = width + 8; // [cite: 490]
-        if (p.y > height + 8) p.y = -8; // [cite: 490]
-        if (p.y < -8) p.y = height + 8; // [cite: 491]
-
-        const a = p.alpha * (0.5 + 0.5 * pulse); // [cite: 491]
-        const r = p.size * (1 + 0.35 * Math.sin(p.phase + now * 0.002)); // [cite: 492]
-
-        ctx.beginPath(); // [cite: 492]
-        ctx.fillStyle = `hsla(${p.hue}, 90%, 68%, ${a})`; // [cite: 493]
-        ctx.shadowColor = `hsla(${p.hue}, 95%, 65%, ${a})`; // [cite: 493]
-        ctx.shadowBlur = 14; // [cite: 493]
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2); // [cite: 494]
-        ctx.fill(); // [cite: 494]
-      }
-      ctx.shadowBlur = 0; // [cite: 494]
-
-      // Start the animation loop; it will self‑pause when the page is hidden
       rafId = requestAnimationFrame(frame);
     }
 
