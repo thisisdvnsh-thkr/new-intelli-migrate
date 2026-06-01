@@ -1,3 +1,4 @@
+import HeroFluidView from "./components/HeroFluidView";
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { MigrationProvider } from './context/MigrationContext'
@@ -194,7 +195,7 @@ function AppRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<PublicLayout><Landing /></PublicLayout>} />
+        <Route path="/" element={<PublicLayout><HeroFluidView /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
         <Route path="/signup" element={<PublicLayout><Signup /></PublicLayout>} />
         <Route path="/oauth-callback" element={<PublicLayout><OAuthCallback /></PublicLayout>} />
