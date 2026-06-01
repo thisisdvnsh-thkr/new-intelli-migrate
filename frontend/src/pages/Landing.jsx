@@ -286,27 +286,27 @@ function UseCases() {
 function Architecture() {
   const agents = [
     {
-      title: 'Parser',
+      title: 'Intelligent Payload Parser',
       description:
         'Engineered for deep-parsing complex multi-format unstructured payloads (JSON, CSV, XML) into safe, intermediate data trees with zero data corruption.'
     },
     {
-      title: 'Mapper',
+      title: 'Semantic Schema Mapper',
       description:
         'Utilizes semantic NLP token analysis to map source fields directly to relational database columns with high structural parity confidence scores.'
     },
     {
-      title: 'Anomaly',
+      title: 'Real-time Anomaly Guardian',
       description:
         'Monitors runtime data streams to instantly isolate structural outliers, malformed database types, and schema configuration drift prior to commit cycles.'
     },
     {
-      title: 'Normalizer',
+      title: 'Relational Structure Normalizer',
       description:
         'Executes continuous schema optimization rules and entity resolution matches to protect integrity constraints across target relational tables.'
     },
     {
-      title: 'SQL Generator',
+      title: 'Automated SQL Architect',
       description:
         'Outputs production‑grade, optimized DDL and DML data scripts equipped with end‑to‑end lineage maps and comprehensive tracking audit trails.'
     }
