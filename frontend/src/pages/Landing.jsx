@@ -284,7 +284,33 @@ function UseCases() {
 
 /* ---------------- ARCHITECTURE ---------------- */
 function Architecture() {
-  const agents = ['Parser', 'Mapper', 'Anomaly', 'Normalizer', 'SQL Generator']
+  const agents = [
+    {
+      title: 'Parser',
+      description:
+        'Engineered for deep-parsing complex multi-format unstructured payloads (JSON, CSV, XML) into safe, intermediate data trees with zero data corruption.'
+    },
+    {
+      title: 'Mapper',
+      description:
+        'Utilizes semantic NLP token analysis to map source fields directly to relational database columns with high structural parity confidence scores.'
+    },
+    {
+      title: 'Anomaly',
+      description:
+        'Monitors runtime data streams to instantly isolate structural outliers, malformed database types, and schema configuration drift prior to commit cycles.'
+    },
+    {
+      title: 'Normalizer',
+      description:
+        'Executes continuous schema optimization rules and entity resolution matches to protect integrity constraints across target relational tables.'
+    },
+    {
+      title: 'SQL Generator',
+      description:
+        'Outputs production‑grade, optimized DDL and DML data scripts equipped with end‑to‑end lineage maps and comprehensive tracking audit trails.'
+    }
+  ]
   return (
     <section id="architecture" className="relative py-28">
       <div className="absolute inset-0 mask-fade-b opacity-50">
@@ -307,7 +333,8 @@ function Architecture() {
             >
               <GlassCard className="p-5 text-center" tiltStrength={6}>
                 <p className="text-xs text-white/40 mb-1 tracking-widest">AGENT {idx + 1}</p>
-                <p className="font-bold text-white">{item}</p>
+                <p className="font-bold text-white">{item.title}</p>
+                <p className="text-slate-400 text-sm">{item.description}</p>
               </GlassCard>
             </motion.div>
           ))}
