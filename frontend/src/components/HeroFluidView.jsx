@@ -84,6 +84,11 @@ export default function HeroFluidView() {
 
     function frame(now) {
       if (!running) return; // [cite: 483]
+      // Pause animation when the tab is not visible to save resources
+      if (document.hidden) {
+        rafId = requestAnimationFrame(frame);
+        return;
+      }
       const t = (now - startTime) * 0.00018; // Smooth pulse loop duration [cite: 484, 516]
 
       // Wash slate-950 backdrop layers dynamically to make motion trails [cite: 484, 485]
