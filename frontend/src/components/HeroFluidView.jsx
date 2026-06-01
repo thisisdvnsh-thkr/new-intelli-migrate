@@ -40,7 +40,7 @@ export default function HeroFluidView() {
     let running = true; // [cite: 477]
 
     // Flow-field particle tracking pool [cite: 477]
-    const PARTICLE_COUNT = 140; // [cite: 477]
+    const PARTICLE_COUNT = 80; // reduced to lower CPU/GPU load
     const particles = []; // [cite: 477]
 
     const rand = (min, max) => min + Math.random() * (max - min); // [cite: 478]
@@ -118,7 +118,8 @@ export default function HeroFluidView() {
       }
       ctx.shadowBlur = 0; // [cite: 494]
 
-      rafId = requestAnimationFrame(frame); // Native 60fps tracking loop [cite: 9, 494, 516]
+      // Start the animation loop; it will self‑pause when the page is hidden
+      rafId = requestAnimationFrame(frame);
     }
 
     function debouncedResize() {

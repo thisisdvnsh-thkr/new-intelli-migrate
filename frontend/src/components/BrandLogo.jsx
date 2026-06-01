@@ -9,7 +9,7 @@ export default function BrandLogo({ width, height, className, showText = true, a
       alt={alt}
       width={width}
       height={height}
-      className={className}
+      className={`${className ?? ''} object-contain`}
     />
   )
 
