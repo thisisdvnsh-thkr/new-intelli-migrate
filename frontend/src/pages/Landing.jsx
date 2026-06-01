@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import HeroFluidView from '../components/HeroFluidView';
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import {
@@ -419,7 +420,7 @@ export default function Landing() {
     <div className="relative min-h-screen bg-black text-white overflow-x-hidden">
       <Noise opacity={0.05} />
       <Navbar />
-      <Hero />
+      <HeroFluidView />
       <Features />
       <HowItWorks />
       <UseCases />
