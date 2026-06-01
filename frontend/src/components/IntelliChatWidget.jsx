@@ -106,6 +106,19 @@ export default function IntelliChatWidget() {
             </button>
           </div>
 
+          {/* Starter question bubbles */}
+          <div className="px-4 py-2 flex flex-col gap-2">
+            {STARTER_QUESTIONS.map((q) => (
+              <button
+                key={q}
+                onClick={() => handleStarterClick(q)}
+                className="text-left bg-white/10 text-white px-3 py-2 rounded-md hover:bg-white/20 transition"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
           <div ref={listRef} className="max-h-[320px] overflow-y-auto px-4 py-4 space-y-3">
             {messages.map((message) => (
               <div
