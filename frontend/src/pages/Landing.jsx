@@ -111,12 +111,6 @@ function Hero() {
         className="relative z-20 max-w-6xl mx-auto px-6 text-center"
       >
         <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-8">
-          <motion.div variants={fadeInUp} className="flex justify-center">
-            <div className="ring-conic inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm">
-              <Sparkles className="w-4 h-4 text-blue-300" />
-              <span className="text-white/85 font-medium">Production-grade AI migration platform</span>
-            </div>
-          </motion.div>
 
           <motion.h1
             variants={fadeInUp}
