@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MessageCircle, Send, X } from 'lucide-react'
+import { Headset, Send, X } from 'lucide-react'
 
 const STARTER_MESSAGES = [
   { id: 'welcome', role: 'bot', text: 'Hi! How can we help you with your migration today?' }
@@ -81,13 +81,18 @@ export default function IntelliChatWidget() {
   return (
     <>
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-[120] flex items-center gap-2 rounded-full bg-white text-black px-5 py-3 shadow-[0_18px_40px_rgba(59,130,246,0.25)] hover:shadow-[0_22px_50px_rgba(99,102,241,0.3)] transition-all"
-        >
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-sm font-semibold">Chat</span>
-        </button>
+        <div className="fixed bottom-6 right-6 z-[120]">
+          <button
+            onClick={() => setOpen(true)}
+            className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white text-black shadow-[0_8px_20px_rgba(59,130,246,0.3)] hover:shadow-[0_10px_25px_rgba(99,102,241,0.4)] transition-all"
+            aria-label="Open live support"
+          >
+            <Headset className="w-6 h-6" />
+          </button>
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+            Live Support
+          </div>
+        </div>
       )}
 
       {open && (
@@ -138,6 +143,21 @@ export default function IntelliChatWidget() {
             ))}
           </div>
 
+          {/* Quick action buttons */}
+          <div className="px-4 py-2 flex gap-2">
+            <button
+              onClick={() => handleStarterClick("I can't log in")}
+              className="flex-1 rounded-full bg-blue-600 text-white py-2 hover:bg-blue-700 transition"
+            >
+              I can't log in
+            </button>
+            <button
+              onClick={() => handleStarterClick("I want to learn about IntelliMigrate")}
+              className="flex-1 rounded-full bg-purple-600 text-white py-2 hover:bg-purple-700 transition"
+            >
+              I want to learn about IntelliMigrate
+            </button>
+          </div>
           <div className="px-4 py-3 border-t border-white/10 bg-black/60">
             <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
               <textarea
@@ -161,4 +181,8 @@ export default function IntelliChatWidget() {
       )}
     </>
   )
+  // expose global toggle function
+  useEffect(() => {
+    window.toggleIntelliChat = () => setOpen((prev) => !prev)
+  }, [])
 }
