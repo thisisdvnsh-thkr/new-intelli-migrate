@@ -431,9 +431,9 @@ function Footer() {
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
           <a href="#faqs" className="hover:text-white transition-colors">FAQs</a>
-          <button onClick={() => { if (window.toggleIntelliChat) window.toggleIntelliChat(); }} className="hover:text-white transition-colors inline-flex items-center gap-1">
+          <a href="javascript:void(0)" onClick={() => { if (window.toggleIntelliChat) window.toggleIntelliChat(); }} className="hover:text-white transition-colors inline-flex items-center gap-1">
             <HelpCircle className="w-4 h-4" /> Support
-          </button>
+          </a>
         </div>
         <p className="text-white/35 text-sm">© 2026 Intelli-Migrate</p>
       </div>

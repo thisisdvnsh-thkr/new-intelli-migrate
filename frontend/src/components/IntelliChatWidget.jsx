@@ -34,12 +34,6 @@ export default function IntelliChatWidget() {
     }
   }
 
-  // ----- Starter questions (displayed at the top of the messages area) -----
-  const STARTER_QUESTIONS = [
-    "How does IntelliMigrate prevent schema mapping data loss?",
-    "What database providers are currently supported?",
-    "How does the Anomaly Detector agent flag structure drift?"
-  ]
 
   // Helper to add a message to the local history state
   const addMessage = (text, role = 'user') => {
@@ -111,18 +105,6 @@ export default function IntelliChatWidget() {
             </button>
           </div>
 
-          {/* Starter question bubbles */}
-          <div className="px-4 py-2 flex flex-col gap-2">
-            {STARTER_QUESTIONS.map((q) => (
-              <button
-                key={q}
-                onClick={() => handleStarterClick(q)}
-                className="text-left bg-white/10 text-white px-3 py-2 rounded-md hover:bg-white/20 transition"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
 
           <div ref={listRef} className="max-h-[320px] overflow-y-auto px-4 py-4 space-y-3">
             {messages.map((message) => (
