@@ -132,6 +132,17 @@ function Lighting() {
 }
 
 export default function HeroScene({ mouse }) {
+  // Cleanup any global listeners (e.g., mouse or scroll tracking) when the component unmounts
+  useEffect(() => {
+    const handleMouse = () => {}
+    const handleScroll = () => {}
+    window.addEventListener('mousemove', handleMouse)
+    window.addEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('mousemove', handleMouse)
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
   return (
     <Canvas
       dpr={[1, Math.min(window.devicePixelRatio, 1.5)]}
