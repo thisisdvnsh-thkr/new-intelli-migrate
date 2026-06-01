@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import {
   Environment,
@@ -15,6 +15,13 @@ import * as THREE from 'three'
 /* ---------- The hero refracting glass shape ---------- */
 function GlassObject({ mouse }) {
   const mesh = useRef()
+  const geometryRef = useRef()
+  const materialRef = useRef()
+
+  useEffect(() => () => {
+    geometryRef.current?.dispose?.()
+    materialRef.current?.dispose?.()
+  }, [])
 
   useFrame((state, delta) => {
     if (!mesh.current) return
@@ -31,11 +38,12 @@ function GlassObject({ mouse }) {
   return (
     <Float speed={1.4} rotationIntensity={0.6} floatIntensity={1.6}>
       <mesh ref={mesh} scale={1.35}>
-        <torusKnotGeometry args={[0.9, 0.32, 220, 32]} />
+        <torusKnotGeometry ref={geometryRef} args={[0.9, 0.32, 220, 32]} />
         <MeshTransmissionMaterial
+          ref={materialRef}
           backside
           backsideThickness={0.6}
-          samples={8}
+          samples={6}
           resolution={512}
           transmission={1}
           roughness={0.06}
@@ -70,13 +78,28 @@ function FloatingShards() {
   )
 
   return items.map((it, i) => (
-    <Float key={i} speed={it.speed} rotationIntensity={1.2} floatIntensity={2.2}>
-      <mesh position={it.p} scale={it.s}>
-        {it.geo === 'ico' && <icosahedronGeometry args={[1, 0]} />}
-        {it.geo === 'oct' && <octahedronGeometry args={[1, 0]} />}
-        {it.geo === 'box' && <boxGeometry args={[1, 1, 1]} />}
-        {it.geo === 'tet' && <tetrahedronGeometry args={[1, 0]} />}
+    <Shard key={i} {...it} />
+  ))
+}
+
+function Shard({ p, s, geo, speed }) {
+  const geometryRef = useRef()
+  const materialRef = useRef()
+
+  useEffect(() => () => {
+    geometryRef.current?.dispose?.()
+    materialRef.current?.dispose?.()
+  }, [])
+
+  return (
+    <Float speed={speed} rotationIntensity={1.2} floatIntensity={2.2}>
+      <mesh position={p} scale={s}>
+        {geo === 'ico' && <icosahedronGeometry ref={geometryRef} args={[1, 0]} />}
+        {geo === 'oct' && <octahedronGeometry ref={geometryRef} args={[1, 0]} />}
+        {geo === 'box' && <boxGeometry ref={geometryRef} args={[1, 1, 1]} />}
+        {geo === 'tet' && <tetrahedronGeometry ref={geometryRef} args={[1, 0]} />}
         <MeshTransmissionMaterial
+          ref={materialRef}
           samples={4}
           resolution={256}
           transmission={1}
@@ -91,7 +114,7 @@ function FloatingShards() {
         />
       </mesh>
     </Float>
-  ))
+  )
 }
 
 /* ---------- Studio lights for nice reflections on the glass ---------- */
@@ -108,10 +131,11 @@ function Lighting() {
   )
 }
 
-export default function HeroScene({ mouse, dpr = [1, 1.8] }) {
+export default function HeroScene({ mouse }) {
+  const safeDpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1
   return (
     <Canvas
-      dpr={dpr}
+      dpr={[1, safeDpr]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0, 5.5], fov: 35 }}
       style={{ position: 'absolute', inset: 0 }}
