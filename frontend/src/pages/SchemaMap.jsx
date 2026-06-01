@@ -106,11 +106,11 @@ export default function SchemaMap() {
         )}
       </motion.header>
 
-      <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
-        <div className="flex items-center justify-between gap-4">
+      <motion.section variants={fadeInUp} className="agent-card">
+        <div className="agent-card-header">
           <div>
-            <h2 className="text-xl font-bold text-white">{t('Confidence Visualizer')}</h2>
-            <p className="text-sm text-white/45">{t('Top 10 mappings are shown first for quick review.')}</p>
+            <h2 className="agent-card-title">{t('Confidence Visualizer')}</h2>
+            <p className="agent-card-subtitle">{t('Top 10 mappings are shown first for quick review.')}</p>
           </div>
           <div className="text-right">
             <p className="text-xs text-white/40 uppercase tracking-wider">{t('Average confidence')}</p>
@@ -143,6 +143,14 @@ export default function SchemaMap() {
           </div>
         )}
 
+        {loading && !mappings.length && (
+          <div className="mt-6 space-y-3">
+            <div className="h-4 rounded-full skeleton" />
+            <div className="h-4 rounded-full skeleton w-5/6" />
+            <div className="h-4 rounded-full skeleton w-2/3" />
+          </div>
+        )}
+
         {visibleMappings.length > 0 && (
           <div className="mt-6 space-y-4">
             <div className="grid grid-cols-10 gap-1">
@@ -160,7 +168,7 @@ export default function SchemaMap() {
               {visibleMappings.map((m, idx) => {
                 const meta = confidenceMeta(m.confidence, t)
                 return (
-                  <div key={`${m.original}-${m.mapped}-${idx}`} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <div key={`${m.original}-${m.mapped}-${idx}`} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
                     <div className="flex items-center justify-between gap-4 mb-2">
                       <p className="text-sm text-white">
                         <span className="font-semibold">{m.original}</span>
@@ -183,25 +191,25 @@ export default function SchemaMap() {
             </div>
           </div>
         )}
+
+        {done && (
+          <div className="agent-card-actions">
+            <button
+              onClick={() => navigate('/anomalies')}
+              className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
+            >
+              {t('Continue to Anomaly Detection')}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </motion.section>
 
       {visibleMappings.length === 0 && (
-        <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-16 text-center">
+        <motion.section variants={fadeInUp} className="agent-card text-center">
           <Sparkles className="w-10 h-10 text-purple-400/60 mx-auto mb-4" />
           <p className="text-white/40">{t('Run schema mapping to see interactive confidence insights.')}</p>
         </motion.section>
-      )}
-
-      {done && (
-        <motion.div variants={fadeInUp} className="flex justify-end">
-          <button
-            onClick={() => navigate('/anomalies')}
-            className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
-          >
-            {t('Continue to Anomaly Detection')}
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </motion.div>
       )}
     </motion.div>
   )

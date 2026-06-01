@@ -27,6 +27,7 @@ import Documentation from './pages/Documentation'
 import ParseReview from './pages/ParseReview'
 import SessionDashboard from './pages/SessionDashboard'
 import ChatwootWidget from './components/ChatwootWidget'
+import IntelliChatWidget from './components/IntelliChatWidget'
 import LoggedInFooter from './components/LoggedInFooter'
 import { checkHealth } from './lib/api'
 import BrandLogo from './components/BrandLogo'
@@ -150,10 +151,10 @@ function BackendLoader({ onReady }) {
 function PageTransition({ children }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      exit={{ opacity: 0, y: 15 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
     >
       {children}
     </motion.div>
@@ -162,11 +163,12 @@ function PageTransition({ children }) {
 
 // Layout with sidebar for dashboard pages
 function DashboardLayout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true)
+  const sidebarWidth = isExpanded ? 288 : 72
   return (
     <div className="flex min-h-screen bg-[#0a0a0b]">
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
-      <main className={`flex-1 min-h-screen transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-20'}`}>
+      <Sidebar isExpanded={isExpanded} onToggle={() => setIsExpanded((v) => !v)} />
+      <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen transition-all duration-300 ease-out">
         <div className="max-w-7xl mx-auto px-8 py-8">
           <PageTransition>{children}</PageTransition>
           <LoggedInFooter />
@@ -235,11 +237,12 @@ export default function App() {
        <AuthProvider>
          <LanguageProvider>
            <MigrationProvider>
-             <AppRoutes />
+              <AppRoutes />
               <ChatwootWidget />
-           </MigrationProvider>
-         </LanguageProvider>
-       </AuthProvider>
+              <IntelliChatWidget />
+            </MigrationProvider>
+          </LanguageProvider>
+        </AuthProvider>
     </BrowserRouter>
   )
 }

@@ -198,7 +198,7 @@ export default function Upload() {
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`rounded-3xl p-10 md:p-14 transition-all duration-300 ${
+        className={`agent-card p-10 md:p-14 transition-all duration-300 hover:scale-[1.01] ${
           dragActive
             ? 'bg-blue-500/10 border-2 border-dashed border-blue-500'
             : file
@@ -234,6 +234,10 @@ export default function Upload() {
             <CircularProgress progress={visualProgress} />
             <p className="text-white font-semibold">{t('Parsing and profiling your file...')}</p>
             <ExtractionVisualizer progress={visualProgress} />
+            <div className="w-full max-w-lg space-y-2">
+              <div className="h-3 rounded-full skeleton" />
+              <div className="h-3 rounded-full skeleton w-4/5" />
+            </div>
             <p className="text-sm text-white/45">{t('Live extraction visual adapts with file size and parsing progress.')}</p>
           </div>
         )}
@@ -246,7 +250,7 @@ export default function Upload() {
           </div>
         )}
 
-        <div className="flex justify-center mt-9">
+        <div className="agent-card-actions">
           {file && !uploadResponse && (
             <button
               onClick={handleUpload}
@@ -266,19 +270,26 @@ export default function Upload() {
       )}
 
       {uploadResponse && (
-        <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Eye className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">{t('File Preview')}</h2>
+        <motion.section variants={fadeInUp} className="agent-card">
+          <div className="agent-card-header">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Eye className="w-5 h-5 text-blue-400" />
+                <h2 className="agent-card-title">{t('File Preview')}</h2>
+              </div>
+              <p className="agent-card-subtitle">{t('Detected Columns')}</p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 font-semibold">
+              {previewColumns.length} {t('Columns')}
+            </span>
           </div>
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <div className="agent-card-grid md:grid-cols-4 mb-6">
             <PreviewStat label={t('File Name')} value={file?.name || stats.fileName || '-'} />
             <PreviewStat label={t('File Size')} value={file ? `${(file.size / 1024).toFixed(1)} KB` : '-'} />
             <PreviewStat label={t('Rows')} value={String(rowCount)} />
             <PreviewStat label={t('Columns')} value={String(previewColumns.length)} />
           </div>
           <div>
-            <p className="text-sm text-white/50 mb-2">{t('Detected Columns')}</p>
             <div className="flex flex-wrap gap-2">
               {previewColumns.slice(0, 20).map((col) => (
                 <span key={col} className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium">
@@ -287,27 +298,24 @@ export default function Upload() {
               ))}
             </div>
           </div>
+          <div className="agent-card-actions">
+            <button
+              onClick={() => navigate('/schema-map')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-colors"
+            >
+              {t('Continue to Schema Mapping')}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
         </motion.section>
       )}
-
-      <motion.div variants={fadeInUp} className="flex justify-end gap-3">
-        {uploadResponse && (
-          <button
-            onClick={() => navigate('/schema-map')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-colors"
-          >
-            {t('Continue to Schema Mapping')}
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        )}
-      </motion.div>
     </motion.div>
   )
 }
 
 function PreviewStat({ label, value }) {
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-4">
+    <div className="rounded-2xl glass-surface p-4 transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
       <p className="text-xs text-white/45 mb-1">{label}</p>
       <p className="text-sm font-semibold text-white break-all">{value}</p>
     </div>

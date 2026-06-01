@@ -115,10 +115,15 @@ export default function GenerateSQL() {
         )}
       </motion.header>
 
-      <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="w-5 h-5 text-emerald-300" />
-          <h2 className="text-xl font-bold text-white">{t('Agent Visualization')}</h2>
+      <motion.section variants={fadeInUp} className="agent-card">
+        <div className="agent-card-header">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-emerald-300" />
+            <h2 className="agent-card-title">{t('Agent Visualization')}</h2>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-200 font-semibold">
+            {t('SQL Generation')}
+          </span>
         </div>
         <div className="grid md:grid-cols-4 gap-3 text-sm">
           <Stat label={t('Tables')} value={String(summary.tableCount || sqlStats.createCount)} />
@@ -129,7 +134,7 @@ export default function GenerateSQL() {
       </motion.section>
 
       {sql ? (
-        <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] overflow-hidden">
+        <motion.section variants={fadeInUp} className="agent-card overflow-hidden">
           <div className="flex justify-between items-center px-6 py-4 border-b border-white/[0.08]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center">
@@ -153,15 +158,23 @@ export default function GenerateSQL() {
             <code>{sql}</code>
           </pre>
         </motion.section>
+      ) : loading ? (
+        <motion.section variants={fadeInUp} className="agent-card">
+          <div className="space-y-3">
+            <div className="h-4 rounded-full skeleton" />
+            <div className="h-4 rounded-full skeleton w-5/6" />
+            <div className="h-4 rounded-full skeleton w-2/3" />
+          </div>
+        </motion.section>
       ) : (
-        <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-16 text-center">
+        <motion.section variants={fadeInUp} className="agent-card text-center">
           <Database className="w-10 h-10 text-emerald-400/50 mx-auto mb-4" />
           <p className="text-white/40">{t('Generate SQL to view scripts and interactive summary.')}</p>
         </motion.section>
       )}
 
       {done && (
-        <motion.div variants={fadeInUp} className="flex justify-end">
+        <motion.div variants={fadeInUp} className="agent-card-actions">
           <button
             onClick={() => navigate('/deploy')}
             className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
@@ -177,7 +190,7 @@ export default function GenerateSQL() {
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-4">
+    <div className="rounded-2xl glass-surface p-4 transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
       <p className="text-xs text-white/45 mb-1">{label}</p>
       <p className="text-lg font-bold text-white">{value}</p>
     </div>

@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose } from 'lucide-react'
+import { Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { useMigration } from '../context/MigrationContext'
 import BrandLogo from './BrandLogo'
 import { getSession, getUserSettings } from '../lib/api'
 
-export default function Sidebar({ isOpen, onToggle }) {
+export default function Sidebar({ isExpanded, onToggle }) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useLanguage()
@@ -46,7 +46,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   ]
 
   const optionClass = ({ isActive }) =>
-    `w-full flex items-center ${isOpen ? 'gap-2 px-3' : 'justify-center px-0'} py-2.5 rounded-xl text-sm font-semibold transition-all ${
+    `w-full flex items-center ${isExpanded ? 'gap-2 px-3' : 'justify-center px-0'} py-2.5 rounded-xl text-sm font-semibold transition-all ${
       isActive
         ? 'bg-blue-500/12 border border-blue-500/35 text-white shadow-[0_0_18px_rgba(59,130,246,0.22)]'
         : 'text-white/65 border border-transparent hover:text-white hover:bg-white/5'
@@ -62,15 +62,18 @@ export default function Sidebar({ isOpen, onToggle }) {
   const MotionButton = motion.button
 
   return (
-    <aside className={`fixed left-0 top-0 bottom-0 ${isOpen ? 'w-80' : 'w-20'} bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50 transition-all duration-300`}>
-      <div className={`border-b border-white/[0.06] ${isOpen ? 'px-6 py-5' : 'px-3 py-4'} space-y-4`}>
-        <div className={`flex items-center ${isOpen ? 'justify-between' : 'justify-center'}`}>
-          {isOpen ? (
+    <aside
+      style={{ width: isExpanded ? 288 : 72 }}
+      className="fixed left-0 top-0 bottom-0 bg-black/40 backdrop-blur-2xl border-r border-white/[0.08] flex flex-col z-50 transition-[width] duration-300 ease-out will-change-[width]"
+    >
+      <div className={`border-b border-white/[0.06] ${isExpanded ? 'px-6 py-5' : 'px-3 py-4'} space-y-4`}>
+        <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+          {isExpanded ? (
             <>
               <BrandLogo />
               <button
                 onClick={onToggle}
-                className="rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center w-9 h-9"
+                className="rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/70 hover:text-white hover:bg-white/[0.06] flex items-center justify-center w-9 h-9 transition-all"
                 title={t('Close sidebar')}
               >
                 <PanelLeftClose className="w-4 h-4" />
@@ -79,10 +82,11 @@ export default function Sidebar({ isOpen, onToggle }) {
           ) : (
             <button
               onClick={onToggle}
-              className="relative group w-full flex items-center justify-center px-2 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/75 hover:text-white hover:bg-white/[0.06]"
+              className="relative group w-full flex items-center justify-center px-2 py-2 rounded-xl bg-white/[0.03] border border-white/[0.1] text-white/75 hover:text-white hover:bg-white/[0.06] transition-all"
               title={t('Open sidebar')}
             >
               <BrandLogo size={32} showText={false} />
+              <PanelLeftOpen className="absolute right-1 top-1 w-3 h-3 text-white/30" />
               <span className="pointer-events-none absolute left-16 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-black text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                 {t('Open sidebar')}
               </span>
@@ -90,19 +94,19 @@ export default function Sidebar({ isOpen, onToggle }) {
           )}
         </div>
 
-        {isOpen && <p className="text-xs text-white/40 pl-1">{t('Session Workspace')}</p>}
+        {isExpanded && <p className="text-xs text-white/40 pl-1">{t('Session Workspace')}</p>}
       </div>
 
-      <div className={`${isOpen ? 'px-4 py-4' : 'px-2 py-4'} border-b border-white/[0.06] space-y-2`}>
+      <div className={`${isExpanded ? 'px-4 py-4' : 'px-2 py-4'} border-b border-white/[0.06] space-y-2`}>
         {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to} className={optionClass} title={!isOpen ? item.label : undefined}>
-            <item.icon className="w-4 h-4" />
-            {isOpen && item.label}
+          <NavLink key={item.to} to={item.to} className={optionClass} title={!isExpanded ? item.label : undefined}>
+            <item.icon className="w-5 h-5" />
+            {isExpanded && item.label}
           </NavLink>
         ))}
       </div>
 
-      {isOpen && (
+      {isExpanded && (
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <p className="px-3 text-xs font-semibold text-white/35 uppercase tracking-wider mb-2">{t('Sessions')}</p>
           <div className="relative px-2 mb-3">
@@ -165,28 +169,28 @@ export default function Sidebar({ isOpen, onToggle }) {
         </div>
       )}
 
-      <div className={`border-t border-white/[0.08] ${isOpen ? 'px-4 py-5' : 'px-2 py-4'} space-y-2`}>
-        <NavLink to="/settings" className={optionClass} title={!isOpen ? t('Settings') : undefined}>
-          <SettingsIcon className="w-4 h-4" />
-          {isOpen && t('Settings')}
+      <div className={`border-t border-white/[0.08] ${isExpanded ? 'px-4 py-5' : 'px-2 py-4'} space-y-2`}>
+        <NavLink to="/settings" className={optionClass} title={!isExpanded ? t('Settings') : undefined}>
+          <SettingsIcon className="w-5 h-5" />
+          {isExpanded && t('Settings')}
         </NavLink>
-        <NavLink to="/help" className={optionClass} title={!isOpen ? t('Help Center') : undefined}>
-          <HelpCircle className="w-4 h-4" />
-          {isOpen && t('Help Center')}
+        <NavLink to="/help" className={optionClass} title={!isExpanded ? t('Help Center') : undefined}>
+          <HelpCircle className="w-5 h-5" />
+          {isExpanded && t('Help Center')}
         </NavLink>
 
         {user ? (
           <button
             onClick={() => navigate('/profile')}
-            className={`w-full flex items-center ${isOpen ? 'gap-3 px-3' : 'justify-center px-0'} py-2.5 rounded-xl border border-transparent hover:bg-white/[0.05] transition-colors`}
-            title={!isOpen ? t('Profile') : undefined}
+            className={`w-full flex items-center ${isExpanded ? 'gap-3 px-3' : 'justify-center px-0'} py-2.5 rounded-xl border border-transparent hover:bg-white/[0.05] transition-colors`}
+            title={!isExpanded ? t('Profile') : undefined}
           >
-            {isOpen ? avatar : (
+            {isExpanded ? avatar : (
               profilePictureUrl
                 ? <img src={profilePictureUrl} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
                 : <UserCircle2 className="w-5 h-5 text-white/70" />
             )}
-            {isOpen && (
+            {isExpanded && (
               <>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-semibold text-white truncate">{user.full_name || user.name || t('Profile')}</p>
