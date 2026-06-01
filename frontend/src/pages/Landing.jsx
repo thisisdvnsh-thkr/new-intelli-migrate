@@ -61,9 +61,9 @@ function Navbar() {
               {label}
             </a>
           ))}
-          <button onClick={() => { if (window.toggleIntelliChat) window.toggleIntelliChat(); }} className="text-white/70 hover:text-white text-sm font-medium inline-flex items-center gap-1">
+          <a href="javascript:void(0)" onClick={() => { if (window.toggleIntelliChat) window.toggleIntelliChat(); }} className="text-white/70 hover:text-white text-sm font-medium inline-flex items-center gap-1">
             <MessageCircle className="w-4 h-4" /> Support
-          </button>
+          </a>
         </div>
 
         <Link to="/login" className="btn-glass !py-2 !px-5 text-sm">Sign In</Link>

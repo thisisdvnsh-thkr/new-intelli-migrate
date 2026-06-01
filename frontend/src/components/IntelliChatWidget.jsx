@@ -61,7 +61,16 @@ export default function IntelliChatWidget() {
       .then((data) => {
         clearTimeout(timeoutId)
         if (data?.reply) {
-          addMessage(data.reply, 'bot')
+          // If the bot says it doesn't know or an error is indicated, show a helpful fallback
+          const lower = data.reply.toLowerCase()
+          if (lower.includes("don't know") || lower.includes('error')) {
+            addMessage(
+              "I'm still learning about this specific part of the migration. You can check our documentation or raise an issue on our GitHub: https://github.com/thisisdvnsh-thkr/new-intelli-migrate.git",
+              'bot'
+            )
+          } else {
+            addMessage(data.reply, 'bot')
+          }
         }
       })
       .catch(() => {
