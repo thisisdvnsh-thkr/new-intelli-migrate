@@ -34,6 +34,50 @@ export default function IntelliChatWidget() {
     }
   }
 
+  // ----- Starter questions (displayed at the top of the messages area) -----
+  const STARTER_QUESTIONS = [
+    "How does IntelliMigrate prevent schema mapping data loss?",
+    "What database providers are currently supported?",
+    "How does the Anomaly Detector agent flag structure drift?"
+  ]
+
+  // Helper to add a message to the local history state
+  const addMessage = (text, role = 'user') => {
+    setMessages((prev) => [
+      ...prev,
+      { id: `${Date.now()}-${prev.length}`, role, text }
+    ])
+  }
+
+  // Click handler for starter‑question bubbles
+  const handleStarterClick = (question) => {
+    // Immediately show the question in the UI
+    addMessage(question, 'user')
+    // Send the question to the backend with a strict 4‑second timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 4000)
+
+    fetch('/api/support-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: question }),
+      signal: controller.signal
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        clearTimeout(timeoutId)
+        if (data?.reply) {
+          addMessage(data.reply, 'bot')
+        }
+      })
+      .catch(() => {
+        clearTimeout(timeoutId)
+        const fallback =
+          "Our multi‑agent schema parser safeguards data by extracting raw schemas, mapping fields with AI, detecting drift, normalising to 3NF, and generating safe migration scripts."
+        addMessage(fallback, 'system')
+      })
+  }
+
   return (
     <>
       {!open && (
