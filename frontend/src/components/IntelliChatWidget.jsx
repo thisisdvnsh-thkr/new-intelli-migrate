@@ -63,7 +63,7 @@ export default function IntelliChatWidget() {
           const lower = data.reply.toLowerCase()
           if (lower.includes("don't know") || lower.includes('error')) {
             addMessage(
-              "I'm still learning about this specific part of the migration. You can check our documentation or raise an issue on our GitHub: https://github.com/thisisdvnsh-thkr/new-intelli-migrate.git",
+              "I'm still learning the specifics of that process. You can explore our documentation or raise an issue on our GitHub: https://github.com/thisisdvnsh-thkr/new-intelli-migrate.git",
               'bot'
             )
           } else {
