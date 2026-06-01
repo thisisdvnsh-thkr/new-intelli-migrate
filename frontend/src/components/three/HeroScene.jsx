@@ -100,7 +100,7 @@ function Shard({ p, s, geo, speed }) {
         {geo === 'tet' && <tetrahedronGeometry ref={geometryRef} args={[1, 0]} />}
         <MeshTransmissionMaterial
           ref={materialRef}
-          samples={4}
+          samples={6}
           resolution={256}
           transmission={1}
           roughness={0.15}
@@ -132,10 +132,9 @@ function Lighting() {
 }
 
 export default function HeroScene({ mouse }) {
-  const safeDpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1
   return (
     <Canvas
-      dpr={[1, safeDpr]}
+      dpr={[1, Math.min(window.devicePixelRatio, 1.5)]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0, 5.5], fov: 35 }}
       style={{ position: 'absolute', inset: 0 }}
