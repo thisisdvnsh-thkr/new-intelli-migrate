@@ -28,6 +28,7 @@ export default function Deploy() {
   const [result, setResult] = useState(null)
   const [settings, setSettings] = useState({})
   const [error, setError] = useState('')
+  const [connectionStatus, setConnectionStatus] = useState('') // added for inline success feedback
   const [deployProgress, setDeployProgress] = useState(0)
   const [showCredentialModal, setShowCredentialModal] = useState(false)
 
@@ -128,11 +129,13 @@ export default function Deploy() {
       const success = Boolean(deployData?.success)
       setDeployed(success)
       if (success) {
+        setConnectionStatus(t('Database connection established successfully.')) // success feedback
         setStepWithSession(6, { status: 'deployed', provider: effectiveProvider })
         updateSessionMeta(stats.sessionId, { deployed: true, provider: effectiveProvider })
       } else {
         const deployMessage = deployData?.message || (Array.isArray(deployData?.errors) ? deployData.errors.join(', ') : '') || t('Deployment could not be completed.')
         setError(deployMessage)
+        setConnectionStatus('') // clear any previous success message
       }
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || t('Deployment failed'))
@@ -241,6 +244,11 @@ export default function Deploy() {
       {error && (
         <div className="rounded-2xl p-4 bg-red-500/10 border border-red-500/30 text-red-300">
           {error}
+        </div>
+      )}
+      {connectionStatus && (
+        <div className="rounded-2xl p-4 bg-green-500/10 border border-green-500/30 text-green-300">
+          {connectionStatus}
         </div>
       )}
 
