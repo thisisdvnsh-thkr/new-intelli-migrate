@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Headset, Send, X } from 'lucide-react'
 
-const STARTER_MESSAGES = [
-  { id: 'welcome', role: 'bot', text: 'Hi! How can we help you with your migration today?' }
-]
+const STARTER_MESSAGES = []
 
 export default function IntelliChatWidget() {
   const [open, setOpen] = useState(false)
