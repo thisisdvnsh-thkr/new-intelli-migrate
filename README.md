@@ -5,7 +5,7 @@
 ---
 ## 🚀 Live Demo
 
-🔗 Frontend: [intellimigrate.dev](https://new-intelli-migrate.pages.dev/)  
+🔗 Frontend: [intellimigrate.dev](https://www.intellimigrate.dev/)  
 🔗 Backend API: [https://your-render-url.onrender.com](https://new-intelli-migrate.onrender.com)
 > Upload messy data → see full pipeline → get SQL output
 
