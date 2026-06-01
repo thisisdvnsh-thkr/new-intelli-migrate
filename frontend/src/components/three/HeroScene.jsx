@@ -101,7 +101,7 @@ function Shard({ p, s, geo, speed }) {
         <MeshTransmissionMaterial
           ref={materialRef}
           samples={6}
-          resolution={256}
+          resolution={512}
           transmission={1}
           roughness={0.15}
           thickness={0.5}
