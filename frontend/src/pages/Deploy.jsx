@@ -28,6 +28,7 @@ export default function Deploy() {
   const [result, setResult] = useState(null)
   const [settings, setSettings] = useState({})
   const [error, setError] = useState('')
+  const [connectionStatus, setConnectionStatus] = useState('') // added for inline success feedback
   const [deployProgress, setDeployProgress] = useState(0)
   const [showCredentialModal, setShowCredentialModal] = useState(false)
 
@@ -128,11 +129,13 @@ export default function Deploy() {
       const success = Boolean(deployData?.success)
       setDeployed(success)
       if (success) {
+        setConnectionStatus(t('Database connection established successfully.')) // success feedback
         setStepWithSession(6, { status: 'deployed', provider: effectiveProvider })
         updateSessionMeta(stats.sessionId, { deployed: true, provider: effectiveProvider })
       } else {
         const deployMessage = deployData?.message || (Array.isArray(deployData?.errors) ? deployData.errors.join(', ') : '') || t('Deployment could not be completed.')
         setError(deployMessage)
+        setConnectionStatus('') // clear any previous success message
       }
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || t('Deployment failed'))
@@ -164,7 +167,7 @@ export default function Deploy() {
         </p>
       </header>
 
-      <section className={`rounded-3xl p-10 md:p-14 text-center ${deployed ? 'bg-green-500/5 border border-green-500/20' : 'bg-white/[0.02] border border-white/[0.08]'}`}>
+      <section className={`agent-card text-center ${deployed ? 'bg-green-500/5 border border-green-500/20' : ''}`}>
         {deployed ? (
           <div className="space-y-6">
             <div className="w-20 h-20 rounded-3xl bg-green-500/20 flex items-center justify-center mx-auto">
@@ -205,26 +208,34 @@ export default function Deploy() {
                   <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all" style={{ width: `${deployProgress}%` }} />
                 </div>
                 <p className="text-sm text-white/55">{t('{progress}% deployment sync').replace('{progress}', deployProgress)}</p>
+                <div className="space-y-2">
+                  <div className="h-3 rounded-full skeleton" />
+                  <div className="h-3 rounded-full skeleton w-4/5" />
+                </div>
               </div>
             )}
 
             {canDeployDirectly ? (
-              <button
-                onClick={deploy}
-                disabled={deploying}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-lg rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all disabled:opacity-50"
-              >
-                {deploying ? <Loader2 className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />}
-                {deploying ? t('Deploying...') : t('Deploy Now')}
-              </button>
+              <div className="agent-card-actions justify-center">
+                <button
+                  onClick={deploy}
+                  disabled={deploying}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-lg rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all disabled:opacity-50"
+                >
+                  {deploying ? <Loader2 className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />}
+                  {deploying ? t('Deploying...') : t('Deploy Now')}
+                </button>
+              </div>
             ) : (
-              <a
-                href={`/generate-sql`}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold text-lg rounded-2xl hover:bg-white/90 transition-colors"
-              >
-                <Download className="w-6 h-6" />
-                {t('Download SQL for Access')}
-              </a>
+              <div className="agent-card-actions justify-center">
+                <a
+                  href={`/generate-sql`}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold text-lg rounded-2xl hover:bg-white/90 transition-colors"
+                >
+                  <Download className="w-6 h-6" />
+                  {t('Download SQL for Access')}
+                </a>
+              </div>
             )}
           </div>
         )}
@@ -233,6 +244,11 @@ export default function Deploy() {
       {error && (
         <div className="rounded-2xl p-4 bg-red-500/10 border border-red-500/30 text-red-300">
           {error}
+        </div>
+      )}
+      {connectionStatus && (
+        <div className="rounded-2xl p-4 bg-green-500/10 border border-green-500/30 text-green-300">
+          {connectionStatus}
         </div>
       )}
 
@@ -275,7 +291,7 @@ export default function Deploy() {
 
 function InfoCard({ label, value }) {
   return (
-    <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.08]">
+    <div className="p-6 rounded-3xl glass-surface transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
       <p className="text-sm text-white/40 mb-1">{label}</p>
       <p className="text-lg font-bold text-white">{value}</p>
     </div>

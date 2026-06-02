@@ -151,19 +151,32 @@ export default function Anomalies() {
         <InfoCard title={t('Issues Found')} value={String(done ? anomalies.length : 0)} />
       </motion.section>
 
-      <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <PieChart className="w-5 h-5 text-orange-300" />
-          <h2 className="text-xl font-bold text-white">{t('Severity Distribution')}</h2>
+      <motion.section variants={fadeInUp} className="agent-card">
+        <div className="agent-card-header">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <PieChart className="w-5 h-5 text-orange-300" />
+              <h2 className="agent-card-title">{t('Severity Distribution')}</h2>
+            </div>
+            <p className="agent-card-subtitle">
+              {t('Quality score reflects the percentage of records passing anomaly checks after validation and cleanup.')}
+            </p>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-xs text-orange-200 font-semibold">
+            {t('Issues Found')}: {anomalies.length}
+          </span>
         </div>
-        <p className="text-sm text-white/45 mb-4">
-          {t('Quality score reflects the percentage of records passing anomaly checks after validation and cleanup.')}
-        </p>
         {anomalies.length > 0 ? (
           <div className="space-y-3">
             <SeverityBar label={t('High')} value={severityStats.high} count={severityStats.highCount} color="bg-red-500" />
             <SeverityBar label={t('Medium')} value={severityStats.medium} count={severityStats.mediumCount} color="bg-yellow-500" />
             <SeverityBar label={t('Low')} value={severityStats.low} count={severityStats.lowCount} color="bg-blue-500" />
+          </div>
+        ) : loading ? (
+          <div className="space-y-3">
+            <div className="h-4 rounded-full skeleton" />
+            <div className="h-4 rounded-full skeleton w-5/6" />
+            <div className="h-4 rounded-full skeleton w-2/3" />
           </div>
         ) : (
           <p className="text-white/40">{t('Run detection to see anomaly distribution.')}</p>
@@ -171,9 +184,9 @@ export default function Anomalies() {
       </motion.section>
 
       {anomalies.length > 0 ? (
-        <motion.section variants={fadeInUp} className="space-y-3">
+        <motion.section variants={fadeInUp} className="agent-card space-y-3">
           {visibleIssues.map((a, idx) => (
-            <div key={`${a.type}-${idx}`} className="rounded-2xl p-4 border border-white/[0.08] bg-white/[0.02]">
+            <div key={`${a.type}-${idx}`} className="rounded-2xl p-4 border border-white/[0.08] bg-white/[0.02] transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-semibold text-white">{a.type}</p>
                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${
@@ -199,19 +212,19 @@ export default function Anomalies() {
           )}
         </motion.section>
       ) : done ? (
-        <motion.section variants={fadeInUp} className="rounded-3xl bg-green-500/5 border border-green-500/20 p-12 text-center">
+        <motion.section variants={fadeInUp} className="agent-card text-center">
           <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-4" />
           <p className="text-white">{t('No anomalies detected. Data quality looks good.')}</p>
         </motion.section>
       ) : (
-        <motion.section variants={fadeInUp} className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-12 text-center">
+        <motion.section variants={fadeInUp} className="agent-card text-center">
           <AlertTriangle className="w-10 h-10 text-orange-300/70 mx-auto mb-4" />
           <p className="text-white/40">{t('Run anomaly detection to generate interactive quality insights.')}</p>
         </motion.section>
       )}
 
       {done && (
-        <motion.div variants={fadeInUp} className="flex justify-end">
+        <motion.div variants={fadeInUp} className="agent-card-actions">
           <button
             onClick={() => navigate('/generate-sql')}
             className="flex items-center gap-3 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all"
@@ -227,7 +240,7 @@ export default function Anomalies() {
 
 function InfoCard({ title, value, subtitle, tone = 'text-white' }) {
   return (
-    <div className="rounded-3xl bg-white/[0.02] border border-white/[0.08] p-6">
+    <div className="rounded-3xl glass-surface p-6 transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
       <p className="text-sm text-white/45 mb-2">{title}</p>
       <p className={`text-3xl font-black ${tone}`}>{value}</p>
       {subtitle && <p className="text-xs text-white/45 mt-1">{subtitle}</p>}

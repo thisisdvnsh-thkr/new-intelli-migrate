@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import {
-  Bell, Shield, Palette, Save, Check, Moon, Sun, Key, Trash2, Eye, EyeOff
+  Bell, Shield, Save, Check, Key, Trash2, Eye, EyeOff
 } from 'lucide-react'
 
 const fadeInUp = {
@@ -17,14 +17,12 @@ const stagger = {
 }
 
 export default function Settings() {
-  const { logout, setTheme } = useAuth()
+  const { logout } = useAuth()
   const { t } = useLanguage()
-  const defaultDarkMode = useMemo(() => !document.documentElement.classList.contains('theme-light'), [])
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
     notifications: true,
-    darkMode: defaultDarkMode,
     autoSave: true
   })
   const [passwordForm, setPasswordForm] = useState({
@@ -51,10 +49,6 @@ export default function Settings() {
     }
     load()
   }, [])
-
-  useEffect(() => {
-    setTheme(settings.darkMode)
-  }, [settings.darkMode, setTheme])
 
   const handleSave = async () => {
     setSaving(true)
@@ -111,15 +105,7 @@ export default function Settings() {
         </button>
       </motion.header>
 
-      <Section icon={Palette} title={t('Appearance')}>
-        <ToggleSetting
-          label={t('Dark Mode')}
-          description={t('Toggle between dark and light appearance')}
-          checked={settings.darkMode}
-          onChange={(v) => setSettings({ ...settings, darkMode: v })}
-          icon={settings.darkMode ? Moon : Sun}
-        />
-      </Section>
+
 
       <Section icon={Bell} title={t('Preferences')}>
         <ToggleSetting

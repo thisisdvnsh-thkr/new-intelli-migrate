@@ -64,7 +64,9 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get('onboarding') === 'true') setShowOnboarding(true)
+    if (searchParams.get('onboarding') === 'true') {
+      setTimeout(() => setShowOnboarding(true), 0)
+    }
   }, [searchParams])
 
   const totals = useMemo(() => {
