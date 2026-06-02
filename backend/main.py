@@ -624,4 +624,4 @@ async def upload_file(file: UploadFile = File(...), current_user: Optional[User]
             }
             mapping_dict = {m.original_name: m.mapped_name for m in mapping_result.mappings}
             mapped_records = []
-            for record in result.records
+            for record in result.records:
