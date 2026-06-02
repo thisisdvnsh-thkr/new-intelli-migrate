@@ -5,15 +5,12 @@ import {
   X,
   ThumbsUp,
   ThumbsDown,
-  ArrowRight,
   Search,
   BookOpen,
-  MessageSquare,
-  AlertCircle,
-  Phone,
-  Calendar,
-  Database,
+  ArrowRight,
   LogOut,
+  Database,
+  Phone,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -39,15 +36,18 @@ const QUICK_ACTIONS = [
 const FAQ_CARDS = [
   {
     title: 'What is Intelli‑Migrate?',
-    description: 'A SaaS platform that converts unstructured data into relational schemas using AI.',
+    description:
+      'A SaaS platform that converts unstructured data into relational schemas using AI.',
   },
   {
     title: 'Supported source formats',
-    description: 'JSON, CSV, XML and nested structures up to 10 levels deep.',
+    description:
+      'JSON, CSV, XML and nested structures up to 10 levels deep.',
   },
   {
     title: 'How is data secured?',
-    description: 'All data is encrypted at rest and in transit, and we never store raw files longer than 24 h.',
+    description:
+      'All data is encrypted at rest and in transit, and we never store raw files longer than 24 h.',
   },
 ]
 
@@ -183,8 +183,11 @@ export default function IntelliChatWidget() {
       .then((data) => {
         clearTimeout(timeoutId)
         const reply = data?.reply?.trim() || ''
-        const confidence = typeof data?.confidence === 'number' ? data.confidence : 1
-        const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : []
+        const confidence =
+          typeof data?.confidence === 'number' ? data.confidence : 1
+        const suggestions = Array.isArray(data?.suggestions)
+          ? data.suggestions
+          : []
         const articles = Array.isArray(data?.articles) ? data.articles : []
 
         // Bot reply
@@ -196,7 +199,7 @@ export default function IntelliChatWidget() {
           articles,
         })
 
-        // If confidence low, show ticket form
+        // Low confidence → show ticket form
         if (confidence < 0.5) {
           setShowTicketForm(true)
         }
@@ -256,7 +259,9 @@ export default function IntelliChatWidget() {
   }
 
   const openGitHubIssue = () => {
-    const title = encodeURIComponent('AI Assistant – Unable to answer user query')
+    const title = encodeURIComponent(
+      'AI Assistant – Unable to answer user query'
+    )
     const body = encodeURIComponent(
       `**Describe the issue**\n\nI asked a question and the AI assistant could not provide a satisfactory answer.\n\n**Question**\n${messages
         .filter((m) => m.role === 'user')
@@ -270,10 +275,9 @@ export default function IntelliChatWidget() {
 
   const submitTicket = (e) => {
     e.preventDefault()
-    // In a real app you would POST this to a ticketing endpoint.
-    // For now we just log and close the form.
-    console.log('Support ticket submitted', ticketDetails)
-    alert('Your support ticket has been submitted. Our team will contact you soon.')
+    // Placeholder – in a real product you would POST to a ticketing endpoint
+    console.log('Ticket submitted', ticketDetails)
+    alert('Your ticket has been submitted. Our team will get back to you shortly.')
     setTicketDetails({ subject: '', description: '' })
     setShowTicketForm(false)
   }
@@ -307,20 +311,18 @@ export default function IntelliChatWidget() {
         ))}
       </div>
 
-      {/* Recent topics (last 3 user messages) */}
-      {messages
-        .filter((m) => m.role === 'user')
-        .slice(-3)
-        .reverse()
-        .map((msg) => (
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        {QUICK_ACTIONS.map((chip) => (
           <button
-            key={msg.id}
-            onClick={() => handleChipClick(msg.text)}
-            className="w-full text-left p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-sm text-white"
+            key={chip}
+            onClick={() => handleChipClick(chip)}
+            className="rounded-full bg-white/10 px-3 py-1 text-xs text-white hover:bg-white/20 transition"
           >
-            {msg.text}
+            {chip}
           </button>
         ))}
+      </div>
     </div>
   )
 
@@ -328,7 +330,7 @@ export default function IntelliChatWidget() {
     const isBot = msg.role === 'bot'
     const isUser = msg.role === 'user'
 
-    // Parse possible fallback actions (legacy format)
+    // Detect legacy fallback payload
     let isFallback = false
     let fallbackActions = []
     if (isBot) {
@@ -358,7 +360,7 @@ export default function IntelliChatWidget() {
               : 'bg-white/5 text-white/80 border border-white/10'
           }`}
         >
-          {/* Regular text */}
+          {/* Normal text */}
           {!isFallback && <span>{msg.text}</span>}
 
           {/* Fallback actions */}
@@ -394,7 +396,7 @@ export default function IntelliChatWidget() {
             </div>
           )}
 
-          {/* Knowledge base article cards */}
+          {/* Knowledge‑base article cards */}
           {isBot && msg.articles?.length > 0 && (
             <div className="mt-2 space-y-2">
               {msg.articles.map((art) => (
@@ -480,7 +482,9 @@ export default function IntelliChatWidget() {
         type="text"
         placeholder="Subject"
         value={ticketDetails.subject}
-        onChange={(e) => setTicketDetails({ ...ticketDetails, subject: e.target.value })}
+        onChange={(e) =>
+          setTicketDetails({ ...ticketDetails, subject: e.target.value })
+        }
         required
         className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none"
       />
@@ -488,7 +492,9 @@ export default function IntelliChatWidget() {
         placeholder="Describe your issue…"
         rows={3}
         value={ticketDetails.description}
-        onChange={(e) => setTicketDetails({ ...ticketDetails, description: e.target.value })}
+        onChange={(e) =>
+          setTicketDetails({ ...ticketDetails, description: e.target.value })
+        }
         required
         className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none"
       />
@@ -544,7 +550,9 @@ export default function IntelliChatWidget() {
             {/* Header */}
             <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20">
               <div>
-                <p className="text-sm font-semibold text-white">Intelli Support</p>
+                <p className="text-sm font-semibold text-white">
+                  Intelli Support
+                </p>
                 <p className="text-xs text-white/60">We reply in seconds</p>
               </div>
               <button
