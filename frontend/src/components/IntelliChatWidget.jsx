@@ -1,10 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
-import { Headset, Send, X, ThumbsUp, ThumbsDown, Loader2, ArrowRight } from 'lucide-react'
+import {
+  Headset,
+  Send,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  ArrowRight,
+  Search,
+  BookOpen,
+  MessageSquare,
+  AlertCircle,
+  Phone,
+  Calendar,
+  Database,
+  LogOut,
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /* -------------------------------------------------------------------------- */
-/*  Constants & Helper UI                                                   */
+/*  Static data – FAQ, Knowledge Base, Categories, Quick Actions              */
 /* -------------------------------------------------------------------------- */
+const CATEGORIES = [
+  { id: 'login', label: 'Login Issues', icon: LogOut },
+  { id: 'migration', label: 'Database Migration', icon: Database },
+  { id: 'deployment', label: 'Deployment', icon: ArrowRight },
+  { id: 'integrations', label: 'Integrations', icon: Phone },
+]
+
 const QUICK_ACTIONS = [
   'How does migration work?',
   'Supported databases',
@@ -14,8 +36,35 @@ const QUICK_ACTIONS = [
   'Book a demo',
 ]
 
-// GitHub repo for “Report Issue” – replace with your actual repo URL if needed
-const GITHUB_ISSUES_URL = 'https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues/new?title='
+const FAQ_CARDS = [
+  {
+    title: 'What is Intelli‑Migrate?',
+    description: 'A SaaS platform that converts unstructured data into relational schemas using AI.',
+  },
+  {
+    title: 'Supported source formats',
+    description: 'JSON, CSV, XML and nested structures up to 10 levels deep.',
+  },
+  {
+    title: 'How is data secured?',
+    description: 'All data is encrypted at rest and in transit, and we never store raw files longer than 24 h.',
+  },
+]
+
+const KNOWLEDGE_BASE = [
+  {
+    title: 'Step‑by‑step migration guide',
+    url: 'https://intelli-migrate.com/docs/migration-guide',
+  },
+  {
+    title: 'Pricing & plans',
+    url: 'https://intelli-migrate.com/pricing',
+  },
+  {
+    title: 'Integrating with Supabase',
+    url: 'https://intelli-migrate.com/docs/supabase-integration',
+  },
+]
 
 /* -------------------------------------------------------------------------- */
 /*  Animation variants                                                       */
@@ -41,14 +90,52 @@ const messageVariants = {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Main Component                                                          */
+/*  Helper components                                                       */
+/* -------------------------------------------------------------------------- */
+function TypingDots() {
+  return (
+    <div className="flex space-x-1">
+      {[...Array(3)].map((_, i) => (
+        <span
+          key={i}
+          className="w-2 h-2 bg-white/70 rounded-full animate-bounce"
+          style={{ animationDelay: `${i * 0.2}s` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Main component                                                          */
 /* -------------------------------------------------------------------------- */
 export default function IntelliChatWidget() {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState([]) // {id, role, text, ts, feedback}
+  const [messages, setMessages] = useState([]) // {id, role, text, ts, feedback, suggestions, articles, confidence}
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [category, setCategory] = useState(CATEGORIES[0].id)
+  const [showTicketForm, setShowTicketForm] = useState(false)
+  const [ticketDetails, setTicketDetails] = useState({ subject: '', description: '' })
   const listRef = useRef(null)
+
+  /* ---------------------------------------------------------------------- */
+  /*  Load / persist conversation history                                    */
+  /* ---------------------------------------------------------------------- */
+  useEffect(() => {
+    const stored = localStorage.getItem('intelli_chat_history')
+    if (stored) {
+      try {
+        setMessages(JSON.parse(stored))
+      } catch {
+        // ignore corrupted data
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('intelli_chat_history', JSON.stringify(messages))
+  }, [messages])
 
   // Auto‑scroll to bottom when new messages appear
   useEffect(() => {
@@ -62,90 +149,75 @@ export default function IntelliChatWidget() {
     window.toggleIntelliChat = () => setOpen((prev) => !prev)
   }, [])
 
-  /* ------------------------------------------------------------------------ */
-  /*  Helper: add a message to the conversation                                 */
-  /* ------------------------------------------------------------------------ */
-  const addMessage = (text, role = 'user') => {
-    const newMsg = {
+  /* ---------------------------------------------------------------------- */
+  /*  Helper: add a message to the conversation                               */
+  /* ---------------------------------------------------------------------- */
+  const addMessage = (payload) => {
+    const base = {
       id: `${Date.now()}-${messages.length}`,
-      role,
-      text,
       ts: new Date().toISOString(),
     }
+    const newMsg = { ...base, ...payload }
     setMessages((prev) => [...prev, newMsg])
     return newMsg.id
   }
 
-  /* ------------------------------------------------------------------------ */
-  /*  Send a question to the backend                                            */
-  /* ------------------------------------------------------------------------ */
+  /* ---------------------------------------------------------------------- */
+  /*  Send a question to the backend                                          */
+  /* ---------------------------------------------------------------------- */
   const submitQuestion = (question) => {
-    // Add user message
-    addMessage(question, 'user')
+    // User message
+    addMessage({ role: 'user', text: question })
     setIsTyping(true)
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 12000) // safety net
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
 
     fetch('/api/support-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: question }),
+      body: JSON.stringify({ message: question, category }),
       signal: controller.signal,
     })
       .then((res) => res.json())
       .then((data) => {
         clearTimeout(timeoutId)
-        const reply = data?.reply?.trim()
-        if (!reply) {
-          // ---- SMART FALLBACK -------------------------------------------------
-          addMessage(
-            "I couldn't find a reliable answer.",
-            'bot'
-          )
-          // Show fallback actions as a bot message (they will be rendered as chips)
-          addMessage(
-            JSON.stringify({
-              fallback: true,
-              actions: [
-                'Give Feedback',
-                'Contact Support',
-                'Open GitHub Issues',
-                'Request Feature',
-              ],
-            }),
-            'bot'
-          )
-        } else {
-          // Normal reply – we simulate streaming by showing the whole text at once
-          addMessage(reply, 'bot')
+        const reply = data?.reply?.trim() || ''
+        const confidence = typeof data?.confidence === 'number' ? data.confidence : 1
+        const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : []
+        const articles = Array.isArray(data?.articles) ? data.articles : []
+
+        // Bot reply
+        addMessage({
+          role: 'bot',
+          text: reply || "I couldn't find a reliable answer.",
+          confidence,
+          suggestions,
+          articles,
+        })
+
+        // If confidence low, show ticket form
+        if (confidence < 0.5) {
+          setShowTicketForm(true)
         }
       })
       .catch(() => {
         clearTimeout(timeoutId)
-        addMessage(
-          "I couldn't find a reliable answer.",
-          'bot'
-        )
-        addMessage(
-          JSON.stringify({
-            fallback: true,
-            actions: [
-              'Give Feedback',
-              'Contact Support',
-              'Open GitHub Issues',
-              'Request Feature',
-            ],
-          }),
-          'bot'
-        )
+        addMessage({
+          role: 'bot',
+          text: "I couldn't find a reliable answer.",
+          confidence: 0,
+          suggestions: [],
+          articles: [],
+        })
+        setShowTicketForm(true)
       })
       .finally(() => setIsTyping(false))
   }
 
-  /* ------------------------------------------------------------------------ */
-  /*  UI Handlers                                                               */
-  /* ------------------------------------------------------------------------ */
+  /* ---------------------------------------------------------------------- */
+  /*  UI Handlers                                                            */
+  /* ---------------------------------------------------------------------- */
   const handleSend = () => {
     const trimmed = input.trim()
     if (!trimmed) return
@@ -165,19 +237,19 @@ export default function IntelliChatWidget() {
   }
 
   const handleFeedback = (msgId, rating) => {
-    // rating: 'up' | 'down'
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId ? { ...m, feedback: rating } : m
-      )
+      prev.map((m) => (m.id === msgId ? { ...m, feedback: rating } : m))
     )
     if (rating === 'down') {
-      // Prompt for more details
       const detail = window.prompt('Sorry about that! What went wrong?')
       if (detail) {
-        // Store locally – you can later send to a backend endpoint if it exists
         const stored = JSON.parse(localStorage.getItem('chat_feedback') || '[]')
-        stored.push({ messageId: msgId, rating, detail, ts: new Date().toISOString() })
+        stored.push({
+          messageId: msgId,
+          rating,
+          detail,
+          ts: new Date().toISOString(),
+        })
         localStorage.setItem('chat_feedback', JSON.stringify(stored))
       }
     }
@@ -192,40 +264,74 @@ export default function IntelliChatWidget() {
         .filter((m) => m.role === 'bot')
         .slice(-1)[0]?.text || ''}`
     )
-    window.open(`${GITHUB_ISSUES_URL}${title}&body=${body}`, '_blank')
+    const url = `https://github.com/thisisdvnsh-thkr/new-intelli-migrate/issues/new?title=${title}&body=${body}`
+    window.open(url, '_blank')
   }
 
-  /* ------------------------------------------------------------------------ */
-  /*  Render helpers                                                            */
-  /* ------------------------------------------------------------------------ */
+  const submitTicket = (e) => {
+    e.preventDefault()
+    // In a real app you would POST this to a ticketing endpoint.
+    // For now we just log and close the form.
+    console.log('Support ticket submitted', ticketDetails)
+    alert('Your support ticket has been submitted. Our team will contact you soon.')
+    setTicketDetails({ subject: '', description: '' })
+    setShowTicketForm(false)
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  Render helpers                                                          */
+  /* ---------------------------------------------------------------------- */
   const renderWelcome = () => (
-    <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-white">
-        Welcome to Intelli-Migrate AI Assistant
-      </h2>
-      <p className="text-sm text-slate-300">
-        I can answer questions about migration workflows, supported databases,
-        pricing, security, SQL generation, and troubleshooting.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {QUICK_ACTIONS.map((chip) => (
+    <div className="p-4 space-y-6">
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+        <input
+          type="text"
+          placeholder="Search help…"
+          className="w-full pl-10 pr-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none"
+        />
+      </div>
+
+      {/* FAQ cards */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {FAQ_CARDS.map((card) => (
           <button
-            key={chip}
-            onClick={() => handleChipClick(chip)}
-            className="rounded-full bg-white/10 px-3 py-1 text-xs text-white hover:bg-white/20 transition"
+            key={card.title}
+            onClick={() => handleChipClick(card.title)}
+            className="text-left p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition"
           >
-            {chip}
+            <h4 className="font-medium text-white">{card.title}</h4>
+            <p className="text-sm text-white/60">{card.description}</p>
           </button>
         ))}
       </div>
+
+      {/* Recent topics (last 3 user messages) */}
+      {messages
+        .filter((m) => m.role === 'user')
+        .slice(-3)
+        .reverse()
+        .map((msg) => (
+          <button
+            key={msg.id}
+            onClick={() => handleChipClick(msg.text)}
+            className="w-full text-left p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-sm text-white"
+          >
+            {msg.text}
+          </button>
+        ))}
     </div>
   )
 
   const renderMessage = (msg, idx) => {
-    // Detect if this is a fallback action payload
+    const isBot = msg.role === 'bot'
+    const isUser = msg.role === 'user'
+
+    // Parse possible fallback actions (legacy format)
     let isFallback = false
     let fallbackActions = []
-    if (msg.role === 'bot') {
+    if (isBot) {
       try {
         const parsed = JSON.parse(msg.text)
         if (parsed.fallback) {
@@ -243,13 +349,11 @@ export default function IntelliChatWidget() {
         initial="hidden"
         animate="visible"
         exit="hidden"
-        className={`flex ${
-          msg.role === 'user' ? 'justify-end' : 'justify-start'
-        }`}
+        className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
       >
         <div
           className={`rounded-2xl px-3 py-2 text-sm max-w-[85%] break-words ${
-            msg.role === 'user'
+            isUser
               ? 'bg-blue-500/20 text-blue-100 border border-blue-500/30'
               : 'bg-white/5 text-white/80 border border-white/10'
           }`}
@@ -275,6 +379,41 @@ export default function IntelliChatWidget() {
             </div>
           )}
 
+          {/* Suggested follow‑up questions */}
+          {isBot && msg.suggestions?.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {msg.suggestions.map((sugg) => (
+                <button
+                  key={sugg}
+                  onClick={() => handleChipClick(sugg)}
+                  className="rounded-full bg-white/10 px-3 py-1 text-xs text-white hover:bg-white/20 transition"
+                >
+                  {sugg}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Knowledge base article cards */}
+          {isBot && msg.articles?.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {msg.articles.map((art) => (
+                <a
+                  key={art.title}
+                  href={art.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-white/70" />
+                    <span className="text-sm text-white">{art.title}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+
           {/* Timestamp */}
           <div className="mt-1 text-xs text-white/40">
             {new Date(msg.ts).toLocaleTimeString([], {
@@ -284,7 +423,7 @@ export default function IntelliChatWidget() {
           </div>
 
           {/* Feedback (only for bot messages that are not fallback) */}
-          {msg.role === 'bot' && !isFallback && (
+          {isBot && !isFallback && (
             <div className="mt-1 flex items-center gap-2">
               <button
                 onClick={() => handleFeedback(msg.id, 'up')}
@@ -311,9 +450,69 @@ export default function IntelliChatWidget() {
     )
   }
 
-  /* ------------------------------------------------------------------------ */
-  /*  Main JSX                                                                */
-  /* ------------------------------------------------------------------------ */
+  const renderCategorySelector = () => (
+    <div className="flex overflow-x-auto gap-2 px-2 py-2">
+      {CATEGORIES.map((cat) => {
+        const Icon = cat.icon
+        const selected = category === cat.id
+        return (
+          <button
+            key={cat.id}
+            onClick={() => setCategory(cat.id)}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition ${
+              selected
+                ? 'bg-white/20 text-white'
+                : 'bg-white/5 text-white/70 hover:bg-white/10'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {cat.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  const renderTicketForm = () => (
+    <form onSubmit={submitTicket} className="p-4 space-y-4 bg-white/5 rounded-xl">
+      <h3 className="text-sm font-medium text-white">Submit a support ticket</h3>
+      <input
+        type="text"
+        placeholder="Subject"
+        value={ticketDetails.subject}
+        onChange={(e) => setTicketDetails({ ...ticketDetails, subject: e.target.value })}
+        required
+        className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none"
+      />
+      <textarea
+        placeholder="Describe your issue…"
+        rows={3}
+        value={ticketDetails.description}
+        onChange={(e) => setTicketDetails({ ...ticketDetails, description: e.target.value })}
+        required
+        className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none"
+      />
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setShowTicketForm(false)}
+          className="px-4 py-1 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-1 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
+        >
+          Submit
+        </button>
+      </div>
+    </form>
+  )
+
+  /* ---------------------------------------------------------------------- */
+  /*  Main JSX                                                              */
+  /* ---------------------------------------------------------------------- */
   return (
     <>
       {/* Closed state – floating round launcher */}
@@ -345,12 +544,8 @@ export default function IntelliChatWidget() {
             {/* Header */}
             <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20">
               <div>
-                <p className="text-sm font-semibold text-white">
-                  Intelli Support
-                </p>
-                <p className="text-xs text-white/60">
-                  We reply in seconds
-                </p>
+                <p className="text-sm font-semibold text-white">Intelli Support</p>
+                <p className="text-xs text-white/60">We reply in seconds</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -361,12 +556,15 @@ export default function IntelliChatWidget() {
               </button>
             </div>
 
+            {/* Category selector */}
+            {renderCategorySelector()}
+
             {/* Message list */}
             <div
               ref={listRef}
               className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
             >
-              {/* If no messages yet – show welcome screen */}
+              {/* Welcome screen */}
               {messages.length === 0 && !isTyping && renderWelcome()}
 
               {/* Conversation */}
@@ -378,29 +576,15 @@ export default function IntelliChatWidget() {
               {isTyping && (
                 <div className="flex">
                   <div className="rounded-2xl bg-white/5 px-3 py-2 text-sm text-white/80 border border-white/10 flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-white/70" />
-                    <span>Thinking…</span>
+                    <TypingDots />
+                    <span className="ml-2">Thinking…</span>
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Quick actions (only when no conversation yet) */}
-            {messages.length === 0 && !isTyping && (
-              <div className="px-4 py-2 border-t border-white/10 bg-white/5">
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_ACTIONS.map((chip) => (
-                    <button
-                      key={chip}
-                      onClick={() => handleChipClick(chip)}
-                      className="rounded-full bg-white/10 px-3 py-1 text-xs text-white hover:bg-white/20 transition"
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              {/* Support ticket form (low confidence) */}
+              {showTicketForm && renderTicketForm()}
+            </div>
 
             {/* Input area */}
             <div className="px-4 py-3 border-t border-white/10 bg-black/30">
