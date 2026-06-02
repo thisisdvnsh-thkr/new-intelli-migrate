@@ -9,6 +9,7 @@ export default function ChatwootWidget() {
   const { user } = useAuth()
   const pendingOpenRef = useRef(false)
 
+  // Load Chatwoot SDK lazily and initialise it
   useEffect(() => {
     const init = () => {
       if (!window.chatwootSDK) return
@@ -33,6 +34,7 @@ export default function ChatwootWidget() {
     }
   }, [])
 
+  // Keep Chatwoot user in sync
   useEffect(() => {
     if (!window.$chatwoot || !user?.email) return
     window.$chatwoot.setUser(user.email, {
@@ -44,6 +46,7 @@ export default function ChatwootWidget() {
     })
   }, [user])
 
+  // Listen for global open‑support‑chat events
   useEffect(() => {
     const handleOpen = () => {
       if (window.$chatwoot) {

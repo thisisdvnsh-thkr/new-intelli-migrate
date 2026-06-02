@@ -143,19 +143,17 @@ export default function HeroFluidView() {
 
   return (
     <section className="relative min-h-screen w-full overflow-hidden bg-slate-950 text-white flex items-center justify-center">
-      {/* Canvas Element Mask Base [cite: 5, 499] */}
+      {/* Canvas Element Mask Base */}
       <div className="pointer-events-none absolute inset-0 z-0">
         <canvas ref={canvasRef} className="h-full w-full" />
       </div>
 
-      {/* Glassmorphic vignette overlays protecting readability [cite: 10, 11, 499, 519] */}
+      {/* Glassmorphic vignette overlays */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/40 to-slate-950 z-10" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(2,6,23,0.85)_100%)] z-10" />
 
-      {/* Premium UI Layout Content View Layer [cite: 12, 499, 521] */}
+      {/* Content */}
       <div className="relative z-20 mx-auto flex max-w-6xl flex-col items-center px-6 py-28 text-center">
-        {/* Removed Architecture Overview badge/button for a cleaner layout */}
-
         <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight sm:text-6xl text-white">
           Migrate Unstructured Data Into{" "}
           <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(168,85,247,0.45)]">
@@ -169,8 +167,8 @@ export default function HeroFluidView() {
           detection, and fully automated SQL generation.
         </p>
 
-        {/* Symmetrical Frosted Glassmorphism Grid Container [cite: 13, 14, 503, 521, 522] */}
-        <div className="mt-16 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Cards grid – responsive with subtle glass effect */}
+        <div className="mt-16 w-full grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {MIGRATION_CARDS.map((card) => (
             <div
               key={card.title}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, HelpCircle, LayoutDashboard, UserCircle2, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Settings as SettingsIcon, LayoutDashboard, UserCircle2, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { useMigration } from '../context/MigrationContext'
@@ -174,7 +174,6 @@ export default function Sidebar({ isExpanded, onToggle }) {
           <SettingsIcon className="w-5 h-5" />
           {isExpanded && t('Settings')}
         </NavLink>
-        {/* Support navigation item removed as per request */}
 
         {user ? (
           <button
@@ -197,8 +196,8 @@ export default function Sidebar({ isExpanded, onToggle }) {
             )}
           </button>
         ) : (
-          <Link to="/login" className={`flex items-center justify-center w-full py-2.5 text-sm font-bold bg-white text-black rounded-xl hover:bg-white/90 transition-colors ${isOpen ? '' : 'px-0'}`}>
-            {isOpen ? 'Sign In' : <UserCircle2 className="w-5 h-5" />}
+          <Link to="/login" className={`flex items-center justify-center w-full py-2.5 text-sm font-bold bg-white text-black rounded-xl hover:bg-white/90 transition-colors ${isExpanded ? '' : 'px-0'}`}>
+            {isExpanded ? 'Sign In' : <UserCircle2 className="w-5 h-5" />}
           </Link>
         )}
       </div>
