@@ -88,7 +88,7 @@ export default function HeroFluidView() {
         const t = (now - startTime) * 0.00018; // Smooth pulse loop duration [cite: 484, 516]
 
         // Wash slate-950 backdrop layers dynamically to make motion trails [cite: 484, 485]
-        ctx.fillStyle = "rgba(2, 6, 23, 0.18)"; 
+        ctx.fillStyle = "rgba(2, 6, 23, 0.18)";
         ctx.fillRect(0, 0, width, height); // [cite: 485]
 
         const pulse = 0.5 + 0.5 * Math.sin(now * 0.0008); // [cite: 486]
@@ -98,7 +98,7 @@ export default function HeroFluidView() {
           const angle = fieldAngle(p.x, p.y, t); // [cite: 488]
 
           // Linear bias drift shifting left-to-right to simulate a migration data pipeline [cite: 469, 488, 523]
-          p.x += Math.cos(angle) * p.speed + 0.12; 
+          p.x += Math.cos(angle) * p.speed + 0.12;
           p.y += Math.sin(angle) * p.speed; // [cite: 489]
 
           // Loop constraints keeping coordinate mutations clean with zero memory overhead [cite: 489, 490, 516]
@@ -154,10 +154,7 @@ export default function HeroFluidView() {
 
       {/* Premium UI Layout Content View Layer [cite: 12, 499, 521] */}
       <div className="relative z-20 mx-auto flex max-w-6xl flex-col items-center px-6 py-28 text-center">
-        <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-widest text-indigo-200 uppercase backdrop-blur-md">
-          <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_2px_rgba(99,102,241,0.8)]" />
-          Architecture Overview
-        </span>
+        {/* Removed Architecture Overview badge/button for a cleaner layout */}
 
         <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight sm:text-6xl text-white">
           Migrate Unstructured Data Into{" "}
