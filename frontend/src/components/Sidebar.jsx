@@ -174,10 +174,7 @@ export default function Sidebar({ isExpanded, onToggle }) {
           <SettingsIcon className="w-5 h-5" />
           {isExpanded && t('Settings')}
         </NavLink>
-        <NavLink to="/help" className={optionClass} title={!isExpanded ? t('Help Center') : undefined}>
-          <HelpCircle className="w-5 h-5" />
-          {isExpanded && t('Help Center')}
-        </NavLink>
+        {/* Support navigation item removed as per request */}
 
         {user ? (
           <button
